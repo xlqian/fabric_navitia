@@ -1,0 +1,36 @@
+key,value
+cc,centre commercial
+hotel de ville,mairie
+gare sncf,gare
+chu,hopital
+chr,hopital
+ld,lieu-dit
+st,saint
+ste,sainte
+bvd,boulevard
+bld,boulevard
+bd,boulevard
+pt,pont
+rle,ruelle
+rte,route
+vla,villa
+grand-champ,grandchamp
+DE,
+LA,
+LES,
+DES,
+LE,
+L,
+DU,
+D,
+SUR,
+AU,
+AUX,
+EN,
+ET,
+fac,université
+faculté,université
+ufr,université
+embarcadère,gare maritime
+CPAM,sécurité sociale
+ANPE,Pole Emploi

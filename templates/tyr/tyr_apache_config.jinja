@@ -1,0 +1,34 @@
+#
+## File managed by fabric, don't edit directly
+# This file is just an example and should not be used in production
+#
+# Navitia2 webservice
+
+WSGISocketPrefix /run/wsgi
+Listen {{env.tyr_ws_port}}
+
+<VirtualHost *:{{env.tyr_ws_port}}>
+	ServerName {{env.tyr_ws_url}}
+	DocumentRoot /var/www
+	<Directory />
+		Options FollowSymLinks
+		AllowOverride None
+	</Directory>
+	<Directory {{env.tyr_basedir}}>
+		 Options All
+         AllowOverride All
+         Require all granted
+	</Directory>
+   	RewriteEngine on
+	RewriteCond %{HTTP:Authorization} ^(.*)
+	RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]
+
+	CustomLog ${APACHE_LOG_DIR}/{{env.tyr_ws_url}}-tyr-access.log combined
+	ErrorLog ${APACHE_LOG_DIR}/{{env.tyr_ws_url}}-tyr-error.log
+
+	WSGIDaemonProcess jormungandr processes=1 threads=15 display-name='%{GROUP}' inactivity-timeout=120
+    WSGIProcessGroup jormungandr
+    WSGIApplicationGroup %{GLOBAL}
+    WSGIImportScript {{env.tyr_wsgi_file}} process-group=jormungandr application-group=%{GLOBAL}
+    WSGIScriptAlias / {{env.tyr_wsgi_file}}
+</VirtualHost>

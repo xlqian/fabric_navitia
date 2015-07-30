@@ -1,0 +1,34 @@
+#
+## File managed by fabric, don't edit directly
+# This file is just an example and should not be used in production
+#
+# Navitia2 webservice
+#
+
+WSGISocketPrefix /run/wsgi
+
+WSGIDaemonProcess jormungandr processes=1 threads=15 display-name='%{GROUP}'
+WSGIProcessGroup jormungandr
+WSGIApplicationGroup %{GLOBAL}
+WSGIImportScript {{env.jormungandr_wsgi_file}} process-group=jormungandr application-group=%{GLOBAL}
+WSGIScriptAlias /navitia {{env.jormungandr_wsgi_file}}
+
+<Location /navitia/>
+    Order allow,deny
+    Allow from all
+
+    # mod_authz_core
+    Require all granted
+</Location>
+
+<Directory {{env.jormungandr_base_dir}}>
+ Options All
+ AllowOverride All
+ Require all granted
+</Directory>
+RewriteEngine on
+RewriteCond %{HTTP:Authorization} ^(.*)
+RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]
+
+CustomLog ${APACHE_LOG_DIR}/jormungandr-access.log combined
+ErrorLog ${APACHE_LOG_DIR}/jormungandr-error.log

@@ -1,0 +1,8 @@
+#
+## File managed by fabric, don't edit directly
+#
+import os
+os.environ['TYR_CONFIG_FILE'] = '{{tyr_settings_file}}'
+
+import tyr.api
+application = tyr.api.app

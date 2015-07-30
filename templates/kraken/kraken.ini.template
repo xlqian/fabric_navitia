@@ -1,0 +1,5 @@
+#
+## File managed by fabric, don't edit directly
+#
+[GENERAL]
+database = %(env.ed_basedir)s/%(instance)s/%(env.kraken_data_nav)s

@@ -1,0 +1,7 @@
+SELECT data_set.name FROM job, data_set
+WHERE job.id = data_set.job_id AND
+job.state='done' AND
+job.instance_id={{instance_id}} AND
+data_set.type='fusio'
+ORDER BY job.created_at DESC
+LIMIT 1;

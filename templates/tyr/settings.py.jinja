@@ -1,0 +1,107 @@
+#encoding: utf-8
+#
+## File managed by fabric, don't edit directly
+#
+
+import logging
+
+#URL for the brokker, by default it's the local rabbitmq
+#For amqp (rabbitMQ) the syntax is:
+#amqp://<user>:<password>@<host>:<port>/<vhost>
+#the default vhost is "/" so the URL end with *two* slash
+#http://docs.celeryproject.org/en/latest/configuration.html#std:setting-BROKER_URL
+CELERY_BROKER_URL = 'amqp://{{tyr_broker_username}}:{{tyr_broker_password}}@{{rabbitmq_host}}:{{rabbitmq_port}}//'
+
+#URI for postgresql
+# postgresql://<user>:<password>@<host>:<port>/<dbname>
+#http://docs.sqlalchemy.org/en/rel_0_9/dialects/postgresql.html#psycopg2
+SQLALCHEMY_DATABASE_URI = 'postgresql://{{tyr_postgresql_user}}:{{tyr_postgresql_password}}@{{postgresql_database_host}}/{{tyr_postgresql_database}}'
+
+#Path to the directory where the configuration file of each instance of ed are defined
+INSTANCES_DIR = '{{env.tyr_base_instances_dir}}'
+
+
+{% if env.cities_database_uri %}
+CITIES_DATABASE_URI = '{{env.cities_database_uri}}'
+{% else %}
+CITIES_DATABASE_URI = None
+{% endif %}
+
+# logger configuration
+LOGGER = {
+    'version': 1,
+    'disable_existing_loggers': True,
+    'formatters':{
+        'default': {
+            'format': 'tyr: [%(name)s] [%(asctime)s] [%(levelname)s] [%(process)s] %(message)s',
+        },
+        'instance': {
+            'format': '%(name)s: [%(asctime)s] [%(levelname)s] [%(process)s] %(message)s',
+        }
+
+    },
+    'handlers': {
+        'default': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '{{env.tyr_base_logfile}}',
+            'formatter': 'default',
+        },
+        {% if env.use_syslog %}
+        'default_syslog': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.SysLogHandler',
+            'address': '/dev/log',
+            'facility': '{{env.tyr_syslog_facility}}',
+            'formatter': 'default',
+        },
+        {% endif %}
+        'instance': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '{{env.tyr_base_logdir}}/%(name).log',
+            'formatter': 'instance',
+        },
+
+    },
+    'loggers': {
+        '': {
+            'handlers': ['{{env.tyr_default_handler}}'],
+            'level': 'INFO',
+        },
+        'instance': {
+            'handlers': ['{{env.tyr_default_handler_instance}}'],
+            'level': 'INFO',
+        },
+
+        'celery':{
+            'level': 'INFO',
+        },
+        'sqlalchemy.engine': {
+            'handlers': ['default'],
+            'level': 'WARN',
+            'propagate': True
+        },
+        'sqlalchemy.pool': {
+            'handlers': ['default'],
+            'level': 'WARN',
+            'propagate': True
+        },
+        'sqlalchemy.dialects.postgresql': {
+            'handlers': ['default'],
+            'level': 'WARN',
+            'propagate': True
+        },
+    }
+}
+
+REDIS_HOST = '{{redis_host}}'
+REDIS_PORT = {{redis_port}}
+REDIS_PASSWORD = {{tyr_redis_password}}
+
+#index of the database use in redis, between 0 and 15 by default
+REDIS_DB = {{tyr_redis_db}}
+
+EMAIL_CHECK_MX = False
+EMAIL_CHECK_SMTP = False
+

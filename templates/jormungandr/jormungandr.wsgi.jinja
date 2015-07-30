@@ -1,0 +1,26 @@
+#
+## File managed by fabric, don't edit directly
+#
+import os
+try:
+    config_file = '{{env.jormungandr_base_dir}}/newrelic.ini'
+    import newrelic.agent
+    if os.path.exists(config_file):
+        newrelic.agent.initialize(config_file)
+    else:
+        print("%s doesn't not exist, newrelic disabled" % config_file)
+except ImportError:
+    pass
+
+import sys
+sys.path.append('{{env.jormungandr_base_dir}}')
+
+{% if env.use_protobuf_cpp %}
+os.environ['PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION'] = 'cpp'
+os.environ['PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION_VERSION'] = '2'
+{% endif %}
+
+os.environ['JORMUNGANDR_CONFIG_FILE'] = '{{env.jormungandr_settings_file}}'
+
+import jormungandr
+application = jormungandr.app

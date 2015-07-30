@@ -1,0 +1,27 @@
+#
+## File managed by fabric, don't edit directly
+#
+[instance]
+name             = {{instance.name}}
+source-directory = {{instance.source_dir}}
+backup-directory = {{instance.backup_dir}}
+aliases          = /usr/share/ed/aliases_fr
+synonyms         = /usr/share/ed/synonyms_fr
+target-file      = {{instance.target_lz4_file}}
+tmp-file         = {{instance.target_tmp_file}}
+{% if instance.is_free %}
+is-free          = true
+{% else %}
+is-free          = false
+{% endif %}
+
+rt-topics = ,
+
+exchange-name     = {{env.tyr_broker_exchange}}
+
+[database]
+host     = {{env.postgresql_database_host}}
+dbname   = {{instance.db_name}}
+username = {{instance.db_user}}
+password = {{instance.db_password}}
+port     = 5432

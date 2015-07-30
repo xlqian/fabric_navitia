@@ -1,0 +1,43 @@
+#
+## File managed by fabric, don't edit directly
+#
+
+[GENERAL]
+database = {{instance.kraken_database}}
+zmq_socket = {{instance.kraken_zmq_socket}}
+instance_name = {{instance.name}}
+nb_threads = {{instance.kraken_nb_threads}}
+
+[LOG]
+log4cplus.rootLogger={{env.kraken_log_level}}, ALL_MSGS
+
+{% if env.enable_syslog %}
+log4cplus.appender.ALL_MSGS=log4cplus::SysLogAppender
+log4cplus.appender.ALL_MSGS.ident={{env.kraken_syslog_ident}}
+log4cplus.appender.ALL_MSGS.facility={{env.kraken_syslog_facility}}
+log4cplus.appender.ALL_MSGS.layout.ConversionPattern={{instance.name}}: {% raw %}[%D{%y-%m-%d %H:%M:%S,%q}] [%p] [%t] - %m %b:%L  %n{% endraw %}
+{% else %}
+log4cplus.appender.ALL_MSGS=log4cplus::RollingFileAppender
+log4cplus.appender.ALL_MSGS.MaxBackupIndex={{env.kraken_log_max_backup}}
+log4cplus.appender.ALL_MSGS.MaxFileSize={{env.kraken_log_max_size}}MB
+log4cplus.appender.ALL_MSGS.File={{env.kraken_log_basedir}}/{{instance.name}}.log
+log4cplus.appender.ALL_MSGS.layout.ConversionPattern={% raw %}[%D{%y-%m-%d %H:%M:%S,%q}] [%-5p] [%t] - %m %b:%L  %n{% endraw %}
+{% endif %}
+
+log4cplus.appender.ALL_MSGS.layout=log4cplus::PatternLayout
+
+[BROKER]
+host = {{env.rabbitmq_host}}
+port = {{env.rabbitmq_port}}
+username = {{env.kraken_broker_username}}
+password = {{env.kraken_broker_password}}
+vhost = {{env.kraken_broker_vhost}}
+exchange = {{env.kraken_broker_exchange}}
+{% for topic in instance.rt_topics %}
+rt_topics = {{topic}}
+{% endfor %}
+
+{% if instance.chaos_database %}
+[CHAOS]
+database = {{ instance.chaos_database }}
+{% endif %}

@@ -1,0 +1,73 @@
+#encoding: utf-8
+#
+## File managed by fabric, don't edit directly
+#
+
+#emplacement ou charger les fichier de configuration par instances
+INSTANCES_DIR='{{env.jormungandr_instances_dir}}'
+
+#chaine de connnection à postgresql pour la base jormungandr
+SQLALCHEMY_DATABASE_URI ='postgresql://{{env.tyr_postgresql_user}}:{{env.tyr_postgresql_password}}@{{env.postgresql_database_host}}/{{env.tyr_postgresql_database}}'
+
+#désactivation de l'authentification
+PUBLIC={{env.jormungandr_is_public}}
+
+
+REDIS_HOST = '{{env.redis_host}}'
+REDIS_PORT = {{env.redis_port}}
+REDIS_PASSWORD = {{env.jormungandr_redis_password}}
+
+# index of the redis data base used (integer from 0 to 15)
+REDIS_DB = 0
+
+# logger configuration
+from jormungandr.logging_utils import IdFilter
+LOGGER = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters':{
+        'default': {
+            'format': '[%(asctime)s] [%(request_id)s] [%(levelname)5s] [%(process)5s] [%(name)10s] %(message)s'
+        },
+        'syslog': {
+            'format': 'jormungandr: [%(asctime)s] [%(request_id)s] [%(levelname)5s] [%(process)5s] [%(name)10s] %(message)s'
+        }
+    },
+    'filters': {
+        'IdFilter': {
+            '()': IdFilter,
+        }
+    },
+    'handlers': {
+        'default': {
+            'level': "{{env.jormungandr_log_level}}",
+            'class': 'logging.handlers.RotatingFileHandler',
+            'formatter': 'default',
+            "filename": "{{env.jormungandr_log_file}}",
+            "maxBytes": "20000000",
+            "backupCount": "5",
+            "filters": ['IdFilter']
+        },
+        {% if env.use_syslog %}
+        'syslog': {
+        'level': "{{env.jormungandr_log_level}}",
+        'class': 'logging.handlers.SysLogHandler',
+        'address': '/dev/log',
+        'facility': "{{env.jormungandr_syslog_facility}}",
+        'formatter': 'syslog',
+        'filters': ['IdFilter']
+        },
+        {% endif %}
+    },
+    'loggers': {
+        '': {
+            'level': "{{env.jormungandr_log_level}}",
+            'handlers': ['{{env.jormungandr_default_handler}}'],
+            'propagate': True
+        },
+    }
+}
+
+SAVE_STAT = {{env.jormungandr_save_stats}}
+BROKER_URL = 'amqp://{{env.jormungandr_broker_username}}:{{env.jormungandr_broker_password}}@{{env.rabbitmq_host}}:{{env.rabbitmq_port}}//'
+EXCHANGE_NAME = '{{env.stat_broker_exchange}}'

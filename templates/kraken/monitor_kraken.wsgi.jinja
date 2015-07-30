@@ -1,0 +1,11 @@
+#
+## File managed by fabric, don't edit directly
+#
+import os
+{% if env.use_protobuf_cpp %}
+os.environ['PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION'] = 'cpp'
+os.environ['PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION_VERSION'] = '2'
+{% endif %}
+os.environ['MONITOR_CONFIG_FILE'] = '{{env.kraken_monitor_config_file}}'
+
+from monitor_kraken.app import app as application
