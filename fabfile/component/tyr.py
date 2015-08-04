@@ -576,24 +576,6 @@ def remove_tyr_instance(instance, purge_logs=False):
         execute(db.remove_postgresql_user, db.instance2postgresql_name(instance))
 
 
-@task
-@roles('tyr')
-def remove_sindri_instance(instance, purge_logs=False):
-    """Remove a tyr instance entirely
-        * Stop the service
-        * Remove startup at boot time
-        * Remove initscript
-        * Remove configuration and pid directory and logs
-    """
-    run("service sindri_%s stop; sleep 1" % instance)
-    # TODO: verify the service is really stopped
-
-    run("update-rc.d -f sindri_%s remove" % instance)
-    run("rm --force /etc/init.d/sindri_%s" % instance)
-    run("rm --recursive --force /srv/sindri/%s/" % instance)
-    if purge_logs:
-        # ex.: /var/log/sindri/fr-bou.log
-        run("rm --force %s/%s.log*" % (env.SINDRI_BASE_LOGDIR, instance))
 
 @task
 @roles('tyr')
