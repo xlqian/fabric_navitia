@@ -36,7 +36,6 @@ env.KRAKEN_START_PORT = 30000
 # use ZMQ socket file or use inet socket auto increment
 env.use_zmq_socket_file = True
 
-env.SINDRI_BASE_LOGDIR = '/var/log/sindri'
 env.AT_BASE_LOGDIR = '/var/log/connectors-rt'
 
 env.ADC_HOSTNAME = 'pa4-adc1-prd.canaltp.prod'
