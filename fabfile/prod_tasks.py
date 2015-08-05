@@ -58,9 +58,9 @@ def enable_nodes(nodes):
         execute(load_balancer.enable_node, node)
 
 @task
-def restart_jormungandr(nodes):
+def restart_jormungandr(nodes, safe=True):
     for node in nodes:
-        execute(jormungandr.reload_jormun_safe, node)
+        execute(jormungandr.reload_jormun_safe, node, safe)
 
 @task
 def switch_to_first_phase(eng_hosts_1, ws_hosts_1, ws_hosts_2):
