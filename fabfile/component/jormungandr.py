@@ -159,7 +159,6 @@ def reload_jormun_safe_all(safe=True, reverse=False):
         in a safe way if load balancers are available
     """
     safe = get_bool_from_cli(safe)
-    reverse = get_bool_from_cli(reverse)
     for server in (env.roledefs['ws'][::-1] if reverse else env.roledefs['ws']):
         execute(reload_jormun_safe, server, safe)
 
