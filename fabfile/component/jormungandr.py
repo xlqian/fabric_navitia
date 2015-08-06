@@ -154,12 +154,13 @@ def reload_jormun_safe(server, safe=True):
             load_balancer.enable_node(server)
 
 @task
-def reload_jormun_safe_all(safe=True):
+def reload_jormun_safe_all(safe=True, reverse=False):
     """ Reload jormungandr on all servers,
         in a safe way if load balancers are available
     """
     safe = get_bool_from_cli(safe)
-    for server in env.roledefs['ws']:
+    reverse = get_bool_from_cli(reverse)
+    for server in (env.roledefs['ws'][::-1] if reverse else env.roledefs['ws']):
         execute(reload_jormun_safe, server, safe)
 
 @task
