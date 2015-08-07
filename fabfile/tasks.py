@@ -1,11 +1,10 @@
 
-import os, datetime
+import datetime
+import os
 
-from fabric.api import run, env, task, execute, roles, local
+from fabric.api import run, env, task, execute, roles
 from fabric.colors import blue, red, yellow, green
-from fabric.context_managers import cd
 from fabric.contrib.files import exists
-from fabtools import require
 
 from fabfile.component import tyr, db, jormungandr, kraken
 from fabfile.component.kraken import upgrade_monitor_kraken_packages
@@ -47,34 +46,6 @@ def setup():
     execute(jormungandr.setup_jormungandr)
     execute(tyr.upgrade_db_tyr)
 
-@task
-def retrieve_packages():
-    require.deb.packages([
-        'unzip',
-        'python2.7',
-        ])
-    # THIS IS NOT CORRECT, Refactor this !
-
-    if not os.path.exists(env.packages_destination):
-        os.makedirs(env.packages_destination) 
-
-    with cd(env.packages_destination):
-        local("wget '{}'".format(env.packages_url))
-        local("unzip archive.zip")
-
-@task
-def retrieve_packages():
-    require.deb.packages([
-        'unzip',
-        'python2.7',
-        ])
-
-    if not os.path.exists(env.packages_destination):
-        os.makedirs(env.packages_destination) 
-
-    with cd(env.packages_destination):
-        local("wget '{}'".format(env.packages_url))
-        local("unzip archive.zip")
 
 #############################################
 #                                           #

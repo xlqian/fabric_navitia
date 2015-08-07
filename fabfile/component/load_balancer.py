@@ -51,8 +51,6 @@ def disable_node(server):
         connection.LocalLB.NodeAddressV2.set_monitor_state(nodes=[node], states=['STATE_DISABLED'])
         connection.LocalLB.NodeAddressV2.set_session_enabled_state(nodes=[node], states=['STATE_DISABLED'])
 
-        #_sync_adc(connection)
-
 
 @task
 def enable_node(server):
