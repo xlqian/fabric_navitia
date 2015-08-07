@@ -123,7 +123,7 @@ def upgrade_all(bina=True, up_tyr=True, up_confs=True, kraken_wait=True):
                     env.ws_hosts_1,  env.ws_hosts_2)
             execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
             execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
-            execute(enable_all_nodes, env.eng_hosts, env.ws_hosts)
+            execute(enable_all_nodes, env.eng_hosts, env.ws_hosts_1,  env.ws_hosts_2)
             env.roledefs['eng'] = env.eng_hosts
             env.roledefs['ws'] = env.ws_hosts
         else:
