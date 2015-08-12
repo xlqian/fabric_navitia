@@ -1,5 +1,3 @@
-<<<<<<< Updated upstream
-=======
 # coding=utf-8
 
 # Copyright (c) 2001-2015, Canal TP and/or its affiliates. All rights reserved.
@@ -30,7 +28,6 @@
 # IRC #navitia on freenode
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
->>>>>>> Stashed changes
 
 import datetime
 import os
