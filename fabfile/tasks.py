@@ -2,8 +2,8 @@
 
 # Copyright (c) 2001-2015, Canal TP and/or its affiliates. All rights reserved.
 #
-# This file is part of fabric_navitia, the deployment framework of Navitia,
-#     the software to build cool stuff with public transport.
+# This file is part of fabric_navitia, the provisioning and deployment tool
+#     of Navitia, the software to build cool stuff with public transport.
 #
 # Hope you'll enjoy and contribute to this project,
 #     powered by Canal TP (www.canaltp.fr).
