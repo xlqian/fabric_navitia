@@ -130,7 +130,7 @@ def upgrade_tyr_packages():
         packages += ['python2.7-dev', 'postgresql-9.1-postgis']
     elif env.distrib == 'debian8':
         packages += ['python2.7-dev', 'g++', 'postgresql-9.4-postgis-2.1']
-    require.deb.packages(packages, update=True, options=['-f'])
+    require.deb.packages(packages, update=True)
     package_filter_list = ['navitia-tyr*deb',
                            'navitia-common*deb']
     _install_packages(package_filter_list)

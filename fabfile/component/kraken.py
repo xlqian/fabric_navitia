@@ -41,7 +41,7 @@ def upgrade_engine_packages():
         packages.append('libzmq3-dev')
     elif env.distrib == 'debian7':
         packages.append('libzmq-dev')
-    require.deb.packages(packages, update=True, options=['-f'])
+    require.deb.packages(packages, update=True)
     package_filter_list = ['navitia-kraken*deb',
                            'navitia-kraken-dbg*deb']
     _install_packages(package_filter_list)
