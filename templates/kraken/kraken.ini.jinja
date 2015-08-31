@@ -15,13 +15,13 @@ log4cplus.rootLogger={{env.kraken_log_level}}, ALL_MSGS
 log4cplus.appender.ALL_MSGS=log4cplus::SysLogAppender
 log4cplus.appender.ALL_MSGS.ident={{env.kraken_syslog_ident}}
 log4cplus.appender.ALL_MSGS.facility={{env.kraken_syslog_facility}}
-log4cplus.appender.ALL_MSGS.layout.ConversionPattern={{instance.name}}: {% raw %}[%D{%y-%m-%d %H:%M:%S,%q}] [%p] [%t] - %m %b:%L  %n{% endraw %}
+log4cplus.appender.ALL_MSGS.layout.ConversionPattern={{instance.name}}: {% raw %}[%D{%y-%m-%d %H:%M:%S,%q}] [%p] [%x] - %m %b:%L  %n{% endraw %}
 {% else %}
 log4cplus.appender.ALL_MSGS=log4cplus::RollingFileAppender
 log4cplus.appender.ALL_MSGS.MaxBackupIndex={{env.kraken_log_max_backup}}
 log4cplus.appender.ALL_MSGS.MaxFileSize={{env.kraken_log_max_size}}MB
 log4cplus.appender.ALL_MSGS.File={{env.kraken_log_basedir}}/{{instance.name}}.log
-log4cplus.appender.ALL_MSGS.layout.ConversionPattern={% raw %}[%D{%y-%m-%d %H:%M:%S,%q}] [%-5p] [%t] - %m %b:%L  %n{% endraw %}
+log4cplus.appender.ALL_MSGS.layout.ConversionPattern={% raw %}[%D{%y-%m-%d %H:%M:%S,%q}] [%-5p] [%x] - %m %b:%L  %n{% endraw %}
 {% endif %}
 
 log4cplus.appender.ALL_MSGS.layout=log4cplus::PatternLayout
