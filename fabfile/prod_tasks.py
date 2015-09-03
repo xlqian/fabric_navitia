@@ -110,6 +110,7 @@ def switch_to_second_phase(eng_hosts_1, eng_hosts_2, ws_hosts_1,  ws_hosts_2):
     execute(disable_nodes, ws_hosts_2)
 
 @task
-def enable_all_nodes(eng_hosts, ws_hosts):
+def enable_all_nodes(eng_hosts, ws_hosts_1,  ws_hosts_2):
     execute(enable_nodes, eng_hosts)
-    execute(restart_jormungandr, ws_hosts)
+    execute(restart_jormungandr, ws_hosts_2)
+    execute(restart_jormungandr, ws_hosts_1)
