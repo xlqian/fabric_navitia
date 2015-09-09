@@ -37,7 +37,6 @@ from fabric.colors import blue, red, yellow, green
 from fabric.contrib.files import exists
 
 from fabfile.component import tyr, db, jormungandr, kraken
-from fabfile.component.kraken import upgrade_monitor_kraken_packages
 from fabfile.component.load_balancer import get_adc_credentials
 from fabfile import utils
 from fabfile.utils import get_bool_from_cli
@@ -105,7 +104,6 @@ def upgrade_all(bina=True, up_tyr=True, up_confs=True, kraken_wait=True):
         execute(check_last_dataset)
         if up_tyr:
             execute(upgrade_tyr, up_confs=up_confs)
-        execute(upgrade_monitor_kraken_packages)
         if bina:
             execute(tyr.launch_rebinarization_upgrade)
 
