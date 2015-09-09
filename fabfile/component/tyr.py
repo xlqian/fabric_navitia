@@ -395,11 +395,6 @@ def launch_rebinarization_upgrade():
     # instances
     execute(get_no_data_instances)
 
-    # tempremove already binarized instances from list
-    #already_binarized_instances = ['bretagne', 'ca-qc', 'champagneardenne', 'de', 'es', 'fr-bou', 'fr-cen', 'fr-idf', 'fr-ne-amiens', 'fr-ne-c', 'fr-ne', 'fr-npdc', 'fr-nw-c', 'fr-nw', 'fr-se-c', 'fr-se', 'fr-sw-c', 'fr-sw', 'lyon', 'nl', 'paysdelaloire', 'se', 'transilien', 'us-ca']
-    #for instance in already_binarized_instances:
-    #   env.excluded_instances.append(instance)
-
     def binarize_instance(i_name):
         with utils.time_that(blue("data loaded for " + i_name + " in {elapsed}")):
             print(blue("loading data for {}".format(i_name)))
