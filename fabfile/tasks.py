@@ -107,9 +107,11 @@ def upgrade_all(bina=True, up_tyr=True, up_confs=True, kraken_wait=True, check_v
     with utils.send_mail():
         execute(check_last_dataset)
         if up_tyr:
-            execute(upgrade_tyr, up_confs=up_confs)
+            execute(upgrade_tyr, up_confs=False)
         if bina:
+            update_tyr_confs(True)
             execute(tyr.launch_rebinarization_upgrade)
+            update_tyr_confs()
 
         if env.use_load_balancer:
             # Upgrade kraken/jormun on first hosts set
@@ -149,10 +151,18 @@ def upgrade_tyr(up_confs=True):
     execute(tyr.upgrade_ed_packages)
     execute(tyr.upgrade_db_tyr)
     if up_confs:
-        execute(tyr.update_tyr_conf)
-        for instance in env.instances.values():
-            execute(tyr.update_tyr_instance_conf, instance)
+        update_tyr_confs()
     restart_tyr()
+
+@task
+def update_tyr_confs(set_temp=False):
+    execute(tyr.update_tyr_conf)
+    for instance in env.instances.values():
+        if set_temp:
+            instance.target_lz4_file = instance.temp_target_lz4_file
+        execute(tyr.update_tyr_instance_conf, instance)
+        if set_temp:
+            instance.target_lz4_file = instance.plain_target_lz4_file
 
 @task
 def restart_tyr():

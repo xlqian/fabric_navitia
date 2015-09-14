@@ -32,6 +32,7 @@
 import StringIO
 import ConfigParser
 from io import BytesIO
+import os
 from retrying import Retrying
 import simplejson as json
 from urllib2 import Request, urlopen, HTTPError
@@ -156,6 +157,19 @@ def test_all_krakens(wait=False):
     for instance in env.instances.values():
         test_kraken(instance.name, fail_if_error=False, wait=wait, loaded_is_ok=True)
 
+def swap_all_data_nav():
+    for instance in env.instances.values():
+        swap_data_nav(instance)
+
+def swap_data_nav(instance):
+    """ swap old/new data.nav.lz4, only if new is still in temp directory
+    """
+    if os.path.getctime(instance.temp_target_lz4_file) > os.path.getctime(instance.plain_target_lz4_file):
+        swap_temp = os.path.join(os.path.dirname(instance.temp_target_lz4_file, 'x'))
+        os.rename(instance.plain_target_lz4_file, swap_temp)
+        os.rename(instance.temp_target_lz4_file, instance.plain_target_lz4_file)
+        os.rename(swap_temp, instance.temp_target_lz4_file)
+
 @task
 @roles('eng')
 def restart_kraken(instance, test=True, wait=True):
@@ -164,6 +178,7 @@ def restart_kraken(instance, test=True, wait=True):
     """
     instance = get_real_instance(instance)
     wait = get_bool_from_cli(wait)
+    swap_data_nav(instance)
     if instance.name not in env.excluded_instances:
         kraken = 'kraken_' + instance.name
         start_or_stop_with_delay(kraken, 4000, 500, start=False, only_once=True)

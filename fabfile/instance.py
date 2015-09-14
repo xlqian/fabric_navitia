@@ -74,8 +74,16 @@ class Instance:
     #we might want to overload all those properties
 
     @property
-    def target_lz4_file(self):
+    def plain_target_lz4_file(self):
         return "{base_dest}/{instance}/data.nav.lz4".format(base_dest=env.tyr_base_destination_dir, instance=self.name)
+    target_lz4_file = plain_target_lz4_file
+
+    @property
+    def temp_target_lz4_file(self):
+        target_path = os.path.join(env.tyr_base_destination_dir, self.name, 'temp')
+        if not os.path.exists(target_path):
+            os.makedirs(target_path)
+        return os.path.join(target_path, "data.nav.lz4")
 
     @property
     def kraken_database(self):
