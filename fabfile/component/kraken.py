@@ -164,11 +164,14 @@ def swap_all_data_nav():
 def swap_data_nav(instance):
     """ swap old/new data.nav.lz4, only if new is still in temp directory
     """
-    if os.path.getctime(instance.temp_target_lz4_file) > os.path.getctime(instance.plain_target_lz4_file):
-        swap_temp = os.path.join(os.path.dirname(instance.temp_target_lz4_file, 'x'))
-        os.rename(instance.plain_target_lz4_file, swap_temp)
-        os.rename(instance.temp_target_lz4_file, instance.plain_target_lz4_file)
-        os.rename(swap_temp, instance.temp_target_lz4_file)
+    temp_target = instance.temp_target_lz4_file
+    plain_target = instance.plain_target_lz4_file
+    if os.access(temp_target, os.W_OK) and os.access(plain_target, os.W_OK) and \
+       os.path.getctime(temp_target) > os.path.getctime(plain_target):
+        swap_temp = os.path.join(os.path.dirname(temp_target, 'x'))
+        os.rename(plain_target, swap_temp)
+        os.rename(temp_target, plain_target)
+        os.rename(swap_temp, temp_target)
 
 @task
 @roles('eng')
