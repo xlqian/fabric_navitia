@@ -107,7 +107,7 @@ def upgrade_all(bina=True, up_tyr=True, up_confs=True, kraken_wait=True, check_v
     with utils.send_mail():
         execute(check_last_dataset)
         if up_tyr:
-            execute(upgrade_tyr, up_confs=False)
+            execute(upgrade_tyr, up_confs=up_confs and not bina)
         if bina:
             update_tyr_confs(True)
             execute(tyr.launch_rebinarization_upgrade)
