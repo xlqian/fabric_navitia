@@ -32,7 +32,7 @@
 import StringIO
 import ConfigParser
 from io import BytesIO
-import os
+import os.path
 from retrying import Retrying
 import simplejson as json
 from urllib2 import Request, urlopen, HTTPError
@@ -166,12 +166,12 @@ def swap_data_nav(instance):
     """
     temp_target = instance.temp_target_lz4_file
     plain_target = instance.plain_target_lz4_file
-    if os.access(temp_target, os.W_OK) and os.access(plain_target, os.W_OK) and \
-       os.path.getctime(temp_target) > os.path.getctime(plain_target):
+    if files.is_file(temp_target) and files.is_file(plain_target) and \
+       files.getmtime(temp_target) > files.getmtime(plain_target):
         swap_temp = os.path.join(os.path.dirname(temp_target, 'x'))
-        os.rename(plain_target, swap_temp)
-        os.rename(temp_target, plain_target)
-        os.rename(swap_temp, temp_target)
+        files.move(plain_target, swap_temp)
+        files.move(temp_target, plain_target)
+        files.move(swap_temp, temp_target)
 
 @task
 @roles('eng')

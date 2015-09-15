@@ -29,8 +29,9 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 
-from fabric.api import env
-import os
+from fabric.api import env, run
+from fabtools import files
+import os.path
 
 all_zmq_ports = [0]
 
@@ -81,8 +82,8 @@ class Instance:
     @property
     def temp_target_lz4_file(self):
         target_path = os.path.join(env.tyr_base_destination_dir, self.name, 'temp')
-        if not os.path.exists(target_path):
-            os.makedirs(target_path)
+        if not files.is_dir(target_path):
+            run("mkdir -p {}".format(target_path))
         return os.path.join(target_path, "data.nav.lz4")
 
     @property
