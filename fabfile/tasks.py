@@ -93,12 +93,11 @@ def upgrade_all_packages():
     execute(jormungandr.upgrade_ws_packages)
 
 @task
-def upgrade_all(bina=True, up_tyr=True, up_confs=True, kraken_wait=True, check_version=True):
+def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True):
     """Upgrade all navitia packages, databases and launch rebinarisation of all instances """
     check_version = get_bool_from_cli(check_version)
     if check_version:
         execute(compare_version_candidate_installed)
-    bina = get_bool_from_cli(bina)
     up_tyr = get_bool_from_cli(up_tyr)
     up_confs = get_bool_from_cli(up_confs)
     kraken_wait = get_bool_from_cli(kraken_wait)
@@ -107,11 +106,8 @@ def upgrade_all(bina=True, up_tyr=True, up_confs=True, kraken_wait=True, check_v
     with utils.send_mail():
         execute(check_last_dataset)
         if up_tyr:
-            execute(upgrade_tyr, up_confs=up_confs and not bina)
-        if bina:
-            update_tyr_confs(True)
+            execute(upgrade_tyr)
             execute(tyr.launch_rebinarization_upgrade)
-            update_tyr_confs()
 
         if env.use_load_balancer:
             # Upgrade kraken/jormun on first hosts set
@@ -136,6 +132,7 @@ def upgrade_all(bina=True, up_tyr=True, up_confs=True, kraken_wait=True, check_v
             execute(upgrade_jormungandr, up_confs=up_confs)
 
 @task
+<<<<<<< HEAD
 def compare_version_candidate_installed():
     """Check candidate version is different from installed"""
     if not show_version(action='check'):
@@ -145,24 +142,15 @@ def compare_version_candidate_installed():
 
 @task
 def upgrade_tyr(up_confs=True):
+=======
+def upgrade_tyr():
+>>>>>>> refactor update_tyr_conf place, simplify upgrae_all parameters
     """Upgrade all ed instances db, launch bina"""
     execute(tyr.stop_tyr_beat)
     execute(tyr.upgrade_tyr_packages)
     execute(tyr.upgrade_ed_packages)
     execute(tyr.upgrade_db_tyr)
-    if up_confs:
-        update_tyr_confs()
     restart_tyr()
-
-@task
-def update_tyr_confs(set_temp=False):
-    execute(tyr.update_tyr_conf)
-    for instance in env.instances.values():
-        if set_temp:
-            instance.target_lz4_file = instance.temp_target_lz4_file
-        execute(tyr.update_tyr_instance_conf, instance)
-        if set_temp:
-            instance.target_lz4_file = instance.plain_target_lz4_file
 
 @task
 def restart_tyr():

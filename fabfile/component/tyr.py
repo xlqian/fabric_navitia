@@ -406,8 +406,10 @@ def launch_rebinarization_upgrade():
                 launch_rebinarization(i_name)
 
     # we run the bina in parallele (if you want sequenciel run, set env.nb_thread_for_bina = 1)
+    update_tyr_confs(True)
     with utils.Parallel(env.nb_thread_for_bina) as pool:
         pool.map(binarize_instance, env.instances.keys())
+    update_tyr_confs()
 
     start_tyr_beat()
 
@@ -507,6 +509,16 @@ def test_tyr_backup_file_presence():
             print(yellow("WARNING: {} has a data.nav.lz4 but no fusio data_set job"
                 "found".format(instance.name)))
 
+
+@task
+def update_tyr_confs(set_temp=False):
+    execute(update_tyr_conf)
+    for instance in env.instances.values():
+        if set_temp:
+            instance.target_lz4_file = instance.temp_target_lz4_file
+        execute(update_tyr_instance_conf, instance)
+        if set_temp:
+            instance.target_lz4_file = instance.plain_target_lz4_file
 
 @task
 @roles('tyr')
