@@ -35,7 +35,6 @@ import os
 from fabric.api import run, env, task, execute, roles
 from fabric.colors import blue, red, yellow, green
 from fabric.contrib.files import exists
-from fabric.contrib.console import confirm
 
 from fabfile.component import tyr, db, jormungandr, kraken
 from fabfile.component.load_balancer import get_adc_credentials
