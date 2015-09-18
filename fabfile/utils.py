@@ -39,6 +39,7 @@ import random
 from retrying import Retrying, RetryError
 import string
 import time
+import semver
 
 from fabric.colors import green, yellow, red
 from fabric.context_managers import cd
@@ -268,7 +269,11 @@ def show_version(action='show', app_name='navitia-kraken'):
         candidate = summarize(x[1] for x in versions.itervalues())
         if isinstance(installed, tuple):
             installed = max(installed)
-        return installed != candidate and candidate
+
+        if semver.compare(candidate,installed) >= 0:
+            return installed > candidate and candidate
+        else:
+            return installed <= candidate and candidate
 
 
 class send_mail(object):
