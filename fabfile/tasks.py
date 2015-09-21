@@ -41,7 +41,6 @@ from fabfile.component.load_balancer import get_adc_credentials
 from fabfile import utils
 from fabfile.utils import get_bool_from_cli
 from fabfile.utils import show_version
-from fabfile.utils import get_version
 from prod_tasks import (remove_kraken_vip, switch_to_first_phase,
                         switch_to_second_phase, enable_all_nodes)
 
@@ -138,10 +137,7 @@ def compare_version_candidate_installed():
     """Check candidate version is different from installed"""
     if not execute(show_version, action='check'):
         installed_version, candidate_version = execute(show_version, action='get')
-        message = "Candidate kraken version (" + \
-            candidate_version + \
-            ") is older or the same than the installed one (" + \
-            installed_version + ")."
+        message = "Candidate kraken version ({}) is older or the same than the installed one ({}).".format(installed_version, candidate_version)
         abort(message)
 
 @task
