@@ -270,10 +270,10 @@ def show_version(action='show', app_name='navitia-kraken'):
         if isinstance(installed, tuple):
             installed = max(installed)
 
-        if semver.compare(candidate,installed) >= 0:
-            return installed > candidate and candidate
+        if semver.compare(candidate,installed) > 0:
+            return installed < candidate and candidate
         else:
-            return installed <= candidate and candidate
+            return installed >= candidate and candidate
 
 
 class send_mail(object):
