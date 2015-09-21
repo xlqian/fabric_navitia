@@ -32,7 +32,7 @@
 import datetime
 import os
 
-from fabric.api import run, env, task, execute, roles
+from fabric.api import run, env, task, execute, roles, abort
 from fabric.colors import blue, red, yellow, green
 from fabric.contrib.files import exists
 
@@ -40,6 +40,7 @@ from fabfile.component import tyr, db, jormungandr, kraken
 from fabfile.component.load_balancer import get_adc_credentials
 from fabfile import utils
 from fabfile.utils import get_bool_from_cli
+from fabfile.utils import show_version
 from prod_tasks import (remove_kraken_vip, switch_to_first_phase,
                         switch_to_second_phase, enable_all_nodes)
 
@@ -92,8 +93,11 @@ def upgrade_all_packages():
     execute(jormungandr.upgrade_ws_packages)
 
 @task
-def upgrade_all(bina=True, up_tyr=True, up_confs=True, kraken_wait=True):
+def upgrade_all(bina=True, up_tyr=True, up_confs=True, kraken_wait=True, check_version=True):
     """Upgrade all navitia packages, databases and launch rebinarisation of all instances """
+    check_version = get_bool_from_cli(check_version)
+    if check_version:
+        execute(compare_version_candidate_installed)
     bina = get_bool_from_cli(bina)
     up_tyr = get_bool_from_cli(up_tyr)
     up_confs = get_bool_from_cli(up_confs)
@@ -128,6 +132,14 @@ def upgrade_all(bina=True, up_tyr=True, up_confs=True, kraken_wait=True):
         else:
             execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
             execute(upgrade_jormungandr, up_confs=up_confs)
+
+@task
+def compare_version_candidate_installed():
+    """Check candidate version is different from installed"""
+    if not show_version(action='check'):
+        installed_version, candidate_version = show_version(action='get')
+        message = "Candidate kraken version ({}) is older or the same than the installed one ({}).".format(candidate_version, installed_version)
+        abort(message)
 
 @task
 def upgrade_tyr(up_confs=True):
