@@ -137,7 +137,7 @@ def compare_version_candidate_installed():
     """Check candidate version is different from installed"""
     if not execute(show_version, action='check'):
         installed_version, candidate_version = execute(show_version, action='get')
-        message = "Candidate kraken version ({}) is older or the same than the installed one ({}).".format(installed_version, candidate_version)
+        message = "Candidate kraken version ({}) is older or the same than the installed one ({}).".format(candidate_version, installed_version)
         abort(message)
 
 @task
