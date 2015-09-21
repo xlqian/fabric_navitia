@@ -132,7 +132,6 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
             execute(upgrade_jormungandr, up_confs=up_confs)
 
 @task
-<<<<<<< HEAD
 def compare_version_candidate_installed():
     """Check candidate version is different from installed"""
     if not show_version(action='check'):
@@ -141,10 +140,7 @@ def compare_version_candidate_installed():
         abort(message)
 
 @task
-def upgrade_tyr(up_confs=True):
-=======
 def upgrade_tyr():
->>>>>>> refactor update_tyr_conf place, simplify upgrae_all parameters
     """Upgrade all ed instances db, launch bina"""
     execute(tyr.stop_tyr_beat)
     execute(tyr.upgrade_tyr_packages)
