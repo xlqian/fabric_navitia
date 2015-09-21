@@ -95,6 +95,7 @@ def upgrade_all_packages():
 @task
 def upgrade_all(bina=True, up_tyr=True, up_confs=True, kraken_wait=True, check_version=True):
     """Upgrade all navitia packages, databases and launch rebinarisation of all instances """
+    check_version = get_bool_from_cli(check_version)
     if check_version:
         execute(compare_version_candidate_installed)
     bina = get_bool_from_cli(bina)
@@ -135,8 +136,8 @@ def upgrade_all(bina=True, up_tyr=True, up_confs=True, kraken_wait=True, check_v
 @task
 def compare_version_candidate_installed():
     """Check candidate version is different from installed"""
-    if not execute(show_version, action='check'):
-        installed_version, candidate_version = execute(show_version, action='get')
+    if not show_version(action='check'):
+        installed_version, candidate_version = show_version(action='get')
         message = "Candidate kraken version ({}) is older or the same than the installed one ({}).".format(candidate_version, installed_version)
         abort(message)
 
