@@ -29,8 +29,9 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 
-from fabric.api import env
-import os
+from fabric.api import env, run
+from fabtools import files, require
+import os.path
 
 all_zmq_ports = [0]
 
@@ -74,8 +75,15 @@ class Instance:
     #we might want to overload all those properties
 
     @property
-    def target_lz4_file(self):
+    def plain_target_lz4_file(self):
         return "{base_dest}/{instance}/data.nav.lz4".format(base_dest=env.tyr_base_destination_dir, instance=self.name)
+    target_lz4_file = plain_target_lz4_file
+
+    @property
+    def temp_target_lz4_file(self):
+        target_path = os.path.join(env.tyr_base_destination_dir, self.name, 'temp')
+        require.files.directory(target_path)
+        return os.path.join(target_path, "data.nav.lz4")
 
     @property
     def kraken_database(self):
