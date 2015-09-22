@@ -1,4 +1,4 @@
-Fabric==1.10.0
+Fabric==1.10.2
 Jinja==1.2
 Jinja2==2.7.3
 MarkupSafe==0.23
