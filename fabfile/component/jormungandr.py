@@ -205,6 +205,34 @@ def start_services():
     start_or_stop_with_delay('apache2', env.APACHE_START_DELAY * 1000, 500, only_once=env.APACHE_START_ONLY_ONCE)
 
 @task
+def check_kraken_jormun_after_deploy(server=env.ws_hosts, instance=None):
+    headers = {'Host': env.jormungandr_url}
+
+    print("→ server: {}".format(server))
+    request_str = 'http://{}/v1/status'.format(get_host_addr(server))
+    print("request_string: {}".format(request_str))
+
+    try:
+        response = requests.get(request_str, headers=headers)
+    except (ConnectionError, HTTPError) as e:
+        print(red("HTTP Error %s: %s" % (e.code, e.readlines()[0])))
+        exit(1)
+    except Exception as e:
+        print(red("Error when connecting to %s: %s" % (env.jormungandr_url, e)))
+        exit(1)
+
+    try:
+        result = response.json()
+    except JSONDecodeError:
+        print(red("cannot read json response : {}".format(response.text)))
+        exit(1)
+
+    if not (result['kraken_version'] is None):
+        print "status={} && kraken_version={}".format(result['status'], result['kraken_version'])
+    else:
+        print "status={}".format(result['status'])
+
+@task
 def test_jormungandr(server, instance=None, fail_if_error=True):
     """
     Test jormungandr globally (/v1/coverage) or a given instance
