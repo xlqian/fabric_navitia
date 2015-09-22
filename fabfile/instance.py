@@ -30,7 +30,7 @@
 # www.navitia.io
 
 from fabric.api import env, run
-from fabtools import files
+from fabtools import files, require
 import os.path
 
 all_zmq_ports = [0]
@@ -82,8 +82,7 @@ class Instance:
     @property
     def temp_target_lz4_file(self):
         target_path = os.path.join(env.tyr_base_destination_dir, self.name, 'temp')
-        if not files.is_dir(target_path):
-            run("mkdir -p {}".format(target_path))
+        require.files.directory(target_path)
         return os.path.join(target_path, "data.nav.lz4")
 
     @property
