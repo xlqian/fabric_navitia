@@ -49,7 +49,7 @@ from fabtools import require
 
 from fabfile.component import kraken, load_balancer
 from fabfile.utils import (_install_packages, _upload_template,
-                           start_or_stop_with_delay, get_bool_from_cli, get_host_addr)
+                           start_or_stop_with_delay, get_bool_from_cli, get_host_addr, show_version)
 
 
 @task
@@ -205,15 +205,18 @@ def start_services():
     start_or_stop_with_delay('apache2', env.APACHE_START_DELAY * 1000, 500, only_once=env.APACHE_START_ONLY_ONCE)
 
 @task
-def check_kraken_jormun_after_deploy(server=env.ws_hosts, instance=None):
+def check_kraken_jormun_after_deploy():
     headers = {'Host': env.jormungandr_url}
 
-    print("→ server: {}".format(server))
-    request_str = 'http://{}/v1/status'.format(get_host_addr(server))
-    print("request_string: {}".format(request_str))
+    request_str = 'http://{}/v1/status'.format(env.jormungandr_url)
+    print("request_str: {}".format(request_str))
 
     try:
-        response = requests.get(request_str, headers=headers)
+        response = requests.get(request_str, headers=headers, auth=HTTPBasicAuth(env.token, ''))
+        if response.status_code != 200:
+            print(red("Request not successful : {}".format(str(response))))
+        else:
+            print(green("Request successful : {}".format(str(response))))
     except (ConnectionError, HTTPError) as e:
         print(red("HTTP Error %s: %s" % (e.code, e.readlines()[0])))
         exit(1)
@@ -227,10 +230,26 @@ def check_kraken_jormun_after_deploy(server=env.ws_hosts, instance=None):
         print(red("cannot read json response : {}".format(response.text)))
         exit(1)
 
-    if not (result['kraken_version'] is None):
-        print "status={} && kraken_version={}".format(result['status'], result['kraken_version'])
-    else:
-        print "status={}".format(result['status'])
+    installed_kraken_version = show_version(action='get')[0]
+    warn_list = list()
+
+    for item in result['regions']:
+        versions_dico = dict()
+        if item['status'] == "dead":
+            versions_dico['status'] = item['status']
+            versions_dico['region_id'] = item['region_id']
+            warn_list.append(versions_dico)
+        elif item['kraken_version'] != ("v" + installed_kraken_version):
+            versions_dico['status'] = item['status']
+            versions_dico['region_id'] = item['region_id']
+            versions_dico['kraken_version'] = item['kraken_version']
+            warn_list.append(versions_dico)
+
+    print(yellow("Installed version = {}".format(installed_kraken_version)))
+
+    for item in warn_list:
+        print(red("status={} region_id={} kraken_version={}".format(item['status'], item['region_id'], item['kraken_version'])))
+
 
 @task
 def test_jormungandr(server, instance=None, fail_if_error=True):
