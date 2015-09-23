@@ -49,7 +49,7 @@ from fabtools import require
 
 from fabfile.component import kraken, load_balancer
 from fabfile.utils import (_install_packages, _upload_template,
-                           start_or_stop_with_delay, get_bool_from_cli, get_host_addr)
+                           start_or_stop_with_delay, get_bool_from_cli, get_host_addr, show_version)
 
 
 @task
@@ -203,6 +203,51 @@ def start_jormungandr_all():
 @roles('ws')
 def start_services():
     start_or_stop_with_delay('apache2', env.APACHE_START_DELAY * 1000, 500, only_once=env.APACHE_START_ONLY_ONCE)
+
+@task
+def check_kraken_jormun_after_deploy(show=False):
+    headers = {'Host': env.jormungandr_url}
+
+    request_str = 'http://{}/v1/status'.format(env.jormungandr_url)
+    print("request_str: {}".format(request_str))
+
+    try:
+        response = requests.get(request_str, headers=headers, auth=HTTPBasicAuth(env.token, ''))
+        if response.status_code != 200:
+            print(red("Request not successful : {}".format(str(response))))
+            return
+    except (ConnectionError, HTTPError) as e:
+        print(red("HTTP Error %s: %s" % (e.code, e.readlines()[0])))
+        return
+    except Exception as e:
+        print(red("Error when connecting to %s: %s" % (env.jormungandr_url, e)))
+        return
+
+    try:
+        result = response.json()
+    except JSONDecodeError:
+        print(red("cannot read json response : {}".format(response.text)))
+        return
+
+    installed_kraken_version = "v" + show_version(action='get')[0]
+    warn_dict = dict()
+    warn_dict['jormungandr'] = result['jormungandr_version'] if installed_kraken_version != result['jormungandr_version'] else None
+    warn_dict['kraken'] = warn_list = list()
+
+    for item in result['regions']:
+        if item['status'] == "dead":
+            warn_list.append(dict(status='dead', region_id=item['region_id'], kraken_version=None))
+        elif item['kraken_version'] != installed_kraken_version:
+            warn_list.append(dict(status=item['status'], region_id=item['region_id'], kraken_version=item['kraken_version']))
+
+    if show:
+        if warn_dict['jormungandr']:
+            print(yellow("Jormungandr version={}".format(warn_dict['jormungandr'])))
+        for item in warn_list:
+            print(yellow("status={status} | region_id={region_id} | kraken_version={kraken_version}".format(**item)))
+
+    return warn_dict
+
 
 @task
 def test_jormungandr(server, instance=None, fail_if_error=True):
