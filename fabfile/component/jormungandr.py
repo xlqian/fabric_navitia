@@ -231,7 +231,7 @@ def check_kraken_jormun_after_deploy(show=False):
 
     installed_kraken_version = "v" + show_version(action='get')[0]
     warn_dict = dict()
-    warn_dict['jormungandr'] = result['jormungandr_version']
+    warn_dict['jormungandr'] = result['jormungandr_version'] if installed_kraken_version != result['jormungandr_version'] else None
     warn_dict['kraken'] = warn_list = list()
 
     for item in result['regions']:
@@ -241,6 +241,8 @@ def check_kraken_jormun_after_deploy(show=False):
             warn_list.append(dict(status=item['status'], region_id=item['region_id'], kraken_version=item['kraken_version']))
 
     if show:
+        if warn_dict['jormungandr']:
+            print(yellow("Jormungandr version={}".format(warn_dict['jormungandr'])))
         for item in warn_list:
             print(yellow("status={status} | region_id={region_id} | kraken_version={kraken_version}".format(**item)))
 
