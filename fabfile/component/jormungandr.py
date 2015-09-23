@@ -205,7 +205,7 @@ def start_services():
     start_or_stop_with_delay('apache2', env.APACHE_START_DELAY * 1000, 500, only_once=env.APACHE_START_ONLY_ONCE)
 
 @task
-def check_kraken_jormun_after_deploy():
+def check_kraken_jormun_after_deploy(show=False):
     headers = {'Host': env.jormungandr_url}
 
     request_str = 'http://{}/v1/status'.format(env.jormungandr_url)
@@ -230,9 +230,8 @@ def check_kraken_jormun_after_deploy():
         return
 
     installed_kraken_version = "v" + show_version(action='get')[0]
-    installed_jormun_version = installed_kraken_version
     warn_dict = dict()
-    warn_dict['jormungandr'] = installed_jormun_version
+    warn_dict['jormungandr'] = result['jormungandr_version']
     warn_dict['kraken'] = warn_list = list()
 
     for item in result['regions']:
@@ -241,10 +240,10 @@ def check_kraken_jormun_after_deploy():
         elif item['kraken_version'] != installed_kraken_version:
             warn_list.append(dict(status=item['status'], region_id=item['region_id'], kraken_version=item['kraken_version']))
 
-    print(yellow("jormungandr_version={} || kraken_version={}".format(warn_dict['jormungandr'], installed_jormun_version)))
+    if show:
+        for item in warn_list:
+            print(yellow("status={status} | region_id={region_id} | kraken_version={kraken_version}".format(**item)))
 
-    for item in warn_list:
-        print(yellow("status={status} | region_id={region_id} | kraken_version={kraken_version}".format(**item)))
     return warn_dict
 
 
