@@ -103,33 +103,51 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
     kraken_wait = get_bool_from_cli(kraken_wait)
     if env.use_load_balancer:
         get_adc_credentials()
-    with utils.send_mail():
-        execute(check_last_dataset)
-        if up_tyr:
-            execute(upgrade_tyr)
-            execute(tyr.launch_rebinarization_upgrade)
+    execute(check_last_dataset)
+    if up_tyr:
+        execute(upgrade_tyr)
+        execute(tyr.launch_rebinarization_upgrade)
 
-        if env.use_load_balancer:
-            # Upgrade kraken/jormun on first hosts set
-            env.roledefs['eng'] = env.eng_hosts_1
-            env.roledefs['ws'] = env.ws_hosts_1
-            execute(switch_to_first_phase, env.eng_hosts_1, env.ws_hosts_1, env.ws_hosts_2)
-            execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
-            execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
+    if env.use_load_balancer:
+        # Upgrade kraken/jormun on first hosts set
+        env.roledefs['eng'] = env.eng_hosts_1
+        env.roledefs['ws'] = env.ws_hosts_1
+        execute(switch_to_first_phase, env.eng_hosts_1, env.ws_hosts_1, env.ws_hosts_2)
+        execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
+        execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
 
-            # Upgrade kraken/jormun on remaining hosts
-            env.roledefs['eng'] = env.eng_hosts_2
-            env.roledefs['ws'] = env.ws_hosts_2
-            execute(switch_to_second_phase, env.eng_hosts_1, env.eng_hosts_2,
-                    env.ws_hosts_1,  env.ws_hosts_2)
-            execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
-            execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
-            execute(enable_all_nodes, env.eng_hosts, env.ws_hosts_1,  env.ws_hosts_2)
-            env.roledefs['eng'] = env.eng_hosts
-            env.roledefs['ws'] = env.ws_hosts
-        else:
-            execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
-            execute(upgrade_jormungandr, up_confs=up_confs)
+        # Upgrade kraken/jormun on remaining hosts
+        env.roledefs['eng'] = env.eng_hosts_2
+        env.roledefs['ws'] = env.ws_hosts_2
+        execute(switch_to_second_phase, env.eng_hosts_1, env.eng_hosts_2,
+                env.ws_hosts_1,  env.ws_hosts_2)
+        execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
+        execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
+        execute(enable_all_nodes, env.eng_hosts, env.ws_hosts_1,  env.ws_hosts_2)
+        env.roledefs['eng'] = env.eng_hosts
+        env.roledefs['ws'] = env.ws_hosts
+    else:
+        execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
+        execute(upgrade_jormungandr, up_confs=up_confs)
+
+@task
+def send_email(kind, add_status=True):
+    if not hasattr(env, 'mail_class'):
+        env.mail_class = utils.send_mail()
+    if kind == 'start':
+        env.mail_class.send_start()
+    elif kind == 'end':
+        add_status = get_bool_from_cli(add_status)
+        status = ''
+        if add_status:
+            warn_dict = jormungandr.check_kraken_jormun_after_deploy()
+            if warn_dict['jormungandr']:
+                status += "\nJormungandr version={}".format(warn_dict['jormungandr'])
+            for item in warn_dict['kraken']:
+                status += "\nKraken {region_id} status={status} version={kraken_version}".format(**item)
+            if status:
+                status = "\n\n---------- Status" + status
+        env.mail_class.send_end(status)
 
 @task
 def compare_version_candidate_installed():
