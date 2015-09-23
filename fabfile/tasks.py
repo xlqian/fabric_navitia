@@ -93,7 +93,7 @@ def upgrade_all_packages():
     execute(jormungandr.upgrade_ws_packages)
 
 @task
-def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True):
+def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True, send_mail=False):
     """Upgrade all navitia packages, databases and launch rebinarisation of all instances """
     check_version = get_bool_from_cli(check_version)
     if check_version:
@@ -104,6 +104,8 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
     if env.use_load_balancer:
         get_adc_credentials()
     execute(check_last_dataset)
+    if send_mail:
+        broadcast_email('start')
     if up_tyr:
         execute(upgrade_tyr)
         execute(tyr.launch_rebinarization_upgrade)
@@ -129,9 +131,11 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
     else:
         execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
         execute(upgrade_jormungandr, up_confs=up_confs)
+    if send_mail:
+        broadcast_email('end')
 
 @task
-def send_email(kind, add_status=True):
+def broadcast_email(kind, add_status=True):
     if not hasattr(env, 'mail_class'):
         env.mail_class = utils.send_mail()
     if kind == 'start':
