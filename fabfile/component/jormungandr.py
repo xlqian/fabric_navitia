@@ -215,40 +215,37 @@ def check_kraken_jormun_after_deploy():
         response = requests.get(request_str, headers=headers, auth=HTTPBasicAuth(env.token, ''))
         if response.status_code != 200:
             print(red("Request not successful : {}".format(str(response))))
-        else:
-            print(green("Request successful : {}".format(str(response))))
+            return
     except (ConnectionError, HTTPError) as e:
         print(red("HTTP Error %s: %s" % (e.code, e.readlines()[0])))
-        exit(1)
+        return
     except Exception as e:
         print(red("Error when connecting to %s: %s" % (env.jormungandr_url, e)))
-        exit(1)
+        return
 
     try:
         result = response.json()
     except JSONDecodeError:
         print(red("cannot read json response : {}".format(response.text)))
-        exit(1)
+        return
 
-    installed_kraken_version = show_version(action='get')[0]
-    warn_list = list()
+    installed_kraken_version = "v" + show_version(action='get')[0]
+    installed_jormun_version = installed_kraken_version
+    warn_dict = dict()
+    warn_dict['jormungandr'] = installed_jormun_version
+    warn_dict['kraken'] = warn_list = list()
 
     for item in result['regions']:
-        versions_dico = dict()
         if item['status'] == "dead":
-            versions_dico['status'] = item['status']
-            versions_dico['region_id'] = item['region_id']
-            warn_list.append(versions_dico)
-        elif item['kraken_version'] != ("v" + installed_kraken_version):
-            versions_dico['status'] = item['status']
-            versions_dico['region_id'] = item['region_id']
-            versions_dico['kraken_version'] = item['kraken_version']
-            warn_list.append(versions_dico)
+            warn_list.append(dict(status='dead', region_id=item['region_id'], kraken_version=None))
+        elif item['kraken_version'] != installed_kraken_version:
+            warn_list.append(dict(status=item['status'], region_id=item['region_id'], kraken_version=item['kraken_version']))
 
-    print(yellow("Installed version = {}".format(installed_kraken_version)))
+    print(yellow("jormungandr_version={} || kraken_version={}".format(warn_dict['jormungandr'], installed_jormun_version)))
 
     for item in warn_list:
-        print(red("status={} region_id={} kraken_version={}".format(item['status'], item['region_id'], item['kraken_version'])))
+        print(yellow("status={status} | region_id={region_id} | kraken_version={kraken_version}".format(**item)))
+    return warn_dict
 
 
 @task
