@@ -37,7 +37,7 @@ from fabric.colors import blue, red, yellow, green
 from fabric.contrib.files import exists
 
 from fabfile.component import tyr, db, jormungandr, kraken
-from fabfile.component.load_balancer import get_adc_credentials
+from fabfile.component.load_balancer import get_adc_credentials, _adc_connection
 from fabfile import utils
 from fabfile.utils import get_bool_from_cli
 from fabfile.utils import show_version
@@ -103,6 +103,8 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
     kraken_wait = get_bool_from_cli(kraken_wait)
     if env.use_load_balancer:
         get_adc_credentials()
+        # check credential NOW
+        _adc_connection(check=True)
     execute(check_last_dataset)
     if send_mail:
         broadcast_email('start')
