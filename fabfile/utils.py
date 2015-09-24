@@ -274,7 +274,7 @@ def show_version(action='show', app_name='navitia-kraken'):
 
 class send_mail(object):
     """
-    Mail sending contextmanager.
+    Mail sending class.
     Class attributes are default messages and subjects
     These can be overriden with keys in env.emails dict.
     env.emails dict must specify at least 'to' and 'server' keys,
@@ -288,38 +288,41 @@ class send_mail(object):
     email_author = (u'Navitia-noreply', u'Navitia Deployment')
 
     def __init__(self):
-        self.mail_class = getattr(env, 'emails', {})
+        self.mail_load = getattr(env, 'emails', {})
         self.candidate = execute(show_version, action='get').values()[0][1]
 
     def send_mail(self, message, subject):
         mail = Envelope(
-            from_addr=self.mail_class.get('author', self.email_author),
-            to_addr=self.mail_class['to'].split(';'),
+            from_addr=self.mail_load.get('author', self.email_author),
+            to_addr=self.mail_load['to'].split(';'),
             subject=subject.format(version=self.candidate, target=env.name.upper()),
             text_body=message % env.name.upper()
         )
-        if self.mail_class.get('cc'):
-            for cc in self.mail_class['cc'].split(';'):
+        if self.mail_load.get('cc'):
+            for cc in self.mail_load['cc'].split(';'):
                 mail.add_cc_addr(cc)
-        mail.send(self.mail_class['server'])
+        mail.send(self.mail_load['server'])
 
-    def __enter__(self):
-        if self.mail_class and not getattr(env, 'no_start_mail', None):
+    def send_start(self):
+        if self.mail_load:
             try:
                 self.send_mail(
-                    self.mail_class.get('start_mes', self.start_mail_message),
-                    self.mail_class.get('start_sub', self.start_mail_subject)
+                    self.mail_load.get('start_mes', self.start_mail_message),
+                    self.mail_load.get('start_sub', self.start_mail_subject)
                 )
             except (KeyError, AttributeError) as e:
                 print(yellow("Can't send start email: %r" % e))
         return self
 
-    def __exit__(self, *args):
-        if self.mail_class and not (args[0] or getattr(env, 'no_finished_mail', None)):
+    def send_end(self, status=None):
+        if self.mail_load:
             try:
+                end_message = self.mail_load.get('end_mes', self.finished_mail_message)
+                if status:
+                    end_message += status
                 self.send_mail(
-                    self.mail_class.get('end_mes', self.finished_mail_message),
-                    self.mail_class.get('end_sub', self.finished_mail_subject)
+                    end_message,
+                    self.mail_load.get('end_sub', self.finished_mail_subject)
                 )
             except (KeyError, AttributeError) as e:
                 print(yellow("Can't send finished email: %r" % e))
