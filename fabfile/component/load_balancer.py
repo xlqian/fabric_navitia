@@ -53,19 +53,20 @@ def get_adc_credentials():
         env.adc_password = getpass.getpass("%s password: " % env.ADC_HOSTNAME)
 
 
-def _adc_connection():
+def _adc_connection(check=False):
     if bigsuds_loaded is True:
         get_adc_credentials()
-        try:
-            connection = bigsuds.BIGIP(
-                hostname=env.ADC_HOSTNAME,
-                username=env.adc_username,
-                password=env.adc_password
-                )
-            # connection.System.SystemInfo.get_version()
-        except Exception as error:
-            print("Error when connecting to %s: %s" % (env.ADC_HOSTNAME, error))
-            exit(1)
+        connection = bigsuds.BIGIP(
+            hostname=env.ADC_HOSTNAME,
+            username=env.adc_username,
+            password=env.adc_password
+            ) 
+        if check:
+            try:
+                connection.System.SystemInfo.get_version()
+            except Exception as error:
+                print(red("Error when connecting to %s: %s" % (env.ADC_HOSTNAME, error)))
+                exit(1)
         return connection
     else:
         print(red("CRITICAL: Can't manage F5 load balancer as 'import bigsuds' fails"))
