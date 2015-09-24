@@ -62,9 +62,9 @@ def _adc_connection():
                 username=env.adc_username,
                 password=env.adc_password
                 )
-            # connection.System.SystemInfo.get_version()
+            connection.System.SystemInfo.get_version()
         except Exception as error:
-            print("Error when connecting to %s: %s" % (env.ADC_HOSTNAME, error))
+            print(red("Error when connecting to %s: %s" % (env.ADC_HOSTNAME, error)))
             exit(1)
         return connection
     else:
