@@ -53,7 +53,7 @@ def get_adc_credentials():
         env.adc_password = getpass.getpass("%s password: " % env.ADC_HOSTNAME)
 
 
-def _adc_connection():
+def _adc_connection(check=False):
     if bigsuds_loaded is True:
         get_adc_credentials()
         try:
@@ -62,7 +62,8 @@ def _adc_connection():
                 username=env.adc_username,
                 password=env.adc_password
                 )
-            connection.System.SystemInfo.get_version()
+            if check:
+                connection.System.SystemInfo.get_version()
         except Exception as error:
             print(red("Error when connecting to %s: %s" % (env.ADC_HOSTNAME, error)))
             exit(1)
