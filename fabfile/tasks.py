@@ -216,7 +216,6 @@ def upgrade_kraken(kraken_wait=True, up_confs=True):
     kraken_wait = get_bool_from_cli(kraken_wait)
     execute(kraken.upgrade_engine_packages)
     execute(kraken.upgrade_monitor_kraken_packages)
-    execute(kraken.restart_all_krakens, wait=kraken_wait)
     if up_confs:
         execute(kraken.update_monitor_configuration)
         for instance in env.instances.values():
