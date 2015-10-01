@@ -172,12 +172,15 @@ def swap_data_nav(instance, force=False):
     temp_target = instance.temp_target_lz4_file
     plain_target = instance.plain_target_lz4_file
     with warn_only():
-        if files.is_file(temp_target) and files.is_file(plain_target) and \
-           (force or (files.getmtime(temp_target) > files.getmtime(plain_target))):
-            swap_temp = os.path.join(os.path.dirname(temp_target), 'x')
-            files.move(plain_target, swap_temp)
+        if files.is_file(plain_target):
+            if files.is_file(temp_target) and \
+               (force or (files.getmtime(temp_target) > files.getmtime(plain_target))):
+                swap_temp = os.path.join(os.path.dirname(temp_target), 'x')
+                files.move(plain_target, swap_temp)
+                files.move(temp_target, plain_target)
+                files.move(swap_temp, temp_target)
+        elif files.is_file(temp_target):
             files.move(temp_target, plain_target)
-            files.move(swap_temp, temp_target)
 
 @task
 @roles('eng')
