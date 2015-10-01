@@ -137,13 +137,6 @@ def setup_tyr():
 
 @task
 @roles('tyr')
-def setup_tyr():
-    _upload_template('tyr/tyr_beat.jinja', env.tyr_beat_service_file,
-                     user='root', mode='755', context={'env': env})
-
-
-@task
-@roles('tyr')
 def upgrade_tyr_packages():
     packages = [
         'sudo',
