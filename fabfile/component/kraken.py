@@ -43,7 +43,7 @@ from fabric.context_managers import settings, warn_only
 from fabric.contrib.files import exists, sed
 from fabric.decorators import roles, serial
 from fabric.operations import run, get
-from fabric.api import task, env, sudo, execute
+from fabric.api import task, env, sudo
 from fabtools import require, service, files
 
 from fabfile.utils import (_install_packages, get_real_instance, _upload_template,
@@ -187,7 +187,7 @@ def restart_kraken(instance, test=True, wait=True):
     """
     instance = get_real_instance(instance)
     wait = get_bool_from_cli(wait)
-    if env.host == env.roledefs['eng'][0].split('@')[1]:
+    if env.host_string == env.roledefs['eng'][0]:
         swap_data_nav(instance)
     if instance.name not in env.excluded_instances:
         kraken = 'kraken_' + instance.name
