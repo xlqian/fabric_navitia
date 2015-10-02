@@ -281,7 +281,7 @@ def test_kraken(instance, fail_if_error=True, wait=False, loaded_is_ok=None):
             print(red("ERROR: Instance {} is not running ! ({})".format(instance.name, result)))
             return False
         print(yellow("WARNING: Instance {} is not running ! ({})".format(instance.name, result)))
-        return
+        return False
 
     if not result['is_connected_to_rabbitmq']:
         print(yellow("WARNING: Instance {} is not connected to rabbitmq".format(instance.name)))
