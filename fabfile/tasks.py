@@ -32,17 +32,21 @@
 import datetime
 import os
 
+from urllib2 import Request
+
 from fabric.api import run, env, task, execute, roles, abort
 from fabric.colors import blue, red, yellow, green
 from fabric.contrib.files import exists
 
 from fabfile.component import tyr, db, jormungandr, kraken
+from fabfile.component.kraken import _test_kraken
 from fabfile.component.load_balancer import get_adc_credentials, _adc_connection
 from fabfile import utils
 from fabfile.utils import get_bool_from_cli
 from fabfile.utils import show_version
 from prod_tasks import (remove_kraken_vip, switch_to_first_phase,
                         switch_to_second_phase, enable_all_nodes)
+
 
 #############################################
 #                                           #
@@ -118,6 +122,7 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
         env.roledefs['ws'] = env.ws_hosts_1
         execute(switch_to_first_phase, env.eng_hosts_1, env.ws_hosts_1, env.ws_hosts_2)
         execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
+        execute(dead_instance)
         execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
 
         # Upgrade kraken/jormun on remaining hosts
@@ -135,6 +140,25 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
         execute(upgrade_jormungandr, up_confs=up_confs)
     if send_mail:
         broadcast_email('end')
+
+
+@task
+@roles('eng')
+def dead_instance():
+    dead = 0
+    threshold = float(15)/100 * len(env.instances.values())
+    for instance in env.instances.values():
+        # env.host will call the monitor kraken on the current host
+        request = Request('http://{}:{}/{}/?instance={}'.format(env.host,
+            env.kraken_monitor_port, env.kraken_monitor_location_dir, instance.name))
+        result = _test_kraken(request, fail_if_error=False)
+        if result['status'] == 'timeout' or result['loaded'] is False:
+            dead += 1
+    if dead >= int(threshold):
+        print(red("The threshold of allowed dead instance is exceeded."
+                  "There are {} dead instances.".format(dead)))
+        exit(1)
+
 
 @task
 def broadcast_email(kind, add_status=True):

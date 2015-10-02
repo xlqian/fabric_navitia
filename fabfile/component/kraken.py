@@ -149,6 +149,7 @@ def restart_all_krakens(wait=True):
     for instance in env.instances.values():
         restart_kraken(instance.name, wait=wait)
 
+
 @task
 @roles('eng')
 def test_all_krakens(wait=False):
@@ -253,7 +254,6 @@ def _test_kraken(query, fail_if_error=True):
 @roles('eng')
 def test_kraken(instance, fail_if_error=True, wait=False, loaded_is_ok=None):
     """Test kraken with '?instance='"""
-    
     instance = get_real_instance(instance)
     wait = get_bool_from_cli(wait)
 
@@ -265,12 +265,11 @@ def test_kraken(instance, fail_if_error=True, wait=False, loaded_is_ok=None):
         # we wait until we get a gestion and the instance is 'loaded'
         try:
             result = Retrying(stop_max_delay=env.KRAKEN_RESTART_DELAY * 1000,
-                            wait_fixed=1000, retry_on_result=lambda x: x is None or not x['loaded']) \
+                              wait_fixed=1000, retry_on_result=lambda x: x is None or not x['loaded']) \
                 .call(_test_kraken, request, fail_if_error)
         except Exception as e:
             print(red("ERROR: could not reach {}, too many retries ! ({})".format(instance.name, e)))
             result = {'status': False}
-
     else:
         result = _test_kraken(request, fail_if_error)
 
@@ -282,7 +281,7 @@ def test_kraken(instance, fail_if_error=True, wait=False, loaded_is_ok=None):
             print(red("ERROR: Instance {} is not running ! ({})".format(instance.name, result)))
             return False
         print(yellow("WARNING: Instance {} is not running ! ({})".format(instance.name, result)))
-        return False
+        return
 
     if not result['is_connected_to_rabbitmq']:
         print(yellow("WARNING: Instance {} is not connected to rabbitmq".format(instance.name)))
