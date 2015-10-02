@@ -109,7 +109,7 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
     if send_mail:
         broadcast_email('start')
     if up_tyr:
-        execute(upgrade_tyr)
+        execute(upgrade_tyr, up_confs=up_confs)
         execute(tyr.launch_rebinarization_upgrade)
 
     if env.use_load_balancer:
@@ -164,12 +164,14 @@ def compare_version_candidate_installed():
         abort(message)
 
 @task
-def upgrade_tyr():
+def upgrade_tyr(up_confs=False):
     """Upgrade all ed instances db, launch bina"""
     execute(tyr.stop_tyr_beat)
     execute(tyr.upgrade_tyr_packages)
     execute(tyr.upgrade_ed_packages)
     execute(tyr.upgrade_db_tyr)
+    if up_confs:
+        tyr.update_tyr_confs()
     restart_tyr()
 
 @task
