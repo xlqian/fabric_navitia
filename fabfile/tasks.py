@@ -87,6 +87,7 @@ def setup():
 def upgrade_all_packages():
     """ Upgrade all navitia packages """
     execute(tyr.upgrade_tyr_packages)
+    execute(tyr.setup_tyr_master)
     execute(kraken.upgrade_engine_packages)
     execute(kraken.upgrade_monitor_kraken_packages)
     execute(tyr.upgrade_ed_packages)
@@ -168,6 +169,7 @@ def upgrade_tyr():
     """Upgrade all ed instances db, launch bina"""
     execute(tyr.stop_tyr_beat)
     execute(tyr.upgrade_tyr_packages)
+    execute(tyr.setup_tyr_master)
     execute(tyr.upgrade_ed_packages)
     execute(tyr.upgrade_db_tyr)
     restart_tyr()

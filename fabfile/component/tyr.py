@@ -120,15 +120,8 @@ def setup_tyr():
 
     update_tyr_conf()
 
-    # we need to deploy the services conf file
-    _upload_template('tyr/tyr_beat.jinja', env.tyr_beat_service_file, user='root', mode='755',
-                     context={
-                         'env': env
-                     })
-    _upload_template('tyr/tyr_worker.jinja', env.tyr_worker_service_file, user='root', mode='755',
-                     context={
-                         'env': env
-                     })
+    _upload_template('tyr/tyr_worker.jinja', env.tyr_worker_service_file,
+                     user='root', mode='755', context={'env': env})
 
     if not files.is_dir(env.tyr_migration_dir):
         files.symlink('/usr/share/tyr/migrations/', env.tyr_migration_dir, use_sudo=True)
@@ -167,10 +160,8 @@ def upgrade_tyr_packages():
     if not python.is_pip_installed():
         python.install_pip()
     require.python.install_requirements('/usr/share/tyr/requirements.txt', use_sudo=True, exists_action='w')
-    _upload_template('tyr/tyr_beat.jinja', env.tyr_beat_service_file,
-                     context={'env': env}, mode='755')
     _upload_template('tyr/tyr_worker.jinja', env.tyr_worker_service_file,
-                     context={'env': env}, mode='755')
+                     user='root', mode='755', context={'env': env})
 
 @task
 @roles('tyr_master')
@@ -185,6 +176,8 @@ def upgrade_db_tyr():
 @roles('tyr_master')
 def setup_tyr_master():
     utils.require_directory(env.ed_basedir, owner='www-data', group='www-data', use_sudo=True)
+    _upload_template('tyr/tyr_beat.jinja', env.tyr_beat_service_file,
+                     user='root', mode='755', context={'env': env})
 
 @task
 @roles('tyr')
