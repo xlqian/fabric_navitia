@@ -126,12 +126,14 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
         env.roledefs['ws'] = env.ws_hosts_2
         execute(switch_to_second_phase, env.eng_hosts_1, env.eng_hosts_2,
                 env.ws_hosts_1,  env.ws_hosts_2)
+        execute(kraken.swap_all_data_nav)
         execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
         execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
         execute(enable_all_nodes, env.eng_hosts, env.ws_hosts_1,  env.ws_hosts_2)
         env.roledefs['eng'] = env.eng_hosts
         env.roledefs['ws'] = env.ws_hosts
     else:
+        execute(kraken.swap_all_data_nav)
         execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
         execute(upgrade_jormungandr, up_confs=up_confs)
     if send_mail:
