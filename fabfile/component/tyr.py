@@ -47,7 +47,7 @@ from fabtools import require, python, files, service
 from fabfile.component import db
 from fabfile.component.kraken import get_no_data_instances
 from fabfile import utils
-from fabfile.utils import _install_packages, _upload_template, start_or_stop_with_delay, get_real_instance
+from fabfile.utils import _install_packages, _upload_template, start_or_stop_with_delay
 
 
 @task
@@ -423,7 +423,8 @@ def launch_rebinarization(instance, use_temp=False):
     with cd(env.tyr_basedir), shell_env(TYR_CONFIG_FILE=env.tyr_settings_file), settings(user=env.KRAKEN_USER):
         print(blue("NOTICE: launching binarization on {} @{}".format(instance, time.strftime('%H:%M:%S'))))
         try:
-            run("python manage.py import_last_dataset {} {}".format(instance, '--custom_output_dir temp' if use_temp else ''))
+            run("python manage.py import_last_dataset {}{}".
+                format(instance, ' --custom_output_dir temp' if use_temp else ''))
         except:
             print(red("ERROR: failed binarization on {}".format(instance)))
 
