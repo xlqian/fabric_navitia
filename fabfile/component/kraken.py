@@ -168,19 +168,17 @@ def swap_all_data_nav(force=False):
 def swap_data_nav(instance, force=False):
     """ swap old/new data.nav.lz4, only if new is still in temp directory
     """
-    instance = get_real_instance(instance)
-    temp_target = instance.temp_target_lz4_file
-    plain_target = instance.plain_target_lz4_file
-    with warn_only():
-        if files.is_file(plain_target):
-            if files.is_file(temp_target) and \
-               (force or (files.getmtime(temp_target) > files.getmtime(plain_target))):
-                swap_temp = os.path.join(os.path.dirname(temp_target), 'x')
-                files.move(plain_target, swap_temp)
-                files.move(temp_target, plain_target)
-                files.move(swap_temp, temp_target)
-        elif files.is_file(temp_target):
+    plain_target = get_real_instance(instance).target_lz4_file
+    temp_target = os.path.join(os.path.dirname(plain_target), 'temp', os.path.basename(plain_target))
+    if exists(plain_target):
+        if exists(temp_target) and \
+           (force or (files.getmtime(temp_target) > files.getmtime(plain_target))):
+            swap_temp = os.path.join(os.path.dirname(temp_target), 'x')
+            files.move(plain_target, swap_temp)
             files.move(temp_target, plain_target)
+            files.move(swap_temp, temp_target)
+    elif exists(temp_target):
+        files.move(temp_target, plain_target)
 
 @task
 @roles('eng')
@@ -190,8 +188,6 @@ def restart_kraken(instance, test=True, wait=True):
     """
     instance = get_real_instance(instance)
     wait = get_bool_from_cli(wait)
-    if env.host_string == env.roledefs['eng'][0]:
-        swap_data_nav(instance)
     if instance.name not in env.excluded_instances:
         kraken = 'kraken_' + instance.name
         start_or_stop_with_delay(kraken, 4000, 500, start=False, only_once=True)
