@@ -396,35 +396,30 @@ def launch_rebinarization_upgrade():
             if i_name in env.excluded_instances:
                 print(blue("NOTICE: i_name {} has been excluded, skiping it".format(i_name)))
             else:
-                launch_rebinarization(i_name)
+                launch_rebinarization(i_name, True)
 
     # we run the bina in parallele (if you want sequenciel run, set env.nb_thread_for_bina = 1)
-    update_tyr_confs(True)
     with utils.Parallel(env.nb_thread_for_bina) as pool:
         pool.map(binarize_instance, env.instances.keys())
-    update_tyr_confs()
 
     start_tyr_beat()
 
 
 @task
 @roles('tyr_master')
-def launch_rebinarization(instance):
+def launch_rebinarization(instance, use_temp=False):
     """ Re-launch binarization of previously processed input data
         During upgrade, we need to regenerate data.nav.lz4 file because of
         serialization objects changes; we have to find the last input file
         processed
     """
-    if env.dry_run is True:
-        print("DRY-RUN: cd /srv/tyr/ "
-              "&& TYR_CONFIG_FILE=/srv/tyr/settings.py python manage.py import_last_dataset {i}".format(i=instance))
-    else:
-        with cd(env.tyr_basedir), shell_env(TYR_CONFIG_FILE=env.tyr_settings_file), settings(user=env.KRAKEN_USER):
-            print(blue("NOTICE: launching binarization on {} @{}".format(instance, time.strftime('%H:%M:%S'))))
-            try:
-                run("python manage.py import_last_dataset {i}".format(i=instance))
-            except:
-                print(red("ERROR: failed binarization on {}".format(instance)))
+    with cd(env.tyr_basedir), shell_env(TYR_CONFIG_FILE=env.tyr_settings_file), settings(user=env.KRAKEN_USER):
+        print(blue("NOTICE: launching binarization on {} @{}".format(instance, time.strftime('%H:%M:%S'))))
+        try:
+            run("python manage.py import_last_dataset {}{}".
+                format(instance, ' --custom_output_dir temp' if use_temp else ''))
+        except:
+            print(red("ERROR: failed binarization on {}".format(instance)))
 
 @task
 @roles('db')
@@ -504,14 +499,10 @@ def test_tyr_backup_file_presence():
 
 
 @task
-def update_tyr_confs(set_temp=False):
+def update_tyr_confs():
     execute(update_tyr_conf)
     for instance in env.instances.values():
-        if set_temp:
-            instance.target_lz4_file = instance.temp_target_lz4_file
         execute(update_tyr_instance_conf, instance)
-        if set_temp:
-            instance.target_lz4_file = instance.plain_target_lz4_file
 
 @task
 @roles('tyr')
