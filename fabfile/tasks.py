@@ -186,7 +186,7 @@ def restart_tyr():
 
 @task
 def restart_kraken():
-    execute(kraken.restart_all_krakens, False)
+    execute(kraken.restart_all_krakens)
 
 @task
 def restart_jormungandr():
