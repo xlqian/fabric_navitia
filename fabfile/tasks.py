@@ -97,13 +97,14 @@ def upgrade_all_packages():
     execute(jormungandr.upgrade_ws_packages)
 
 @task
-def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True, send_mail=False):
+def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True, send_mail=False, check_dead=True):
     """Upgrade all navitia packages, databases and launch rebinarisation of all instances """
     check_version = get_bool_from_cli(check_version)
     if check_version:
         execute(compare_version_candidate_installed)
     up_tyr = get_bool_from_cli(up_tyr)
     up_confs = get_bool_from_cli(up_confs)
+    check_dead = get_bool_from_cli(check_dead)
     kraken_wait = get_bool_from_cli(kraken_wait)
     if env.use_load_balancer:
         get_adc_credentials()
@@ -122,7 +123,8 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
         env.roledefs['ws'] = env.ws_hosts_1
         execute(switch_to_first_phase, env.eng_hosts_1, env.ws_hosts_1, env.ws_hosts_2)
         execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
-        execute(dead_instance)
+        if check_dead:
+            execute(check_dead_instances)
         execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
 
         # Upgrade kraken/jormun on remaining hosts
@@ -144,7 +146,7 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
 
 @task
 @roles('eng')
-def dead_instance():
+def check_dead_instances():
     dead = 0
     threshold = float(15)/100 * len(env.instances.values())
     for instance in env.instances.values():
