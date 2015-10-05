@@ -174,6 +174,25 @@ def swap_data_nav(instance):
         files.move(temp_target, plain_target)
         files.move(swap_temp, temp_target)
 
+
+@task
+@roles('eng')
+def check_dead_instances():
+    dead = 0
+    threshold = float(15)/100 * len(env.instances.values())
+    for instance in env.instances.values():
+        # env.host will call the monitor kraken on the current host
+        request = Request('http://{}:{}/{}/?instance={}'.format(env.host,
+            env.kraken_monitor_port, env.kraken_monitor_location_dir, instance.name))
+        result = _test_kraken(request, fail_if_error=False)
+        if not result or result['status'] == 'timeout' or result['loaded'] is False:
+            dead += 1
+    if dead >= int(threshold):
+        print(red("The threshold of allowed dead instance is exceeded."
+                  "There are {} dead instances.".format(dead)))
+        exit(1)
+
+
 @task
 @roles('eng')
 def restart_kraken(instance, test=True, wait=True):
