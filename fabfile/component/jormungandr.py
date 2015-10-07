@@ -45,7 +45,7 @@ from fabric.contrib.files import exists
 from fabric.decorators import roles
 from fabric.operations import run, get
 from fabric.api import execute, task, env, sudo
-from fabtools import require
+from fabtools import require, python
 
 from fabfile.component import kraken, load_balancer
 from fabfile.utils import (_install_packages, _upload_template,
@@ -107,7 +107,8 @@ def upgrade_ws_packages():
     package_filter_list = ['navitia-jormungandr*deb',
                            'navitia-common*deb']
     _install_packages(package_filter_list)
-    require.python.install_pip()
+    if not python.is_pip_installed():
+        python.install_pip()
 
     require.python.install_requirements('/usr/share/jormungandr/requirements.txt',
             use_sudo=True,
