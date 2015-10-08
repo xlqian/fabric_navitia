@@ -13,13 +13,6 @@ SQLALCHEMY_DATABASE_URI ='postgresql://{{env.tyr_postgresql_user}}:{{env.tyr_pos
 PUBLIC={{env.jormungandr_is_public}}
 
 
-REDIS_HOST = '{{env.redis_host}}'
-REDIS_PORT = {{env.redis_port}}
-REDIS_PASSWORD = {{env.jormungandr_redis_password}}
-
-# index of the redis data base used (integer from 0 to 15)
-REDIS_DB = 0
-
 # logger configuration
 from jormungandr.logging_utils import IdFilter
 LOGGER = {
@@ -71,3 +64,21 @@ LOGGER = {
 SAVE_STAT = {{env.jormungandr_save_stats}}
 BROKER_URL = 'amqp://{{env.jormungandr_broker_username}}:{{env.jormungandr_broker_password}}@{{env.rabbitmq_host}}:{{env.rabbitmq_port}}//'
 EXCHANGE_NAME = '{{env.stat_broker_exchange}}'
+
+
+{% if env.jormungandr_enable_redis %}
+CACHE_CONFIGURATION = {
+    'CACHE_TYPE': 'redis',
+    {% if env.jormungandr_redis_password %}
+    'CACHE_REDIS_URL': 'redis://{{env.redis_host}}:{{env.redis_port}}/{{env.jormungandr_redis_db}',
+    {% else %}
+    'CACHE_REDIS_URL': 'redis://{{env.jormungandr_redis_password}}@{{env.redis_host}}:{{env.redis_port}}/{{env.jormungandr_redis_db}',
+    {% endif %}
+    'CACHE_KEY_PREFIX': 'jormungandr.',
+    'TIMEOUT_PTOBJECTS': {{env.jormungand_cache_timeout}},
+    'TIMEOUT_AUTHENTICATION': {{env.jormungand_cache_timeout}},
+    'TIMEOUT_PARAMS': {{env.jormungand_cache_timeout}},
+}
+{% endif %}
+
+

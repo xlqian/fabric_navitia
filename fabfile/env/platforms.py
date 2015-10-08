@@ -140,6 +140,9 @@ env.jormungandr_log_level = 'INFO'
 env.jormungandr_redis_db = 0
 env.jormungandr_redis_password = None
 
+env.jormungandr_enable_redis = False
+env.jormungandr_cache_timeout = 600
+
 # stat_persitor and rt (?)
 env.jormungandr_broker_username = 'guest'
 env.jormungandr_broker_password = 'guest'
