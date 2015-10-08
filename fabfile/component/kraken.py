@@ -179,7 +179,7 @@ def swap_data_nav(instance):
 @roles('eng')
 def check_dead_instances():
     dead = 0
-    threshold = float(15)/100 * len(env.instances.values())
+    threshold = env.kraken_threshold * len(env.instances.values())
     for instance in env.instances.values():
         # env.host will call the monitor kraken on the current host
         request = Request('http://{}:{}/{}/?instance={}'.format(env.host,
