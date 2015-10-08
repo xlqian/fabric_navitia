@@ -149,6 +149,7 @@ def restart_all_krakens(wait=True):
     for instance in env.instances.values():
         restart_kraken(instance.name, wait=wait)
 
+
 @task
 @roles('eng')
 def test_all_krakens(wait=False):
@@ -179,6 +180,25 @@ def swap_data_nav(instance, force=False):
             files.move(swap_temp, temp_target)
     elif exists(temp_target):
         files.move(temp_target, plain_target)
+
+
+@task
+@roles('eng')
+def check_dead_instances():
+    dead = 0
+    threshold = env.kraken_threshold * len(env.instances.values())
+    for instance in env.instances.values():
+        # env.host will call the monitor kraken on the current host
+        request = Request('http://{}:{}/{}/?instance={}'.format(env.host,
+            env.kraken_monitor_port, env.kraken_monitor_location_dir, instance.name))
+        result = _test_kraken(request, fail_if_error=False)
+        if not result or result['status'] == 'timeout' or result['loaded'] is False:
+            dead += 1
+    if dead >= int(threshold):
+        print(red("The threshold of allowed dead instance is exceeded."
+                  "There are {} dead instances.".format(dead)))
+        exit(1)
+
 
 @task
 @roles('eng')
@@ -259,7 +279,6 @@ def _test_kraken(query, fail_if_error=True):
 @roles('eng')
 def test_kraken(instance, fail_if_error=True, wait=False, loaded_is_ok=None):
     """Test kraken with '?instance='"""
-    
     instance = get_real_instance(instance)
     wait = get_bool_from_cli(wait)
 
@@ -271,12 +290,11 @@ def test_kraken(instance, fail_if_error=True, wait=False, loaded_is_ok=None):
         # we wait until we get a gestion and the instance is 'loaded'
         try:
             result = Retrying(stop_max_delay=env.KRAKEN_RESTART_DELAY * 1000,
-                            wait_fixed=1000, retry_on_result=lambda x: x is None or not x['loaded']) \
+                              wait_fixed=1000, retry_on_result=lambda x: x is None or not x['loaded']) \
                 .call(_test_kraken, request, fail_if_error)
         except Exception as e:
             print(red("ERROR: could not reach {}, too many retries ! ({})".format(instance.name, e)))
             result = {'status': False}
-
     else:
         result = _test_kraken(request, fail_if_error)
 

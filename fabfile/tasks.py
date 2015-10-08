@@ -37,12 +37,14 @@ from fabric.colors import blue, red, yellow, green
 from fabric.contrib.files import exists
 
 from fabfile.component import tyr, db, jormungandr, kraken
+from fabfile.component.kraken import check_dead_instances
 from fabfile.component.load_balancer import get_adc_credentials, _adc_connection
 from fabfile import utils
 from fabfile.utils import get_bool_from_cli
 from fabfile.utils import show_version
 from prod_tasks import (remove_kraken_vip, switch_to_first_phase,
                         switch_to_second_phase, enable_all_nodes)
+
 
 #############################################
 #                                           #
@@ -94,13 +96,14 @@ def upgrade_all_packages():
     execute(jormungandr.upgrade_ws_packages)
 
 @task
-def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True, send_mail=False):
+def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True, send_mail=False, check_dead=True):
     """Upgrade all navitia packages, databases and launch rebinarisation of all instances """
     check_version = get_bool_from_cli(check_version)
     if check_version:
         execute(compare_version_candidate_installed)
     up_tyr = get_bool_from_cli(up_tyr)
     up_confs = get_bool_from_cli(up_confs)
+    check_dead = get_bool_from_cli(check_dead)
     kraken_wait = get_bool_from_cli(kraken_wait)
     if env.use_load_balancer:
         get_adc_credentials()
@@ -119,6 +122,8 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
         env.roledefs['ws'] = env.ws_hosts_1
         execute(switch_to_first_phase, env.eng_hosts_1, env.ws_hosts_1, env.ws_hosts_2)
         execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
+        if check_dead:
+            execute(check_dead_instances)
         execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
 
         # Upgrade kraken/jormun on remaining hosts
@@ -138,6 +143,7 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
         execute(upgrade_jormungandr, up_confs=up_confs)
     if send_mail:
         broadcast_email('end')
+
 
 @task
 def broadcast_email(kind, add_status=True):
