@@ -143,6 +143,9 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
         execute(upgrade_jormungandr, up_confs=up_confs)
     if send_mail:
         broadcast_email('end')
+    else:
+        warn_dict = jormungandr.check_kraken_jormun_after_deploy()
+        show_dead_kraken_status(warn_dict)
 
 
 @task
@@ -155,7 +158,7 @@ def broadcast_email(kind, add_status=True):
         add_status = get_bool_from_cli(add_status)
         if add_status:
             warn_dict = jormungandr.check_kraken_jormun_after_deploy()
-        env.mail_class.send_end(show_dead_kraken_status(warn_dict))
+        env.mail_class.send_end(show_dead_kraken_status(warn_dict, mail=True))
 
 
 @task
