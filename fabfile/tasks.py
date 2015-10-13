@@ -30,7 +30,6 @@
 # www.navitia.io
 
 import datetime
-from operator import itemgetter
 import os
 
 from fabric.api import run, env, task, execute, roles, abort
