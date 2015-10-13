@@ -239,6 +239,8 @@ def check_kraken_jormun_after_deploy(show=False):
             warn_list.append(dict(status='dead', region_id=item['region_id'], kraken_version=None))
         elif item['kraken_version'] != installed_kraken_version:
             warn_list.append(dict(status=item['status'], region_id=item['region_id'], kraken_version=item['kraken_version']))
+        elif item['status'] == "no_data":
+            warn_list.append(dict(status='no_data', region_id=item['region_id'], kraken_version=installed_kraken_version))
 
     if show:
         if warn_dict['jormungandr']:
