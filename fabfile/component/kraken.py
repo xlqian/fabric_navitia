@@ -44,7 +44,7 @@ from fabric.contrib.files import exists, sed
 from fabric.decorators import roles, serial
 from fabric.operations import run, get
 from fabric.api import task, env, sudo
-from fabtools import require, service, files
+from fabtools import require, service, files, python
 
 from fabfile.utils import (_install_packages, get_real_instance, _upload_template,
                            start_or_stop_with_delay, get_host_addr)
@@ -83,7 +83,8 @@ def upgrade_engine_packages():
 def upgrade_monitor_kraken_packages():
     package_filter_list = ['navitia-monitor-kraken*deb']
     _install_packages(package_filter_list)
-    require.python.install_pip()
+    if not python.is_pip_installed():
+        python.install_pip()
     require.python.install_requirements('/usr/share/monitor_kraken/requirements.txt',
                                         use_sudo=True,
                                         exists_action='w')
