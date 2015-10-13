@@ -30,6 +30,7 @@
 # www.navitia.io
 
 import datetime
+from operator import itemgetter
 import os
 
 from fabric.api import run, env, task, execute, roles, abort
@@ -158,11 +159,14 @@ def broadcast_email(kind, add_status=True):
             warn_dict = jormungandr.check_kraken_jormun_after_deploy()
             if warn_dict['jormungandr']:
                 status += "\nJormungandr version={}".format(warn_dict['jormungandr'])
-            for item in warn_dict['kraken']:
+
+            version_sort = sorted(warn_dict['kraken'], key=lambda i: i.get('kraken_version'), reverse=True)
+            for item in version_sort:
                 status += "\nKraken {region_id} status={status} version={kraken_version}".format(**item)
             if status:
                 status = "\n\n---------- Status" + status
         env.mail_class.send_end(status)
+
 
 @task
 def compare_version_candidate_installed():
