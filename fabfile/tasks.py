@@ -41,7 +41,7 @@ from fabfile.component.kraken import check_dead_instances
 from fabfile.component.load_balancer import get_adc_credentials, _adc_connection
 from fabfile import utils
 from fabfile.utils import get_bool_from_cli
-from fabfile.utils import show_version
+from fabfile.utils import show_version, show_dead_kraken_status
 from prod_tasks import (remove_kraken_vip, switch_to_first_phase,
                         switch_to_second_phase, enable_all_nodes)
 
@@ -153,18 +153,9 @@ def broadcast_email(kind, add_status=True):
         env.mail_class.send_start()
     elif kind == 'end':
         add_status = get_bool_from_cli(add_status)
-        status = ''
         if add_status:
             warn_dict = jormungandr.check_kraken_jormun_after_deploy()
-            if warn_dict['jormungandr']:
-                status += "\nJormungandr version={}".format(warn_dict['jormungandr'])
-
-            version_sort = sorted(warn_dict['kraken'], key=lambda i: i.get('kraken_version'), reverse=True)
-            for item in version_sort:
-                status += "\nKraken {region_id} status={status} version={kraken_version}".format(**item)
-            if status:
-                status = "\n\n---------- Status" + status
-        env.mail_class.send_end(status)
+        env.mail_class.send_end(show_dead_kraken_status(warn_dict))
 
 
 @task
