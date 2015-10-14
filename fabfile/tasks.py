@@ -98,51 +98,51 @@ def upgrade_all_packages():
 @task
 def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True, send_mail=False, check_dead=True):
     """Upgrade all navitia packages, databases and launch rebinarisation of all instances """
-    check_version = get_bool_from_cli(check_version)
-    if check_version:
-        execute(compare_version_candidate_installed)
-    up_tyr = get_bool_from_cli(up_tyr)
-    up_confs = get_bool_from_cli(up_confs)
-    check_dead = get_bool_from_cli(check_dead)
-    kraken_wait = get_bool_from_cli(kraken_wait)
-    if env.use_load_balancer:
-        get_adc_credentials()
-        # check credential NOW
-        _adc_connection(check=True)
-    execute(check_last_dataset)
-    if send_mail:
-        broadcast_email('start')
-    if up_tyr:
-        execute(upgrade_tyr, up_confs=up_confs)
-        execute(tyr.launch_rebinarization_upgrade)
-
-    if env.use_load_balancer:
-        # Upgrade kraken/jormun on first hosts set
-        env.roledefs['eng'] = env.eng_hosts_1
-        env.roledefs['ws'] = env.ws_hosts_1
-        execute(switch_to_first_phase, env.eng_hosts_1, env.ws_hosts_1, env.ws_hosts_2)
-        execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
-        if check_dead:
-            execute(check_dead_instances)
-        execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
-
-        # Upgrade kraken/jormun on remaining hosts
-        env.roledefs['eng'] = env.eng_hosts_2
-        env.roledefs['ws'] = env.ws_hosts_2
-        execute(switch_to_second_phase, env.eng_hosts_1, env.eng_hosts_2,
-                env.ws_hosts_1,  env.ws_hosts_2)
-        execute(kraken.swap_all_data_nav)
-        execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
-        execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
-        execute(enable_all_nodes, env.eng_hosts, env.ws_hosts_1,  env.ws_hosts_2)
-        env.roledefs['eng'] = env.eng_hosts
-        env.roledefs['ws'] = env.ws_hosts
-    else:
-        execute(kraken.swap_all_data_nav)
-        execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
-        execute(upgrade_jormungandr, up_confs=up_confs)
+    # check_version = get_bool_from_cli(check_version)
+    # if check_version:
+    #     execute(compare_version_candidate_installed)
+    # up_tyr = get_bool_from_cli(up_tyr)
+    # up_confs = get_bool_from_cli(up_confs)
+    # check_dead = get_bool_from_cli(check_dead)
+    # kraken_wait = get_bool_from_cli(kraken_wait)
+    # if env.use_load_balancer:
+    #     get_adc_credentials()
+    #     # check credential NOW
+    #     _adc_connection(check=True)
+    # execute(check_last_dataset)
+    # if send_mail:
+    #     broadcast_email('start')
+    # if up_tyr:
+    #     execute(upgrade_tyr, up_confs=up_confs)
+    #     execute(tyr.launch_rebinarization_upgrade)
+    #
+    # if env.use_load_balancer:
+    #     # Upgrade kraken/jormun on first hosts set
+    #     env.roledefs['eng'] = env.eng_hosts_1
+    #     env.roledefs['ws'] = env.ws_hosts_1
+    #     execute(switch_to_first_phase, env.eng_hosts_1, env.ws_hosts_1, env.ws_hosts_2)
+    #     execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
+    #     if check_dead:
+    #         execute(check_dead_instances)
+    #     execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
+    #
+    #     # Upgrade kraken/jormun on remaining hosts
+    #     env.roledefs['eng'] = env.eng_hosts_2
+    #     env.roledefs['ws'] = env.ws_hosts_2
+    #     execute(switch_to_second_phase, env.eng_hosts_1, env.eng_hosts_2,
+    #             env.ws_hosts_1,  env.ws_hosts_2)
+    #     execute(kraken.swap_all_data_nav)
+    #     execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
+    #     execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
+    #     execute(enable_all_nodes, env.eng_hosts, env.ws_hosts_1,  env.ws_hosts_2)
+    #     env.roledefs['eng'] = env.eng_hosts
+    #     env.roledefs['ws'] = env.ws_hosts
+    # else:
+    #     execute(kraken.swap_all_data_nav)
+    #     execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
+    #     execute(upgrade_jormungandr, up_confs=up_confs)
     warn_dict = jormungandr.check_kraken_jormun_after_deploy()
-    status = show_dead_kraken_status(warn_dict)
+    status = show_dead_kraken_status(warn_dict, show=True)
     if send_mail:
         broadcast_email('end', status)
 

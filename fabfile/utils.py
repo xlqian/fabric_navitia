@@ -355,7 +355,7 @@ def start_or_stop_with_delay(service, delay, wait, start=True, only_once=False, 
     return True
 
 
-def show_dead_kraken_status(warn_dict):
+def show_dead_kraken_status(warn_dict, show=False):
     status = ''
 
     if warn_dict['jormungandr'] is None and not warn_dict['kraken']:
@@ -370,5 +370,6 @@ def show_dead_kraken_status(warn_dict):
         status += "\nKraken {region_id} status={status} version={kraken_version}".format(**item)
     if status:
         status = "\n\n---------- Status" + status
-    print(yellow(status))
+    if show:
+        print(yellow(status))
     return status
