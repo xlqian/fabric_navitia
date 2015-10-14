@@ -41,7 +41,7 @@ from fabfile.component.kraken import check_dead_instances
 from fabfile.component.load_balancer import get_adc_credentials, _adc_connection
 from fabfile import utils
 from fabfile.utils import get_bool_from_cli
-from fabfile.utils import show_version
+from fabfile.utils import show_version, show_dead_kraken_status
 from prod_tasks import (remove_kraken_vip, switch_to_first_phase,
                         switch_to_second_phase, enable_all_nodes)
 
@@ -141,28 +141,21 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
         execute(kraken.swap_all_data_nav)
         execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
         execute(upgrade_jormungandr, up_confs=up_confs)
+    warn_dict = jormungandr.check_kraken_jormun_after_deploy()
+    status = show_dead_kraken_status(warn_dict, show=True)
     if send_mail:
-        broadcast_email('end')
+        broadcast_email('end', status)
 
 
 @task
-def broadcast_email(kind, add_status=True):
+def broadcast_email(kind, status):
     if not hasattr(env, 'mail_class'):
         env.mail_class = utils.send_mail()
     if kind == 'start':
         env.mail_class.send_start()
     elif kind == 'end':
-        add_status = get_bool_from_cli(add_status)
-        status = ''
-        if add_status:
-            warn_dict = jormungandr.check_kraken_jormun_after_deploy()
-            if warn_dict['jormungandr']:
-                status += "\nJormungandr version={}".format(warn_dict['jormungandr'])
-            for item in warn_dict['kraken']:
-                status += "\nKraken {region_id} status={status} version={kraken_version}".format(**item)
-            if status:
-                status = "\n\n---------- Status" + status
         env.mail_class.send_end(status)
+
 
 @task
 def compare_version_candidate_installed():
