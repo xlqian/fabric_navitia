@@ -370,5 +370,5 @@ def show_dead_kraken_status(warn_dict):
         status += "\nKraken {region_id} status={status} version={kraken_version}".format(**item)
     if status:
         status = "\n\n---------- Status" + status
-    print(yellow("{}".format(status)))
+    print(yellow(status))
     return status
