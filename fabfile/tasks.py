@@ -141,24 +141,20 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
         execute(kraken.swap_all_data_nav)
         execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
         execute(upgrade_jormungandr, up_confs=up_confs)
+    warn_dict = jormungandr.check_kraken_jormun_after_deploy()
+    status = show_dead_kraken_status(warn_dict)
     if send_mail:
-        broadcast_email('end')
-    else:
-        warn_dict = jormungandr.check_kraken_jormun_after_deploy()
-        show_dead_kraken_status(warn_dict)
+        broadcast_email('end', status)
 
 
 @task
-def broadcast_email(kind, add_status=True):
+def broadcast_email(kind, status):
     if not hasattr(env, 'mail_class'):
         env.mail_class = utils.send_mail()
     if kind == 'start':
         env.mail_class.send_start()
     elif kind == 'end':
-        add_status = get_bool_from_cli(add_status)
-        if add_status:
-            warn_dict = jormungandr.check_kraken_jormun_after_deploy()
-        env.mail_class.send_end(show_dead_kraken_status(warn_dict, mail=True))
+        env.mail_class.send_end(status)
 
 
 @task
