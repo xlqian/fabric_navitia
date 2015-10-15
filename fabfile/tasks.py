@@ -113,18 +113,18 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
     if send_mail:
         broadcast_email('start')
     time_dict = TimeDiff()
-    time_total = time_dict.register_start('total_deploy')
+    time_dict.register_start('total_deploy')
     if up_tyr:
         execute(upgrade_tyr, up_confs=up_confs)
-        time_bina = time_dict.register_start('bina')
+        time_dict.register_start('bina')
         execute(tyr.launch_rebinarization_upgrade)
-        time_dict.get_time_diff('bina', time_bina)
+        time_dict.get_time_diff('bina')
 
     if env.use_load_balancer:
         # Upgrade kraken/jormun on first hosts set
         env.roledefs['eng'] = env.eng_hosts_1
         env.roledefs['ws'] = env.ws_hosts_1
-        time_kraken_reload = time_dict.register_start('kraken')
+        time_dict.register_start('kraken')
         execute(switch_to_first_phase, env.eng_hosts_1, env.ws_hosts_1, env.ws_hosts_2)
         execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
         if check_dead:
@@ -138,18 +138,18 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
                 env.ws_hosts_1,  env.ws_hosts_2)
         execute(kraken.swap_all_data_nav)
         execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
-        time_dict.get_time_diff('kraken', time_kraken_reload)
+        time_dict.get_time_diff('kraken')
         execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
         execute(enable_all_nodes, env.eng_hosts, env.ws_hosts_1,  env.ws_hosts_2)
         env.roledefs['eng'] = env.eng_hosts
         env.roledefs['ws'] = env.ws_hosts
     else:
         execute(kraken.swap_all_data_nav)
-        time_kraken_reload = time_dict.register_start('kraken')
+        time_dict.register_start('kraken')
         execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
-        time_dict.get_time_diff('kraken', time_kraken_reload)
+        time_dict.get_time_diff('kraken')
         execute(upgrade_jormungandr, up_confs=up_confs)
-    time_dict.get_time_diff('total_deploy', time_total)
+    time_dict.get_time_diff('total_deploy')
     warn_dict = jormungandr.check_kraken_jormun_after_deploy()
     status = show_dead_kraken_status(warn_dict, show=True)
     status += time_dict.show_time_deploy(time_dict)

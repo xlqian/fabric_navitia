@@ -387,24 +387,21 @@ class TimeDiff(object):
 
     def register_start(self, service):
         self.time_dict[service] = datetime.datetime.now()
-        return self.time_dict[service]
 
     def register_end(self, service):
-        self.time_dict[service] = datetime.datetime.now()
-        return self.time_dict[service]
+        self.time_dict[service] = datetime.datetime.now() - self.time_dict[service]
 
-    def get_time_diff(self, service, start_time=None):
-        self.time_dict[service] = self.register_end(service) - start_time
+    def get_time_diff(self, service):
         return self.time_dict[service]
 
     def show_time_deploy(self, show=False):
         time_deploy = ''
         if 'total_deploy' in self.time_dict:
-            time_deploy += "\nTotal deployment time: {}".format(self.time_dict['total_deploy'])
+            time_deploy += "\nTotal deployment time: {}".format(self.get_time_diff('total_deploy'))
         if 'bina' in self.time_dict:
-            time_deploy += "\nTotal binarization time: {}".format(self.time_dict['bina'])
+            time_deploy += "\nTotal binarization time: {}".format(self.get_time_diff('bina'))
         if 'kraken' in self.time_dict:
-            time_deploy += "\nTotal kraken reload time: {}".format(self.time_dict['kraken'])
+            time_deploy += "\nTotal kraken reload time: {}".format(self.get_time_diff('kraken'))
         if time_deploy:
             time_deploy = "\n\n--------- Time" + time_deploy
 
