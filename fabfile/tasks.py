@@ -148,7 +148,7 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
 
 
 @task
-def broadcast_email(kind, status):
+def broadcast_email(kind, status=None):
     if not hasattr(env, 'mail_class'):
         env.mail_class = utils.send_mail()
     if kind == 'start':
