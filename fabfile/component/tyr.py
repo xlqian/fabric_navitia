@@ -387,24 +387,25 @@ def launch_rebinarization_upgrade(pilot_tyr_beat=True):
     # - test kraken instance via monitor-kraken
     # - only continue to next instance if instance is ok, to avoid breaking all
     # instances
-    execute(get_no_data_instances)
+    try:
+        execute(get_no_data_instances)
 
-    def binarize_instance(i_name):
-        with utils.time_that(blue("data loaded for " + i_name + " in {elapsed}")):
-            print(blue("loading data for {}".format(i_name)))
-            update_ed_db(i_name)
+        def binarize_instance(i_name):
+            with utils.time_that(blue("data loaded for " + i_name + " in {elapsed}")):
+                print(blue("loading data for {}".format(i_name)))
+                update_ed_db(i_name)
 
-            if i_name in env.excluded_instances:
-                print(blue("NOTICE: i_name {} has been excluded, skiping it".format(i_name)))
-            else:
-                launch_rebinarization(i_name, True)
+                if i_name in env.excluded_instances:
+                    print(blue("NOTICE: i_name {} has been excluded, skiping it".format(i_name)))
+                else:
+                    launch_rebinarization(i_name, True)
 
-    # we run the bina in parallele (if you want sequenciel run, set env.nb_thread_for_bina = 1)
-    with utils.Parallel(env.nb_thread_for_bina) as pool:
-        pool.map(binarize_instance, env.instances.keys())
-
-    if pilot_tyr_beat:
-        start_tyr_beat()
+            # we run the bina in parallele (if you want sequenciel run, set env.nb_thread_for_bina = 1)
+        with utils.Parallel(env.nb_thread_for_bina) as pool:
+            pool.map(binarize_instance, env.instances.keys())
+    finally:
+        if pilot_tyr_beat:
+            start_tyr_beat()
 
 
 @task
