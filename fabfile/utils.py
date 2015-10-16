@@ -39,6 +39,7 @@ import random
 from retrying import Retrying, RetryError
 import string
 import time
+import datetime
 import semver
 
 from fabric.colors import green, yellow, red
@@ -358,6 +359,8 @@ def start_or_stop_with_delay(service, delay, wait, start=True, only_once=False, 
 def show_dead_kraken_status(warn_dict, show=False):
     status = ''
 
+    status += "\nThere are {} instances.".format(len(env.instances))
+
     if warn_dict['jormungandr'] is None and not warn_dict['kraken']:
         print(yellow("All instances are clean and updates!"))
         return
@@ -373,3 +376,34 @@ def show_dead_kraken_status(warn_dict, show=False):
     if show:
         print(yellow(status))
     return status
+
+
+class TimeDiff(object):
+    def __init__(self):
+        self.time_dict = {}
+
+    def register_start(self, service):
+        self.time_dict[service] = datetime.datetime.now()
+
+    def register_end(self, service):
+        self.time_dict[service] = datetime.datetime.now() - self.time_dict[service]
+
+    def get_time_diff(self, service):
+        return self.time_dict[service]
+
+
+def show_time_deploy(td, show=False):
+    time_deploy = ''
+    if 'total_deploy' in td.time_dict:
+        time_deploy += "\nTotal deployment time: {}".format(td.get_time_diff('total_deploy'))
+    if 'bina' in td.time_dict:
+        time_deploy += "\nTotal binarization time: {}".format(td.get_time_diff('bina'))
+    if 'kraken' in td.time_dict:
+        time_deploy += "\nTotal kraken reload time: {}".format(td.get_time_diff('kraken'))
+    if time_deploy:
+        time_deploy = "\n\n--------- Time" + time_deploy
+
+    if show:
+        print(yellow(time_deploy))
+
+    return time_deploy
