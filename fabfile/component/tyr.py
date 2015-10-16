@@ -370,11 +370,12 @@ def get_tyr_config(instance):
 
 @task
 @roles('tyr_master')
-def launch_rebinarization_upgrade():
+def launch_rebinarization_upgrade(pilot_tyr_beat=True):
     """launch binarization on all instances for the upgrade"""
 
     # avoid any other normal binarization during upgrade
-    stop_tyr_beat()
+    if pilot_tyr_beat:
+        stop_tyr_beat()
     # for each instance:
     # - upgrade the ed database
     # - binarize last processed data, blocking step (sync, which is good to
@@ -402,7 +403,8 @@ def launch_rebinarization_upgrade():
     with utils.Parallel(env.nb_thread_for_bina) as pool:
         pool.map(binarize_instance, env.instances.keys())
 
-    start_tyr_beat()
+    if pilot_tyr_beat:
+        start_tyr_beat()
 
 
 @task
