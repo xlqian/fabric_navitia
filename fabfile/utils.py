@@ -358,11 +358,8 @@ def start_or_stop_with_delay(service, delay, wait, start=True, only_once=False, 
 
 def show_dead_kraken_status(warn_dict, show=False):
     status = ''
-    count = 0
-    while count < len(env.instances.values()):
-        count += 1
-    if count > 0:
-        status += "\nThere are {} instances.".format(count)
+
+    status += "\nThere are {} instances.".format(len(env.instances))
 
     if warn_dict['jormungandr'] is None and not warn_dict['kraken']:
         print(yellow("All instances are clean and updates!"))
@@ -394,18 +391,19 @@ class TimeDiff(object):
     def get_time_diff(self, service):
         return self.time_dict[service]
 
-    def show_time_deploy(self, show=False):
-        time_deploy = ''
-        if 'total_deploy' in self.time_dict:
-            time_deploy += "\nTotal deployment time: {}".format(self.get_time_diff('total_deploy'))
-        if 'bina' in self.time_dict:
-            time_deploy += "\nTotal binarization time: {}".format(self.get_time_diff('bina'))
-        if 'kraken' in self.time_dict:
-            time_deploy += "\nTotal kraken reload time: {}".format(self.get_time_diff('kraken'))
-        if time_deploy:
-            time_deploy = "\n\n--------- Time" + time_deploy
 
-        if show:
-            print(yellow(time_deploy))
+def show_time_deploy(td, show=False):
+    time_deploy = ''
+    if 'total_deploy' in td.time_dict:
+        time_deploy += "\nTotal deployment time: {}".format(td.get_time_diff('total_deploy'))
+    if 'bina' in td.time_dict:
+        time_deploy += "\nTotal binarization time: {}".format(td.get_time_diff('bina'))
+    if 'kraken' in td.time_dict:
+        time_deploy += "\nTotal kraken reload time: {}".format(td.get_time_diff('kraken'))
+    if time_deploy:
+        time_deploy = "\n\n--------- Time" + time_deploy
 
-        return time_deploy
+    if show:
+        print(yellow(time_deploy))
+
+    return time_deploy

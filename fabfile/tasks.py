@@ -41,7 +41,7 @@ from fabfile.component.kraken import check_dead_instances
 from fabfile.component.load_balancer import get_adc_credentials, _adc_connection
 from fabfile import utils
 from fabfile.utils import (get_bool_from_cli, show_version,
-                           show_dead_kraken_status, TimeDiff)
+                           show_dead_kraken_status, TimeDiff, show_time_deploy)
 from prod_tasks import (remove_kraken_vip, switch_to_first_phase,
                         switch_to_second_phase, enable_all_nodes)
 
@@ -152,7 +152,7 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
     time_dict.register_end('total_deploy')
     warn_dict = jormungandr.check_kraken_jormun_after_deploy()
     status = show_dead_kraken_status(warn_dict, show=True)
-    status += time_dict.show_time_deploy(time_dict)
+    status += show_time_deploy(time_dict)
     if send_mail:
         broadcast_email('end', status)
 
