@@ -106,6 +106,7 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
     up_confs = get_bool_from_cli(up_confs)
     check_dead = get_bool_from_cli(check_dead)
     kraken_wait = get_bool_from_cli(kraken_wait)
+    manual_lb = get_bool_from_cli(manual_lb)
     if env.use_load_balancer and not manual_lb:
         get_adc_credentials()
         # check credential NOW
