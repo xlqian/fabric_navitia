@@ -47,7 +47,7 @@ from fabric.api import task, env, sudo
 from fabtools import require, service, files, python
 
 from fabfile.utils import (_install_packages, get_real_instance, _upload_template,
-                           start_or_stop_with_delay, get_host_addr)
+                           start_or_stop_with_delay, get_host_addr, show_version)
 
 
 @task
@@ -200,6 +200,13 @@ def check_dead_instances():
                   "There are {} dead instances.".format(dead)))
         exit(1)
 
+    compare_version_kraken = show_version(action='get')
+    if compare_version_kraken[0] != compare_version_kraken[1]:
+        # if update of packages did not work
+        print(red("Installed kraken version ({}) is different "
+                  "than the candidate kraken version ({})"
+                  .format(compare_version_kraken[0], compare_version_kraken[1])))
+        exit(1)
 
 @task
 @roles('eng')
