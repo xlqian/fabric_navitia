@@ -121,7 +121,7 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
 
     time_dict = TimeDiff()
     time_dict.register_start('total_deploy')
-    tyr.stop_tyr_beat()
+    execute(tyr.stop_tyr_beat)
     if up_tyr:
         execute(upgrade_tyr, up_confs=up_confs)
         time_dict.register_start('bina')
@@ -164,7 +164,7 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
         time_dict.register_end('kraken')
         execute(upgrade_jormungandr, up_confs=up_confs)
 
-    tyr.start_tyr_beat()
+    execute(tyr.start_tyr_beat)
     time_dict.register_end('total_deploy')
     warn_dict = jormungandr.check_kraken_jormun_after_deploy()
     status = show_dead_kraken_status(warn_dict, show=True)
