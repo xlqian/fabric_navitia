@@ -75,9 +75,9 @@ CACHE_CONFIGURATION = {
     'CACHE_REDIS_URL': 'redis://{{env.jormungandr_redis_password}}@{{env.redis_host}}:{{env.redis_port}}/{{env.jormungandr_redis_db}}',
     {% endif %}
     'CACHE_KEY_PREFIX': 'jormungandr.',
-    'TIMEOUT_PTOBJECTS': {{env.jormungand_cache_timeout}},
-    'TIMEOUT_AUTHENTICATION': {{env.jormungand_cache_timeout}},
-    'TIMEOUT_PARAMS': {{env.jormungand_cache_timeout}},
+    'TIMEOUT_PTOBJECTS': {{env.jormungandr_cache_timeout}},
+    'TIMEOUT_AUTHENTICATION': {{env.jormungandr_cache_timeout}},
+    'TIMEOUT_PARAMS': {{env.jormungandr_cache_timeout}},
 }
 {% endif %}
 
