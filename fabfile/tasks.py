@@ -123,8 +123,8 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
         time_dict.register_start('bina')
         execute(tyr.launch_rebinarization_upgrade, pilot_tyr_beat=False)
         time_dict.register_end('bina')
+        execute(kraken.swap_all_data_nav)
 
-    execute(kraken.swap_all_data_nav)
     if env.use_load_balancer:
         # Upgrade kraken/jormun on first hosts set
         env.roledefs['eng'] = env.eng_hosts_1
