@@ -362,20 +362,16 @@ def show_dead_kraken_status(warn_dict, show=False):
     status += "\nThere are {} instances.".format(len(env.instances))
 
     if warn_dict is None:
-        print(yellow("Error in the request!"))
-        return
-    if warn_dict['jormungandr'] is None and not warn_dict['kraken']:
-        print(yellow("All instances are clean and updates!"))
-        return
-
-    if warn_dict['jormungandr']:
+        status += "\nError in the request!"
+    elif warn_dict['jormungandr'] is None and not warn_dict['kraken']:
+        status += "\nAll instances are clean and updates!"
+    elif warn_dict:
+        if warn_dict['jormungandr']:
             status += "\nJormungandr version={}".format(warn_dict['jormungandr'])
-
-    version_sort = sorted(warn_dict['kraken'], key=lambda i: i.get('kraken_version'), reverse=True)
-    for item in version_sort:
-        status += "\nKraken {region_id} status={status} version={kraken_version}".format(**item)
-    if status:
-        status = "\n\n---------- Status" + status
+        version_sort = sorted(warn_dict['kraken'], key=lambda i: i.get('kraken_version'), reverse=True)
+        for item in version_sort:
+           status += "\nKraken {region_id} status={status} version={kraken_version}".format(**item)
+    status = "\n\n---------- Status" + status
     if show:
         print(yellow(status))
     return status
