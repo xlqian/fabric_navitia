@@ -158,11 +158,6 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
 
 
 @task
-def test():
-    warn_dict = jormungandr.check_kraken_jormun_after_deploy()
-    status = show_dead_kraken_status(warn_dict, show=True)
-    print status
-@task
 def broadcast_email(kind, status=None):
     if not hasattr(env, 'mail_class'):
         env.mail_class = utils.send_mail()
