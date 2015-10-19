@@ -361,12 +361,11 @@ def show_dead_kraken_status(warn_dict, show=False):
 
     status += "\nThere are {} instances.".format(len(env.instances))
 
-    if warn_dict is not None:
-        if warn_dict['jormungandr'] is None and not warn_dict['kraken']:
-            print(yellow("All instances are clean and updates!"))
-            return
-    else:
+    if warn_dict is None:
         print(yellow("Error in the request!"))
+        return
+    if warn_dict['jormungandr'] is None and not warn_dict['kraken']:
+        print(yellow("All instances are clean and updates!"))
         return
 
     if warn_dict['jormungandr']:
