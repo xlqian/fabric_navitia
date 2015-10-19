@@ -200,12 +200,12 @@ def check_dead_instances():
                   "There are {} dead instances.".format(dead)))
         exit(1)
 
-    compare_version_kraken = show_version(action='get')
-    if compare_version_kraken[0] != compare_version_kraken[1]:
+    installed_kraken, candidate_kraken = show_version(action='get')
+    if installed_kraken != candidate_kraken:
         # if update of packages did not work
         print(red("Installed kraken version ({}) is different "
                   "than the candidate kraken version ({})"
-                  .format(compare_version_kraken[0], compare_version_kraken[1])))
+                  .format(installed_kraken, candidate_kraken)))
         exit(1)
 
 @task
