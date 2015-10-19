@@ -7,6 +7,9 @@ database = {{instance.kraken_database}}
 zmq_socket = {{instance.kraken_zmq_socket}}
 instance_name = {{instance.name}}
 nb_threads = {{instance.kraken_nb_threads}}
+{% if instance.enable_realtime %}
+is_realtime_enabled = true
+{% endif %}
 
 [LOG]
 log4cplus.rootLogger={{env.kraken_log_level}}, ALL_MSGS
