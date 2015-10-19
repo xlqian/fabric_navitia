@@ -107,10 +107,14 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
     check_dead = get_bool_from_cli(check_dead)
     kraken_wait = get_bool_from_cli(kraken_wait)
     manual_lb = get_bool_from_cli(manual_lb)
-    if env.use_load_balancer and not manual_lb:
-        get_adc_credentials()
-        # check credential NOW
-        _adc_connection(check=True)
+    if env.use_load_balancer:
+        if manual_lb:
+            print(yellow("WARNING : you are in MANUAL mode :\n"
+                         "Check frequently for message asking you to switch nodes manually"))
+        else:
+            get_adc_credentials()
+            # check credential NOW
+            _adc_connection(check=True)
     execute(check_last_dataset)
     if send_mail:
         broadcast_email('start')
