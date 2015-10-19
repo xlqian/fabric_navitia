@@ -44,7 +44,8 @@ def get_next_zmq_socket():
 class Instance:
     def __init__(self, name, db_password, db_local='fr_FR.UTF8',
                  is_free=False, chaos_database=None, rt_topics=[],
-                 zmq_socket_port=None, db_name=None, db_user=None, source_dir=None):
+                 zmq_socket_port=None, db_name=None, db_user=None, source_dir=None,
+                 enable_realtime=False):
         self.name = name
         self.db_password = db_password
         self.is_free = is_free
@@ -70,6 +71,7 @@ class Instance:
         self.db_user = db_user if db_user else 'ed_' + self.name.replace('-', '_')
         self._source_dir = source_dir if source_dir != 'auto' else '/srv/ed/source/{}/{}/FUSIO/EXPORT/'.\
             format(self.name.upper(), (getattr(env, 'fusio_name', None) or env.name).upper())
+        self.enable_realtime = enable_realtime
 
     #we might want to overload all those properties
 
