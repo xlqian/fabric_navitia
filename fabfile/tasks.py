@@ -150,7 +150,7 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
         execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
         time_dict.register_end('kraken')
         execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
-        if manual_lb:
+        if not manual_lb:
             execute(enable_all_nodes, env.eng_hosts, env.ws_hosts_1,  env.ws_hosts_2)
         env.roledefs['eng'] = env.eng_hosts
         env.roledefs['ws'] = env.ws_hosts
