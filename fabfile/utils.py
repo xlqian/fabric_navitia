@@ -357,21 +357,19 @@ def start_or_stop_with_delay(service, delay, wait, start=True, only_once=False, 
 
 
 def show_dead_kraken_status(warn_dict, show=False):
-    status = ''
-
-    status += "\nThere are {} instances.".format(len(env.instances))
+    status = "\n\n---------- Status" \
+             "\nThere are {} instances.".format(len(env.instances))
 
     if warn_dict:
         if warn_dict['jormungandr'] is None and not warn_dict['kraken']:
-            status += "\nAll instances are clean and updates!"
+            status += "\nAll instances are clean and updated!"
         if warn_dict['jormungandr']:
             status += "\nJormungandr version={}".format(warn_dict['jormungandr'])
-        version_sort = sorted(warn_dict['kraken'], key=lambda i: i.get('kraken_version'), reverse=True)
-        for item in version_sort:
-           status += "\nKraken {region_id} status={status} version={kraken_version}".format(**item)
-    else:
-        status += "\nError in the request!"
-    status = "\n\n---------- Status" + status
+        if warn_dict['kraken']:
+            version_sort = sorted(warn_dict['kraken'], key=lambda i: i.get('kraken_version'), reverse=True)
+            for item in version_sort:
+                status += "\nKraken {region_id} status={status} version={kraken_version}".format(**item)
+
     if show:
         print(yellow(status))
     return status
