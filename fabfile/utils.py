@@ -385,22 +385,30 @@ class TimeDiff(object):
     def register_end(self, service):
         self.time_dict[service] = datetime.datetime.now() - self.time_dict[service]
 
-    def get_time_diff(self, service):
-        return self.time_dict[service]
+    def get_time_diff(self, service, format=None):
+        if format == 'minutes':
+            return self.time_dict[service].total_seconds()/60
+        elif format == 'hours':
+            return self.time_dict[service].total_seconds()/3600
+        else:
+            return self.time_dict[service]
 
 
 def show_time_deploy(td, show=False):
     time_deploy = ''
     if 'total_deploy' in td.time_dict:
-        time_deploy += "\nTotal deployment time: {}".format(td.get_time_diff('total_deploy'))
+        time_deploy += "\nTotal deployment time: {} ({} hours)".\
+            format(td.get_time_diff('total_deploy'), td.get_time_diff('total_deploy', format='hours'))
     if 'bina' in td.time_dict:
-        time_deploy += "\nTotal binarization time: {}".format(td.get_time_diff('bina'))
+        time_deploy += "\nBinarization time: {} ({} hours)".\
+            format(td.get_time_diff('bina'), td.get_time_diff('bina', format='hours'))
     if 'kraken' in td.time_dict:
-        time_deploy += "\nTotal kraken reload time: {}".format(td.get_time_diff('kraken'))
+        time_deploy += "\nKraken reload time: {} ({} minutes)".\
+            format(td.get_time_diff('kraken'), td.get_time_diff('kraken', format='minutes'))
     if time_deploy:
         time_deploy = "\n\n--------- Time" + time_deploy
 
-    if show:
+    if show and time_deploy:
         print(yellow(time_deploy))
 
     return time_deploy
