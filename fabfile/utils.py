@@ -397,13 +397,13 @@ class TimeDiff(object):
 def show_time_deploy(td, show=False):
     time_deploy = ''
     if 'total_deploy' in td.time_dict:
-        time_deploy += "\nTotal deployment time: {} ({} hours)".\
+        time_deploy += "\nTotal deployment time: {} ({:.2f} hours)".\
             format(td.get_time_diff('total_deploy'), td.get_time_diff('total_deploy', format='hours'))
     if 'bina' in td.time_dict:
-        time_deploy += "\nBinarization time: {} ({} hours)".\
+        time_deploy += "\nBinarization time: {} ({:.2f} hours)".\
             format(td.get_time_diff('bina'), td.get_time_diff('bina', format='hours'))
     if 'kraken' in td.time_dict:
-        time_deploy += "\nKraken reload time: {} ({} minutes)".\
+        time_deploy += "\nKraken reload time: {} ({:.2f} minutes)".\
             format(td.get_time_diff('kraken'), td.get_time_diff('kraken', format='minutes'))
     if time_deploy:
         time_deploy = "\n\n--------- Time" + time_deploy
