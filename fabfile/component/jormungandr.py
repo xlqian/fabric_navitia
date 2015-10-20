@@ -230,18 +230,18 @@ def check_kraken_jormun_after_deploy(show=False):
         print(red("cannot read json response : {}".format(response.text)))
         return
 
-    installed_kraken_version = "v" + show_version(action='get')[0]
+    candidate_kraken_version = "v" + show_version(action='get')[1]
     warn_dict = dict()
-    warn_dict['jormungandr'] = result['jormungandr_version'] if installed_kraken_version != result['jormungandr_version'] else None
+    warn_dict['jormungandr'] = result['jormungandr_version'] if candidate_kraken_version != result['jormungandr_version'] else None
     warn_dict['kraken'] = warn_list = list()
 
     for item in result['regions']:
         if item['status'] == "dead":
             warn_list.append(dict(status='dead', region_id=item['region_id'], kraken_version=None))
-        elif item['kraken_version'] != installed_kraken_version:
+        elif item['kraken_version'] != candidate_kraken_version:
             warn_list.append(dict(status=item['status'], region_id=item['region_id'], kraken_version=item['kraken_version']))
         elif item['status'] == "no_data":
-            warn_list.append(dict(status='no_data', region_id=item['region_id'], kraken_version=installed_kraken_version))
+            warn_list.append(dict(status='no_data', region_id=item['region_id'], kraken_version=candidate_kraken_version))
 
     if show:
         if warn_dict['jormungandr']:
