@@ -96,7 +96,8 @@ def upgrade_all_packages():
     execute(jormungandr.upgrade_ws_packages)
 
 @task
-def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True, send_mail=False, check_dead=True):
+def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True,
+                send_mail=False, check_dead=True, manual_lb=True):
     """Upgrade all navitia packages, databases and launch rebinarisation of all instances """
     check_version = get_bool_from_cli(check_version)
     if check_version:
@@ -105,27 +106,38 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
     up_confs = get_bool_from_cli(up_confs)
     check_dead = get_bool_from_cli(check_dead)
     kraken_wait = get_bool_from_cli(kraken_wait)
+    manual_lb = get_bool_from_cli(manual_lb)
     if env.use_load_balancer:
-        get_adc_credentials()
-        # check credential NOW
-        _adc_connection(check=True)
+        if manual_lb:
+            print(yellow("WARNING : you are in MANUAL mode :\n"
+                         "Check frequently for message asking you to switch nodes manually"))
+        else:
+            get_adc_credentials()
+            # check credential NOW
+            _adc_connection(check=True)
     execute(check_last_dataset)
     if send_mail:
         broadcast_email('start')
+
     time_dict = TimeDiff()
     time_dict.register_start('total_deploy')
+    execute(tyr.stop_tyr_beat)
     if up_tyr:
         execute(upgrade_tyr, up_confs=up_confs)
         time_dict.register_start('bina')
-        execute(tyr.launch_rebinarization_upgrade)
+        execute(tyr.launch_rebinarization_upgrade, pilot_tyr_beat=False)
         time_dict.register_end('bina')
+        execute(kraken.swap_all_data_nav)
 
     if env.use_load_balancer:
         # Upgrade kraken/jormun on first hosts set
         env.roledefs['eng'] = env.eng_hosts_1
         env.roledefs['ws'] = env.ws_hosts_1
         time_dict.register_start('kraken')
-        execute(switch_to_first_phase, env.eng_hosts_1, env.ws_hosts_1, env.ws_hosts_2)
+        if manual_lb:
+            raw_input(yellow("Please disable ENG1/WS1 and enable ENG2-4/WS2-4"))
+        else:
+            execute(switch_to_first_phase, env.eng_hosts_1, env.ws_hosts_1, env.ws_hosts_2)
         execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
         if check_dead:
             execute(check_dead_instances)
@@ -134,27 +146,33 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
         # Upgrade kraken/jormun on remaining hosts
         env.roledefs['eng'] = env.eng_hosts_2
         env.roledefs['ws'] = env.ws_hosts_2
-        execute(switch_to_second_phase, env.eng_hosts_1, env.eng_hosts_2,
-                env.ws_hosts_1,  env.ws_hosts_2)
-        execute(kraken.swap_all_data_nav)
+        if manual_lb:
+            raw_input(yellow("Please enable ENG1/WS1 and disable ENG2-4/WS2-4"))
+        else:
+            execute(switch_to_second_phase, env.eng_hosts_1, env.eng_hosts_2,
+                    env.ws_hosts_1,  env.ws_hosts_2)
         execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
         time_dict.register_end('kraken')
         execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
-        execute(enable_all_nodes, env.eng_hosts, env.ws_hosts_1,  env.ws_hosts_2)
+        if not manual_lb:
+            execute(enable_all_nodes, env.eng_hosts, env.ws_hosts_1,  env.ws_hosts_2)
         env.roledefs['eng'] = env.eng_hosts
         env.roledefs['ws'] = env.ws_hosts
     else:
-        execute(kraken.swap_all_data_nav)
         time_dict.register_start('kraken')
         execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
         time_dict.register_end('kraken')
         execute(upgrade_jormungandr, up_confs=up_confs)
+
+    execute(tyr.start_tyr_beat)
     time_dict.register_end('total_deploy')
     warn_dict = jormungandr.check_kraken_jormun_after_deploy()
     status = show_dead_kraken_status(warn_dict, show=True)
     status += show_time_deploy(time_dict)
     if send_mail:
         broadcast_email('end', status)
+    if env.use_load_balancer and manual_lb:
+        print(yellow("Please enable ENG1-4/WS1-4"))
 
 
 @task
