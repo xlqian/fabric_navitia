@@ -124,7 +124,7 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
     time_dict.register_start('total_deploy')
     execute(tyr.stop_tyr_beat)
     if up_tyr:
-        execute(upgrade_tyr, up_confs=up_confs)
+        execute(upgrade_tyr, up_confs=up_confs, pilot_tyr_beat=False)
         time_dict.register_start('bina')
         execute(tyr.launch_rebinarization_upgrade, pilot_tyr_beat=False)
         time_dict.register_end('bina')
@@ -195,22 +195,24 @@ def compare_version_candidate_installed():
         abort(message)
 
 @task
-def upgrade_tyr(up_confs=False):
+def upgrade_tyr(up_confs=False, pilot_tyr_beat=True):
     """Upgrade all ed instances db, launch bina"""
-    execute(tyr.stop_tyr_beat)
+    if pilot_tyr_beat:
+        execute(tyr.stop_tyr_beat)
     execute(tyr.upgrade_tyr_packages)
     execute(tyr.setup_tyr_master)
     execute(tyr.upgrade_ed_packages)
     execute(tyr.upgrade_db_tyr)
     if up_confs:
         tyr.update_tyr_confs()
-    restart_tyr()
+    restart_tyr(pilot_tyr_beat)
 
 @task
-def restart_tyr():
+def restart_tyr(tyr_beat=True):
     # restart tyr workers and reload with newer binaries
     execute(tyr.restart_tyr_worker)
-    execute(tyr.start_tyr_beat)
+    if tyr_beat:
+        execute(tyr.restart_tyr_beat)
 
 @task
 def restart_kraken():
