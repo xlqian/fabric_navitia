@@ -13,6 +13,11 @@ SQLALCHEMY_DATABASE_URI ='postgresql://{{env.tyr_postgresql_user}}:{{env.tyr_pos
 PUBLIC={{env.jormungandr_is_public}}
 
 
+{% if env.jormungandr_pool_size %}
+#limit the connection pool size of sqlalchemy
+SQLALCHEMY_POOL_SIZE = {{env.jormungandr_pool_size}}
+{% endif %}
+
 # logger configuration
 from jormungandr.logging_utils import IdFilter
 LOGGER = {
