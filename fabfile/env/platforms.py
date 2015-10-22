@@ -157,6 +157,10 @@ env.jormungandr_instance_socket = 'localhost'
 env.jormungandr_default_handler = 'default'
 env.jormungandr_syslog_facility = 'local7'
 
+#used for limiting the number of connections to the database
+#by default we keep the default values
+env.jormungandr_pool_size = None
+
 ##############################
 # kraken
 ##############################
