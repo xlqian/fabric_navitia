@@ -236,6 +236,8 @@ def check_kraken_jormun_after_deploy(show=False):
     warn_dict['kraken'] = warn_list = list()
 
     for item in result['regions']:
+        if item['region_id'] not in env.instances:
+            continue
         if item['status'] == "dead":
             warn_list.append(dict(status='dead', region_id=item['region_id'], kraken_version=None))
         elif item['kraken_version'] != candidate_kraken_version:
