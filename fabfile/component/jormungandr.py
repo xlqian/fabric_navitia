@@ -235,13 +235,14 @@ def check_kraken_jormun_after_deploy(show=False):
     warn_dict['jormungandr'] = result['jormungandr_version'] if candidate_kraken_version != result['jormungandr_version'] else None
     warn_dict['kraken'] = warn_list = list()
 
-    for item in result['regions']:
-        if item['status'] == "dead":
-            warn_list.append(dict(status='dead', region_id=item['region_id'], kraken_version=None))
-        elif item['kraken_version'] != candidate_kraken_version:
-            warn_list.append(dict(status=item['status'], region_id=item['region_id'], kraken_version=item['kraken_version']))
-        elif item['status'] == "no_data":
-            warn_list.append(dict(status='no_data', region_id=item['region_id'], kraken_version=candidate_kraken_version))
+    for item in [(region, instance.name) for region in result['regions'] for instance in env.instances.values()]:
+        if item[0]['region_id'] == item[1]:
+            if item[0]['status'] == "dead":
+                warn_list.append(dict(status='dead', region_id=item[0]['region_id'], kraken_version=None))
+            elif item[0]['kraken_version'] != candidate_kraken_version:
+                warn_list.append(dict(status=item[0]['status'], region_id=item[0]['region_id'], kraken_version=item[0]['kraken_version']))
+            elif item[0]['status'] == "no_data":
+                warn_list.append(dict(status='no_data', region_id=item[0]['region_id'], kraken_version=candidate_kraken_version))
 
     if show:
         if warn_dict['jormungandr']:
