@@ -31,7 +31,6 @@
 
 import datetime
 import os
-import time
 
 from fabric.api import run, env, task, execute, roles, abort
 from fabric.colors import blue, red, yellow, green
@@ -98,7 +97,7 @@ def upgrade_all_packages():
 
 @task
 def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True,
-                send_mail=False, check_dead=True, manual_lb=True):
+                send_mail='no', check_dead=True, manual_lb=True):
     """Upgrade all navitia packages, databases and launch rebinarisation of all instances """
     check_version = get_bool_from_cli(check_version)
     if check_version:
@@ -117,7 +116,7 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
             # check credential NOW
             _adc_connection(check=True)
     execute(check_last_dataset)
-    if send_mail:
+    if send_mail in ('start', 'all'):
         broadcast_email('start')
 
     time_dict = TimeDiff()
@@ -170,7 +169,7 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
     warn_dict = jormungandr.check_kraken_jormun_after_deploy()
     status = show_dead_kraken_status(warn_dict, show=True)
     status += show_time_deploy(time_dict)
-    if send_mail:
+    if send_mail in ('end', 'all'):
         broadcast_email('end', status)
     if env.use_load_balancer and manual_lb:
         print(yellow("Please enable ENG1-4/WS1-4"))
