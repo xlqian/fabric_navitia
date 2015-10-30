@@ -30,7 +30,6 @@
 # www.navitia.io
 
 from contextlib import contextmanager
-import datetime
 from envelopes import Envelope
 import functools
 from multiprocessing.dummy import Pool as ThreadPool
@@ -304,11 +303,14 @@ class send_mail(object):
                 mail.add_cc_addr(cc)
         mail.send(self.mail_load['server'])
 
-    def send_start(self):
+    def send_start(self, status=None):
         if self.mail_load:
             try:
+                end_message = self.mail_load.get('start_mes', self.start_mail_message)
+                if status:
+                    end_message += status
                 self.send_mail(
-                    self.mail_load.get('start_mes', self.start_mail_message),
+                    end_message,
                     self.mail_load.get('start_sub', self.start_mail_subject)
                 )
             except (KeyError, AttributeError) as e:
