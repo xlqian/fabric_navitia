@@ -41,7 +41,7 @@ from fabfile.component.kraken import check_dead_instances
 from fabfile.component.load_balancer import get_adc_credentials, _adc_connection
 from fabfile import utils
 from fabfile.utils import (get_bool_from_cli, show_version,
-                           show_dead_kraken_status, TimeDiff, show_time_deploy)
+                           show_dead_kraken_status, TimeCollector, show_time_deploy)
 from prod_tasks import (remove_kraken_vip, switch_to_first_phase,
                         switch_to_second_phase, enable_all_nodes)
 
@@ -119,7 +119,7 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
     if send_mail in ('start', 'all'):
         broadcast_email('start')
 
-    time_dict = TimeDiff()
+    time_dict = TimeCollector()
     time_dict.register_start('total_deploy')
     execute(tyr.stop_tyr_beat)
     if up_tyr:
