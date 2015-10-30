@@ -375,36 +375,38 @@ def show_dead_kraken_status(warn_dict, show=False):
     return status
 
 
-class TimeDiff(object):
+class TimeCollector(object):
     def __init__(self):
-        self.time_dict = {}
+        self.start_time = {}
+        self.end_time = {}
 
     def register_start(self, service):
-        self.time_dict[service] = datetime.datetime.now()
+        self.start_time[service] = datetime.datetime.now()
 
     def register_end(self, service):
-        self.time_dict[service] = datetime.datetime.now() - self.time_dict[service]
+        self.end_time[service] = datetime.datetime.now()
 
-    def get_time_diff(self, service, format=None):
+    def get_duration(self, service, format=None):
+        du = self.end_time[service] - self.start_time[service]
         if format == 'minutes':
-            return self.time_dict[service].total_seconds()/60
+            return du.total_seconds()/60
         elif format == 'hours':
-            return self.time_dict[service].total_seconds()/3600
+            return du.total_seconds()/3600
         else:
-            return self.time_dict[service]
+            return du
 
 
 def show_time_deploy(td, show=False):
     time_deploy = ''
-    if 'total_deploy' in td.time_dict:
+    if 'total_deploy' in td.end_time:
         time_deploy += "\nTotal deployment time: {} ({:.2f} hours)".\
-            format(td.get_time_diff('total_deploy'), td.get_time_diff('total_deploy', format='hours'))
-    if 'bina' in td.time_dict:
+            format(td.get_duration('total_deploy'), td.get_duration('total_deploy', format='hours'))
+    if 'bina' in td.end_time:
         time_deploy += "\nBinarization time: {} ({:.2f} hours)".\
-            format(td.get_time_diff('bina'), td.get_time_diff('bina', format='hours'))
-    if 'kraken' in td.time_dict:
+            format(td.get_duration('bina'), td.get_duration('bina', format='hours'))
+    if 'kraken' in td.end_time:
         time_deploy += "\nKraken reload time: {} ({:.2f} minutes)".\
-            format(td.get_time_diff('kraken'), td.get_time_diff('kraken', format='minutes'))
+            format(td.get_duration('kraken'), td.get_duration('kraken', format='minutes'))
     if time_deploy:
         time_deploy = "\n\n--------- Time" + time_deploy
 
