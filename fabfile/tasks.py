@@ -176,14 +176,10 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
 
 
 @task
-def deploy_prod_bina(up_confs=True, check_version=True, manual_lb=False,
-                     send_mail=False):
+def deploy_prod_bina(up_confs=True, check_version=True, send_mail=False):
     """Upgrade all navitia packages, databases and launch rebinarisation of all instances """
     check_version = get_bool_from_cli(check_version)
     up_confs = get_bool_from_cli(up_confs)
-    if manual_lb:
-        print(yellow("WARNING : you are in MANUAL mode :\n"
-                     "Check frequently for message asking you to switch nodes manually"))
     if check_version:
         execute(compare_version_candidate_installed('navitia-tyr'))
     execute(check_last_dataset)
@@ -259,6 +255,7 @@ def deploy_prod_kraken(up_confs=True, kraken_wait=True, send_mail=False,
     if manual_lb:
         print(yellow("Please enable ENG1-4/WS1-4"))
 
+    print(yellow("End time = {}".format(time_end)))
 
 @task
 def broadcast_email(kind, status=None):
