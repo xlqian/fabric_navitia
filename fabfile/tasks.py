@@ -213,8 +213,8 @@ def deploy_prod_bina(up_tyr=True, up_confs=True, check_version=True,
 
 @task
 def deploy_prod_update(up_confs=True, kraken_wait=True, send_mail='no',
-                       check_dead=True, manual_lb=True, time_begin=None,
-                       time_bina=None):
+                       check_dead=True, manual_lb=True, time_begin='no',
+                       time_bina='no'):
     up_confs = get_bool_from_cli(up_confs)
     check_dead = get_bool_from_cli(check_dead)
     kraken_wait = get_bool_from_cli(kraken_wait)
