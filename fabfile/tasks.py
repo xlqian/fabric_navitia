@@ -30,7 +30,6 @@
 # www.navitia.io
 
 import datetime
-from datetime import datetime
 import os
 
 from fabric.api import run, env, task, execute, roles, abort
@@ -177,14 +176,18 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
 
 
 @task
-def deploy_prod_bina(up_confs=True, check_version=True, send_mail=False):
+def deploy_prod_bina(up_confs=True, check_version=True, manual_lb=False,
+                     send_mail=False):
     """Upgrade all navitia packages, databases and launch rebinarisation of all instances """
     check_version = get_bool_from_cli(check_version)
     up_confs = get_bool_from_cli(up_confs)
+    if manual_lb:
+        print(yellow("WARNING : you are in MANUAL mode :\n"
+                     "Check frequently for message asking you to switch nodes manually"))
     if check_version:
         execute(compare_version_candidate_installed('navitia-tyr'))
     execute(check_last_dataset)
-    time_start = datetime.now()
+    time_start = datetime.datetime.now()
     status = "\n\nStart deployment : {}".format(time_start)
     if send_mail:
         broadcast_email('start', status)
@@ -197,13 +200,14 @@ def deploy_prod_bina(up_confs=True, check_version=True, send_mail=False):
     execute(tyr.launch_rebinarization_upgrade, pilot_tyr_beat=False)
     time_dict.register_end('bina')
 
-    print(yellow("beginning = {} || bina = {:.2f}"
-                 .format(time_dict.get_time_diff('total_deploy'),
+    print(yellow("Start time = {} || binarisation time = {:.2f}"
+                 .format(time_start,
                          time_dict.get_time_diff('bina', format='hours'))))
 
 @task
-def deploy_prod_update(up_confs=True, kraken_wait=True, send_mail=False,
-                       check_dead=True, check_version=True, time_bina='no'):
+def deploy_prod_kraken(up_confs=True, kraken_wait=True, send_mail=False,
+                       check_dead=True, check_version=True,
+                       manual_lb=False, time_bina='no'):
     up_confs = get_bool_from_cli(up_confs)
     check_dead = get_bool_from_cli(check_dead)
     kraken_wait = get_bool_from_cli(kraken_wait)
@@ -218,7 +222,10 @@ def deploy_prod_update(up_confs=True, kraken_wait=True, send_mail=False,
     env.roledefs['eng'] = env.eng_hosts_1
     env.roledefs['ws'] = env.ws_hosts_1
     time_dict.register_start('kraken')
-    raw_input(yellow("Please disable ENG1/WS1 and enable ENG2-4/WS2-4"))
+    if manual_lb:
+        raw_input(yellow("Please disable ENG1/WS1 and enable ENG2-4/WS2-4"))
+    else:
+        execute(switch_to_first_phase, env.eng_hosts_1, env.ws_hosts_1, env.ws_hosts_2)
     execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
     if check_dead:
         execute(check_dead_instances)
@@ -227,15 +234,21 @@ def deploy_prod_update(up_confs=True, kraken_wait=True, send_mail=False,
     # Upgrade kraken/jormun on remaining hosts
     env.roledefs['eng'] = env.eng_hosts_2
     env.roledefs['ws'] = env.ws_hosts_2
-    raw_input(yellow("Please enable ENG1/WS1 and disable ENG2-4/WS2-4"))
+    if manual_lb:
+        raw_input(yellow("Please enable ENG1/WS1 and disable ENG2-4/WS2-4"))
+    else:
+        execute(switch_to_second_phase, env.eng_hosts_1, env.eng_hosts_2,
+                env.ws_hosts_1,  env.ws_hosts_2)
     execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
     time_dict.register_end('kraken')
     execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
+    if not manual_lb:
+        execute(enable_all_nodes, env.eng_hosts, env.ws_hosts_1,  env.ws_hosts_2)
     env.roledefs['eng'] = env.eng_hosts
     env.roledefs['ws'] = env.ws_hosts
 
     execute(tyr.start_tyr_beat)
-    time_end = datetime.now()
+    time_end = datetime.datetime.now()
     warn_dict = jormungandr.check_kraken_jormun_after_deploy()
     status = show_dead_kraken_status(warn_dict, show=True)
     status += show_time_deploy(time_dict)
@@ -243,7 +256,8 @@ def deploy_prod_update(up_confs=True, kraken_wait=True, send_mail=False,
     status += "\n\nEnd deployment : {}\n".format(time_end)
     if send_mail:
         broadcast_email('end', status)
-    print(yellow("Please enable ENG1-4/WS1-4"))
+    if manual_lb:
+        print(yellow("Please enable ENG1-4/WS1-4"))
 
 
 @task
@@ -262,10 +276,14 @@ def compare_version_candidate_installed(app_name='navitia-kraken'):
     if not show_version(action='check'):
         if app_name == 'navitia-kraken':
             installed_version, candidate_version = show_version(action='get')
-            message = "Candidate kraken version ({}) is older or the same than the installed one ({}).".format(candidate_version, installed_version)
+            message = "Candidate {} version ({}) is older or the same than " \
+                      "the installed one ({})."\
+                .format(app_name, candidate_version, installed_version)
         elif app_name == 'navitia-tyr':
             installed_version, candidate_version = show_version(action='get', app_name='navitia-tyr')
-            message = "Candidate tyr version ({}) is older or the same than the installed one ({}).".format(candidate_version, installed_version)
+            message = "Candidate {} version ({}) is older or the same than " \
+                      "the installed one ({})."\
+                .format(app_name, candidate_version, installed_version)
         abort(message)
 
 @task
