@@ -38,7 +38,6 @@ from fabric.contrib.files import exists
 
 from fabfile.component import tyr, db, jormungandr, kraken
 from fabfile.component.kraken import check_dead_instances
-from fabfile.component.load_balancer import get_adc_credentials, _adc_connection
 from fabfile import utils
 from fabfile.utils import (get_bool_from_cli, show_version,
                            show_dead_kraken_status, TimeCollector, show_time_deploy)
@@ -97,24 +96,17 @@ def upgrade_all_packages():
 
 @task
 def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True,
-                send_mail='no', check_dead=True, manual_lb=True):
+                send_mail='no'):
     """Upgrade all navitia packages, databases and launch rebinarisation of all instances """
     check_version = get_bool_from_cli(check_version)
-    if check_version:
-        execute(compare_version_candidate_installed)
     up_tyr = get_bool_from_cli(up_tyr)
     up_confs = get_bool_from_cli(up_confs)
-    check_dead = get_bool_from_cli(check_dead)
     kraken_wait = get_bool_from_cli(kraken_wait)
-    manual_lb = get_bool_from_cli(manual_lb)
     if env.use_load_balancer:
-        if manual_lb:
-            print(yellow("WARNING : you are in MANUAL mode :\n"
-                         "Check frequently for message asking you to switch nodes manually"))
-        else:
-            get_adc_credentials()
-            # check credential NOW
-            _adc_connection(check=True)
+        print(red("This task is not for PROD plateform !!!"))
+        exit(1)
+    if check_version:
+        execute(compare_version_candidate_installed)
     execute(check_last_dataset)
     if send_mail in ('start', 'all'):
         broadcast_email('start')
@@ -129,40 +121,10 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
         time_dict.register_end('bina')
         execute(kraken.swap_all_data_nav)
 
-    if env.use_load_balancer:
-        # Upgrade kraken/jormun on first hosts set
-        env.roledefs['eng'] = env.eng_hosts_1
-        env.roledefs['ws'] = env.ws_hosts_1
-        time_dict.register_start('kraken')
-        if manual_lb:
-            raw_input(yellow("Please disable ENG1/WS1 and enable ENG2-4/WS2-4"))
-        else:
-            execute(switch_to_first_phase, env.eng_hosts_1, env.ws_hosts_1, env.ws_hosts_2)
-        execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
-        if check_dead:
-            execute(check_dead_instances)
-        execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
-
-        # Upgrade kraken/jormun on remaining hosts
-        env.roledefs['eng'] = env.eng_hosts_2
-        env.roledefs['ws'] = env.ws_hosts_2
-        if manual_lb:
-            raw_input(yellow("Please enable ENG1/WS1 and disable ENG2-4/WS2-4"))
-        else:
-            execute(switch_to_second_phase, env.eng_hosts_1, env.eng_hosts_2,
-                    env.ws_hosts_1,  env.ws_hosts_2)
-        execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
-        time_dict.register_end('kraken')
-        execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
-        if not manual_lb:
-            execute(enable_all_nodes, env.eng_hosts, env.ws_hosts_1,  env.ws_hosts_2)
-        env.roledefs['eng'] = env.eng_hosts
-        env.roledefs['ws'] = env.ws_hosts
-    else:
-        time_dict.register_start('kraken')
-        execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
-        time_dict.register_end('kraken')
-        execute(upgrade_jormungandr, up_confs=up_confs)
+    time_dict.register_start('kraken')
+    execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
+    time_dict.register_end('kraken')
+    execute(upgrade_jormungandr, up_confs=up_confs)
 
     execute(tyr.start_tyr_beat)
     time_dict.register_end('total_deploy')
@@ -171,8 +133,6 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
     status += show_time_deploy(time_dict)
     if send_mail in ('end', 'all'):
         broadcast_email('end', status)
-    if env.use_load_balancer and manual_lb:
-        print(yellow("Please enable ENG1-4/WS1-4"))
 
 
 @task
