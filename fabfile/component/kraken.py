@@ -184,6 +184,38 @@ def swap_data_nav(instance, force=False):
 
 
 @task
+@roles('tyr_master')
+def purge_data_nav(force=False):
+    """
+    purge temp/data.nav.lz4 files
+    the whole process will be skipped as soon as a single condition is encountered:
+    - temp data file is more recent than actual data file
+    - temp data file exists but actual data file is missing
+    """
+    if not force:
+        print("Checking lz4 temp files purge conditions before proceeding...")
+        reason = {}
+        for instance in env.instances.values():
+            plain_target = get_real_instance(instance).target_lz4_file
+            temp_target = os.path.join(os.path.dirname(plain_target), 'temp', os.path.basename(plain_target))
+            if exists(plain_target):
+                if exists(temp_target) and files.getmtime(temp_target) > files.getmtime(plain_target):
+                    reason[instance.name] = "{} is more recent than {}".format(temp_target, plain_target)
+            elif exists(temp_target):
+                reason[instance.name] = "{} does not exists".format(plain_target)
+        if reason:
+            print(yellow("Error: Can't purge lz4 temp files, reasons:"))
+            for k, v in reason.iteritems():
+                print("  {}: {}".format(k, v))
+            exit(1)
+
+    for instance in env.instances.values():
+        plain_target = get_real_instance(instance).target_lz4_file
+        temp_target = os.path.join(os.path.dirname(plain_target), 'temp', os.path.basename(plain_target))
+        if exists(temp_target):
+            files.remove(temp_target)
+
+@task
 @roles('eng')
 def check_dead_instances():
     dead = 0
