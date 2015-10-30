@@ -184,11 +184,12 @@ def deploy_prod_bina(up_confs=True, check_version=True, send_mail=False):
     if check_version:
         execute(compare_version_candidate_installed('navitia-tyr'))
     execute(check_last_dataset)
+    time_start = datetime.now()
+    status = "\n\nStart deployment : {}".format(time_start)
     if send_mail:
-        broadcast_email('start')
+        broadcast_email('start', status)
 
     time_dict = TimeDiff()
-    time_dict.register_start('total_deploy')
     execute(tyr.stop_tyr_beat)
 
     execute(upgrade_tyr, up_confs=up_confs, pilot_tyr_beat=False)
@@ -250,7 +251,7 @@ def broadcast_email(kind, status=None):
     if not hasattr(env, 'mail_class'):
         env.mail_class = utils.send_mail()
     if kind == 'start':
-        env.mail_class.send_start()
+        env.mail_class.send_start(status)
     elif kind == 'end':
         env.mail_class.send_end(status)
 
