@@ -271,16 +271,10 @@ def broadcast_email(kind, status=None):
 def compare_version_candidate_installed(app_name='navitia-kraken'):
     """Check candidate version is different from installed"""
     if not show_version(action='check'):
-        if app_name == 'navitia-kraken':
-            installed_version, candidate_version = show_version(action='get')
-            message = "Candidate {} version ({}) is older or the same than " \
-                      "the installed one ({})."\
-                .format(app_name, candidate_version, installed_version)
-        elif app_name == 'navitia-tyr':
-            installed_version, candidate_version = show_version(action='get', app_name='navitia-tyr')
-            message = "Candidate {} version ({}) is older or the same than " \
-                      "the installed one ({})."\
-                .format(app_name, candidate_version, installed_version)
+        installed_version, candidate_version = show_version(action='get', app_name)
+        message = "Candidate {} version ({}) is older or the same than " \
+                  "the installed one ({})."\
+            .format(app_name, candidate_version, installed_version)
         abort(message)
 
 @task
