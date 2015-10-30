@@ -30,7 +30,6 @@
 # www.navitia.io
 
 from contextlib import contextmanager
-import datetime
 from envelopes import Envelope
 import functools
 from multiprocessing.dummy import Pool as ThreadPool
