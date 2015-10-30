@@ -192,7 +192,7 @@ def deploy_prod_bina(up_confs=True, check_version=True, manual_lb=False,
     if send_mail:
         broadcast_email('start', status)
 
-    time_dict = TimeDiff()
+    time_dict = TimeCollector()
     execute(tyr.stop_tyr_beat)
 
     execute(upgrade_tyr, up_confs=up_confs, pilot_tyr_beat=False)
@@ -202,7 +202,7 @@ def deploy_prod_bina(up_confs=True, check_version=True, manual_lb=False,
 
     print(yellow("Start time = {} || binarisation time = {:.2f}"
                  .format(time_start,
-                         time_dict.get_time_diff('bina', format='hours'))))
+                         time_dict.get_duration('bina', format='hours'))))
 
 @task
 def deploy_prod_kraken(up_confs=True, kraken_wait=True, send_mail=False,
@@ -216,7 +216,7 @@ def deploy_prod_kraken(up_confs=True, kraken_wait=True, send_mail=False,
         execute(compare_version_candidate_installed)
     execute(check_last_dataset)
 
-    time_dict = TimeDiff()
+    time_dict = TimeCollector()
 
     # Upgrade kraken/jormun on first hosts set
     env.roledefs['eng'] = env.eng_hosts_1
