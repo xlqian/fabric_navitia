@@ -30,7 +30,6 @@
 # www.navitia.io
 
 import datetime
-import time
 from datetime import datetime, timedelta
 import os
 
