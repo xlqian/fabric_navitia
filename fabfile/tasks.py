@@ -205,12 +205,13 @@ def deploy_prod_kraken(up_confs=True, kraken_wait=True, send_mail=False,
                        check_dead=True, check_version=True,
                        manual_lb=False, time_bina='no'):
     up_confs = get_bool_from_cli(up_confs)
+    check_version = get_bool_from_cli(check_version)
     check_dead = get_bool_from_cli(check_dead)
     kraken_wait = get_bool_from_cli(kraken_wait)
-    execute(kraken.swap_all_data_nav)
     if check_version:
         execute(compare_version_candidate_installed)
     execute(check_last_dataset)
+    execute(kraken.swap_all_data_nav)
 
     time_dict = TimeCollector()
 
@@ -271,7 +272,7 @@ def broadcast_email(kind, status=None):
 def compare_version_candidate_installed(app_name='navitia-kraken'):
     """Check candidate version is different from installed"""
     if not show_version(action='check'):
-        installed_version, candidate_version = show_version(action='get', app_name)
+        installed_version, candidate_version = show_version(action='get', app_name=app_name)
         message = "Candidate {} version ({}) is older or the same than " \
                   "the installed one ({})."\
             .format(app_name, candidate_version, installed_version)
