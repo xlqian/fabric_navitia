@@ -75,7 +75,7 @@ EXCHANGE_NAME = '{{env.stat_broker_exchange}}'
 CACHE_CONFIGURATION = {
     'CACHE_TYPE': 'redis',
     {% if env.jormungandr_redis_password %}
-    'CACHE_REDIS_URL': 'redis:{{env.jormungandr_redis_password}}//{{env.redis_host}}:{{env.redis_port}}/{{env.jormungandr_redis_db}}',
+    'CACHE_REDIS_URL': 'redis://{{env.jormungandr_redis_user}}:{{env.jormungandr_redis_password}}@{{env.redis_host}}:{{env.redis_port}}/{{env.jormungandr_redis_db}}',
     {% else %}
     'CACHE_REDIS_URL': 'redis://{{env.redis_host}}:{{env.redis_port}}/{{env.jormungandr_redis_db}}',
     {% endif %}
