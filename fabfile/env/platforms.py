@@ -138,6 +138,7 @@ env.jormungandr_log_level = 'INFO'
 
 # index of the redis data base used (integer from 0 to 15)
 env.jormungandr_redis_db = 0
+env.jormungandr_redis_user = None
 env.jormungandr_redis_password = None
 
 env.jormungandr_enable_redis = False
