@@ -126,6 +126,7 @@ env.jormungandr_settings_file = os.path.join(env.jormungandr_base_dir,
 env.jormungandr_apache_config_file = '/etc/apache2/conf.d/jormungandr.conf'
 
 env.jormungandr_url = 'localhost'
+env.jormungandr_url_prefix = ''
 env.jormungandr_port = 80
 env.jormungandr_listen_port = env.jormungandr_port
 env.jormungandr_save_stats = True
