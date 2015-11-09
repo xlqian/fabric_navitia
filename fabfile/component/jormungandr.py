@@ -209,7 +209,7 @@ def start_services():
 def check_kraken_jormun_after_deploy(show=False):
     headers = {'Host': env.jormungandr_url}
 
-    request_str = 'http://{}/v1/status'.format(env.jormungandr_url)
+    request_str = 'http://{}{}/v1/status'.format(env.jormungandr_url, env.jormungandr_url_prefix)
     print("request_str: {}".format(request_str))
 
     try:

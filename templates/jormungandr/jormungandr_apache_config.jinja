@@ -11,7 +11,7 @@ WSGIDaemonProcess jormungandr processes=1 threads=15 display-name='%{GROUP}'
 WSGIProcessGroup jormungandr
 WSGIApplicationGroup %{GLOBAL}
 WSGIImportScript {{env.jormungandr_wsgi_file}} process-group=jormungandr application-group=%{GLOBAL}
-WSGIScriptAlias /navitia {{env.jormungandr_wsgi_file}}
+WSGIScriptAlias {{env.jormungandr_url_prefix}} {{env.jormungandr_wsgi_file}}
 
 <Location /navitia/>
     Order allow,deny
