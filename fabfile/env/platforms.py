@@ -205,7 +205,7 @@ env.kraken_monitor_listen_port = env.kraken_monitor_port
 env.kraken_monitor_basedir = '/srv/monitor'
 env.kraken_monitor_wsgi_file = os.path.join(env.kraken_monitor_basedir, 'monitor.wsgi')
 env.kraken_monitor_config_file = os.path.join(env.kraken_monitor_basedir, 'settings.py')
-env.kraken_monitor_apache_config_file = '/etc/apache2/conf.d/monitor-kraken'
+env.kraken_monitor_apache_config_file = '/etc/apache2/conf.d/monitor-kraken.conf'
 
 ##############################
 # tyr

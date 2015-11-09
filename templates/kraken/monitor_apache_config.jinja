@@ -10,7 +10,7 @@ WSGIProcessGroup monitor-kraken
 WSGIApplicationGroup %{GLOBAL}
 WSGIImportScript {{env.kraken_monitor_wsgi_file}} process-group=monitor-kraken application-group=%{GLOBAL}
 WSGIScriptAlias /{{env.kraken_monitor_location_dir}}/ {{env.kraken_monitor_wsgi_file}}
-
+SetEnv PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION cpp
 <Location /{{env.kraken_monitor_location_dir}}/>
     Order allow,deny
     Allow from all
