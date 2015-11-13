@@ -141,7 +141,7 @@ def deploy_prod_bina(up_confs=True, check_version=True, send_mail=False):
     check_version = get_bool_from_cli(check_version)
     up_confs = get_bool_from_cli(up_confs)
     if check_version:
-        execute(compare_version_candidate_installed, app_name='navitia-tyr')
+        execute(compare_version_candidate_installed, host_name='tyr')
     execute(check_last_dataset)
     time_start = datetime.datetime.now()
     status = "\n\nStart deployment : {}".format(time_start)
@@ -229,14 +229,19 @@ def broadcast_email(kind, status=None):
 
 
 @task
-def compare_version_candidate_installed(app_name='navitia-kraken'):
+def test():
+    execute(compare_version_candidate_installed)
+    execute(compare_version_candidate_installed, host_name='tyr')
+
+@task
+def compare_version_candidate_installed(host_name='eng'):
     """Check candidate version is different from installed"""
-    if not show_version(action='check', app_name=app_name):
-        installed_version, candidate_version = show_version(action='get', app_name=app_name)
+    if not show_version(action='check', host=host_name):
+        installed_version, candidate_version = show_version(action='get', host=host_name)
         message = "Candidate {} version ({}) is older or the same than " \
                   "the installed one ({})."\
-            .format(app_name, candidate_version, installed_version)
-        abort(message)
+            .format(host_name, candidate_version, installed_version)
+        print(message)
 
 @task
 def upgrade_tyr(up_confs=False, pilot_tyr_beat=True):

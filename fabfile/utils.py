@@ -247,7 +247,7 @@ def get_version(host):
         return installed, candidate
 
 @task
-def show_version(action='show', app_name='navitia-kraken'):
+def show_version(action='show', host='eng'):
     """
     prints, gets or checks versions (installed and candidate) from navitia-kraken/navitia-tyr package
     show: print versions on stdout
@@ -255,11 +255,6 @@ def show_version(action='show', app_name='navitia-kraken'):
          installed and candidate can be tuples if different versions are coexisting
     check: return True if candidate version is different from installed
     """
-    host = 'eng'
-    if app_name == 'navitia-tyr':
-        host = 'tyr'
-    elif app_name == 'navitia-jormungandr':
-        host = 'ws'
     versions = execute(get_version, host)
     def summarize(iterable):
         s = tuple(set(iterable))
@@ -267,7 +262,7 @@ def show_version(action='show', app_name='navitia-kraken'):
             return s[0]
         return s
     if action == 'show':
-        print(green(app_name))
+        print(green(host_app_mapping[host]))
         for k, v in versions.iteritems():
             print(green("  %s, installed: %s, candidate: %s" % (k, v[0], v[1])))
     elif action == 'get':
