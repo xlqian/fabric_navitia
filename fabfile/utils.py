@@ -241,9 +241,9 @@ def get_version(app_name):
 @task
 def show_version(action='show', app_name='navitia-kraken'):
     """
-    prints, gets or checks versions (installed and candidate) from navitia-kraken package
+    prints, gets or checks versions (installed and candidate) from navitia-kraken/navitia-tyr package
     show: print versions on stdout
-    get: returns tuple (installed, candidate) or (None, None) if navitia-kraken not installed on target,
+    get: returns tuple (installed, candidate) or (None, None) if navitia-kraken/tyr not installed on target,
          installed and candidate can be tuples if different versions are coexisting
     check: return True if candidate version is different from installed
     """
