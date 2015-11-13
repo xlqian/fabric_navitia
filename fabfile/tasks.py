@@ -229,11 +229,6 @@ def broadcast_email(kind, status=None):
 
 
 @task
-def test():
-    execute(compare_version_candidate_installed)
-    execute(compare_version_candidate_installed, host_name='tyr')
-
-@task
 def compare_version_candidate_installed(host_name='eng'):
     """Check candidate version is different from installed"""
     if not show_version(action='check', host=host_name):
@@ -241,7 +236,7 @@ def compare_version_candidate_installed(host_name='eng'):
         message = "Candidate {} version ({}) is older or the same than " \
                   "the installed one ({})."\
             .format(host_name, candidate_version, installed_version)
-        print(message)
+        abort(message)
 
 @task
 def upgrade_tyr(up_confs=False, pilot_tyr_beat=True):
