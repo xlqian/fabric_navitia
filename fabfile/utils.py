@@ -247,10 +247,15 @@ def show_version(action='show', app_name='navitia-kraken'):
          installed and candidate can be tuples if different versions are coexisting
     check: return True if candidate version is different from installed
     """
+    tmp_eng = env.roledefs['eng']
     if app_name == 'navitia-tyr':
         env.roledefs['eng'] = env.roledefs['tyr']
 
     versions = execute(get_version, app_name=app_name)
+
+    if env.roledefs['eng'] == env.roledefs['tyr']:
+        env.roledefs['eng'] = tmp_eng
+
     def summarize(iterable):
         s = tuple(set(iterable))
         if len(s) == 1:

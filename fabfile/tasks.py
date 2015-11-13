@@ -141,7 +141,7 @@ def deploy_prod_bina(up_confs=True, check_version=True, send_mail=False):
     check_version = get_bool_from_cli(check_version)
     up_confs = get_bool_from_cli(up_confs)
     if check_version:
-        execute(compare_version_candidate_installed('navitia-tyr'))
+        execute(compare_version_candidate_installed, app_name='navitia-tyr')
     execute(check_last_dataset)
     time_start = datetime.datetime.now()
     status = "\n\nStart deployment : {}".format(time_start)
@@ -231,7 +231,7 @@ def broadcast_email(kind, status=None):
 @task
 def compare_version_candidate_installed(app_name='navitia-kraken'):
     """Check candidate version is different from installed"""
-    if not show_version(action='check'):
+    if not show_version(action='check', app_name=app_name):
         installed_version, candidate_version = show_version(action='get', app_name=app_name)
         message = "Candidate {} version ({}) is older or the same than " \
                   "the installed one ({})."\
