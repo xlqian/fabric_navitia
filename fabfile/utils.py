@@ -33,6 +33,7 @@ from contextlib import contextmanager
 from envelopes import Envelope
 import functools
 from multiprocessing.dummy import Pool as ThreadPool
+from fabric.context_managers import settings
 import os
 import random
 from retrying import Retrying, RetryError
@@ -226,17 +227,24 @@ def get_real_instance(instance):
         return env.instances[instance]
     return instance
 
+host_app_mapping = dict(
+    tyr='navitia-tyr',
+    eng='navitia-kraken',
+    ws='navitia-jormungandr'
+)
+
 @task
-@roles('eng')
-def get_version(app_name):
-    sudo('apt-get update')
-    lines = run('apt-cache policy %s' % app_name).split('\n')
-    try:
-        installed = lines[1].strip().split()[-1]
-        candidate = lines[2].strip().split()[-1]
-    except IndexError:
-        installed, candidate = None, None
-    return installed, candidate
+def get_version(host):
+    app_name = host_app_mapping[host]
+    with settings(host_string=env.roledefs[host][0]):
+        sudo('apt-get update')
+        lines = run('apt-cache policy %s' % app_name).split('\n')
+        try:
+            installed = lines[1].strip().split()[-1]
+            candidate = lines[2].strip().split()[-1]
+        except IndexError:
+            installed, candidate = None, None
+        return installed, candidate
 
 @task
 def show_version(action='show', app_name='navitia-kraken'):
@@ -247,15 +255,12 @@ def show_version(action='show', app_name='navitia-kraken'):
          installed and candidate can be tuples if different versions are coexisting
     check: return True if candidate version is different from installed
     """
-    tmp_eng = env.roledefs['eng']
+    host = 'eng'
     if app_name == 'navitia-tyr':
-        env.roledefs['eng'] = env.roledefs['tyr']
-
-    versions = execute(get_version, app_name=app_name)
-
-    if env.roledefs['eng'] == env.roledefs['tyr']:
-        env.roledefs['eng'] = tmp_eng
-
+        host = 'tyr'
+    elif app_name == 'navitia-jormungandr':
+        host = 'ws'
+    versions = execute(get_version, host)
     def summarize(iterable):
         s = tuple(set(iterable))
         if len(s) == 1:
