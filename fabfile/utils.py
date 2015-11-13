@@ -33,6 +33,7 @@ from contextlib import contextmanager
 from envelopes import Envelope
 import functools
 from multiprocessing.dummy import Pool as ThreadPool
+from fabric.context_managers import settings
 import os
 import random
 from retrying import Retrying, RetryError
@@ -226,35 +227,42 @@ def get_real_instance(instance):
         return env.instances[instance]
     return instance
 
-@task
-@roles('eng')
-def get_version(app_name):
-    sudo('apt-get update')
-    lines = run('apt-cache policy %s' % app_name).split('\n')
-    try:
-        installed = lines[1].strip().split()[-1]
-        candidate = lines[2].strip().split()[-1]
-    except IndexError:
-        installed, candidate = None, None
-    return installed, candidate
+host_app_mapping = dict(
+    tyr='navitia-tyr',
+    eng='navitia-kraken',
+    ws='navitia-jormungandr'
+)
 
 @task
-def show_version(action='show', app_name='navitia-kraken'):
+def get_version(host):
+    app_name = host_app_mapping[host]
+    with settings(host_string=env.roledefs[host][0]):
+        sudo('apt-get update')
+        lines = run('apt-cache policy %s' % app_name).split('\n')
+        try:
+            installed = lines[1].strip().split()[-1]
+            candidate = lines[2].strip().split()[-1]
+        except IndexError:
+            installed, candidate = None, None
+        return installed, candidate
+
+@task
+def show_version(action='show', host='eng'):
     """
-    prints, gets or checks versions (installed and candidate) from navitia-kraken package
+    prints, gets or checks versions (installed and candidate) from navitia-kraken/navitia-tyr/navitia-jormungandr package
     show: print versions on stdout
-    get: returns tuple (installed, candidate) or (None, None) if navitia-kraken not installed on target,
+    get: returns tuple (installed, candidate) or (None, None) if navitia-kraken/tyr/jormungandr not installed on target,
          installed and candidate can be tuples if different versions are coexisting
     check: return True if candidate version is different from installed
     """
-    versions = execute(get_version, app_name=app_name)
+    versions = execute(get_version, host)
     def summarize(iterable):
         s = tuple(set(iterable))
         if len(s) == 1:
             return s[0]
         return s
     if action == 'show':
-        print(green(app_name))
+        print(green(host_app_mapping[host]))
         for k, v in versions.iteritems():
             print(green("  %s, installed: %s, candidate: %s" % (k, v[0], v[1])))
     elif action == 'get':
