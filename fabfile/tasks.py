@@ -40,7 +40,8 @@ from fabfile.component import tyr, db, jormungandr, kraken
 from fabfile.component.kraken import check_dead_instances
 from fabfile import utils
 from fabfile.utils import (get_bool_from_cli, show_version,
-                           show_dead_kraken_status, TimeCollector, show_time_deploy)
+                           show_dead_kraken_status, TimeCollector,
+                           show_time_deploy, host_app_mapping)
 from prod_tasks import (remove_kraken_vip, switch_to_first_phase,
                         switch_to_second_phase, enable_all_nodes)
 
@@ -235,7 +236,7 @@ def compare_version_candidate_installed(host_name='eng'):
         installed_version, candidate_version = show_version(action='get', host=host_name)
         message = "Candidate {} version ({}) is older or the same than " \
                   "the installed one ({})."\
-            .format(host_name, candidate_version, installed_version)
+            .format(host_app_mapping[host_name], candidate_version, installed_version)
         abort(message)
 
 @task
