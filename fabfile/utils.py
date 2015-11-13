@@ -249,9 +249,9 @@ def get_version(host):
 @task
 def show_version(action='show', host='eng'):
     """
-    prints, gets or checks versions (installed and candidate) from navitia-kraken/navitia-tyr package
+    prints, gets or checks versions (installed and candidate) from navitia-kraken/navitia-tyr/navitia-jormungandr package
     show: print versions on stdout
-    get: returns tuple (installed, candidate) or (None, None) if navitia-kraken/tyr not installed on target,
+    get: returns tuple (installed, candidate) or (None, None) if navitia-kraken/tyr/jormungandr not installed on target,
          installed and candidate can be tuples if different versions are coexisting
     check: return True if candidate version is different from installed
     """
