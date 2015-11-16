@@ -79,7 +79,7 @@ def update_tyr_conf():
 @task
 @roles('tyr')
 def setup_tyr():
-    packages = ['redis_server']
+    packages = ['redis-server']
     if env.rabbitmq_host == 'localhost':
         packages.append('rabbitmq-server')
     require.deb.packages(packages)
