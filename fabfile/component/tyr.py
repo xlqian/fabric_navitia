@@ -79,10 +79,11 @@ def update_tyr_conf():
 @task
 @roles('tyr')
 def setup_tyr():
-    require.deb.packages([
-        "alembic",
-        "rabbitmq-server",
-        'redis-server'])
+    packages = ['redis_server']
+    if env.rabbitmq_host == 'localhost':
+        packages.append('rabbitmq-server')
+    require.deb.packages(packages)
+
     require.users.user('www-data')
 
     utils.require_directories([env.tyr_base_instances_dir,
