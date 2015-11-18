@@ -424,3 +424,52 @@ def show_time_deploy(td, show=False):
         print(yellow(time_deploy))
 
     return time_deploy
+
+
+@roles('tyr_master')
+def downtime_request(host, start_date, end_date, service):
+    """ request for the downtime """
+    message = 'Deployment'
+
+    run('curl --silent --show-error '
+        '--data cmd_typ=56 '
+        '--data cmd_mod=2 '
+        '--data host={} '
+        '--data service={} '
+        '--data "com_author={}" '
+        '--data "com_data={}" '
+        '--data trigger=0 '
+        '--data "start_time={}" '
+        '--data "end_time={}" '
+        '--data fixed=1 '
+        '--data hours=2 '
+        '--data minutes=0 '
+        '--data btnSubmit=Commit '
+        '--insecure '
+        'http://{}/cgi-bin/nagios3/cmd.cgi -u "{}:{}"'
+        .format(host, service, env.supervision_user, message, start_date,
+                end_date, env.supervision_url, env.supervision_user, env.supervision_password))
+
+
+def downtime_deployment(step='no'):
+    """ during the deployment on supervised hosts, activate downtime """
+    if not env.supervision_url:
+        return
+    tmp = time.time()
+    start_date = datetime.datetime.fromtimestamp(tmp).strftime('%d-%m-%Y %H:%M:%S')
+
+    if step == 'bina':
+        tmp += 60 * env.supervision_downtime_bina
+        end_date = datetime.datetime.fromtimestamp(tmp).strftime('%d-%m-%Y %H:%M:%S')
+        for host in env.supervision_host_tyr:
+            for instance in env.instances:
+                service = 'data_ed_{}'.format(instance)
+                execute(downtime_request, host, start_date, end_date, service)
+    elif step == 'kraken':
+        tmp += 60 * env.supervision_downtime_kraken
+        end_date = datetime.datetime.fromtimestamp(tmp).strftime('%d-%m-%Y %H:%M:%S')
+        for host in env.supervision_host_eng:
+            for instance in env.instances:
+                service = 'kraken_{}'.format(instance)
+                execute(downtime_request, host, start_date, end_date, service)
+

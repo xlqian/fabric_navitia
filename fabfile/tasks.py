@@ -41,7 +41,8 @@ from fabfile.component.kraken import check_dead_instances
 from fabfile import utils
 from fabfile.utils import (get_bool_from_cli, show_version,
                            show_dead_kraken_status, TimeCollector,
-                           show_time_deploy, host_app_mapping)
+                           show_time_deploy, host_app_mapping,
+                           downtime_deployment)
 from prod_tasks import (remove_kraken_vip, switch_to_first_phase,
                         switch_to_second_phase, enable_all_nodes)
 
@@ -97,7 +98,7 @@ def upgrade_all_packages():
 
 @task
 def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True,
-                send_mail='no'):
+                send_mail='no', set_downtime=False):
     """Upgrade all navitia packages, databases and launch rebinarisation of all instances """
     check_version = get_bool_from_cli(check_version)
     up_tyr = get_bool_from_cli(up_tyr)
@@ -118,11 +119,15 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
     if up_tyr:
         execute(upgrade_tyr, up_confs=up_confs, pilot_tyr_beat=False)
         time_dict.register_start('bina')
+        if set_downtime:
+            execute(downtime_deployment, step='bina')
         execute(tyr.launch_rebinarization_upgrade, pilot_tyr_beat=False)
         time_dict.register_end('bina')
         execute(kraken.swap_all_data_nav)
 
     time_dict.register_start('kraken')
+    if set_downtime:
+        execute(downtime_deployment, step='kraken')
     execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
     time_dict.register_end('kraken')
     execute(upgrade_jormungandr, up_confs=up_confs)
@@ -154,12 +159,15 @@ def deploy_prod_bina(up_confs=True, check_version=True, send_mail=False):
 
     execute(upgrade_tyr, up_confs=up_confs, pilot_tyr_beat=False)
     time_dict.register_start('bina')
+    if set_downtime:
+        execute(downtime_deployment, step='bina')
     execute(tyr.launch_rebinarization_upgrade, pilot_tyr_beat=False)
     time_dict.register_end('bina')
 
     print(yellow("Start time = {} || binarisation time = {:.2f}"
                  .format(time_start,
                          time_dict.get_duration('bina', format='hours'))))
+
 
 @task
 def deploy_prod_kraken(up_confs=True, kraken_wait=True, send_mail=False,
@@ -184,6 +192,8 @@ def deploy_prod_kraken(up_confs=True, kraken_wait=True, send_mail=False,
         raw_input(yellow("Please disable ENG1/WS1 and enable ENG2-4/WS2-4"))
     else:
         execute(switch_to_first_phase, env.eng_hosts_1, env.ws_hosts_1, env.ws_hosts_2)
+    if set_downtime:
+        execute(downtime_deployment, step='kraken')
     execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
     if check_dead:
         execute(check_dead_instances)
