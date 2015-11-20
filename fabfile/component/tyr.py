@@ -79,9 +79,7 @@ def update_tyr_conf():
 @task
 @roles('tyr')
 def setup_tyr():
-    packages = ['redis-server']
-    if env.rabbitmq_host == 'localhost':
-        packages.append('rabbitmq-server')
+    packages = ['alembic']
     require.deb.packages(packages)
 
     require.users.user('www-data')
@@ -133,27 +131,20 @@ def setup_tyr():
     if not files.is_file(tyr_symlink):
         files.symlink('/usr/bin/manage_tyr.py', tyr_symlink, use_sudo=True)
 
-    service.start('rabbitmq-server')
-    service.start('redis-server')
 
 @task
 @roles('tyr')
 def upgrade_tyr_packages():
     packages = [
-        'sudo',
-        'apache2',
-        'libapache2-mod-wsgi',
         'logrotate',
-        'python2.7',
         'git',
-        'postgresql-server-dev-all'
         ]
     if env.distrib == 'ubuntu14.04':
-        packages += ['libpython2.7-dev', 'postgresql-9.3-postgis-2.1']
+        packages += ['libpython2.7-dev']
     elif env.distrib == 'debian7':
-        packages += ['python2.7-dev', 'postgresql-9.1-postgis']
+        packages += ['python2.7-dev']
     elif env.distrib == 'debian8':
-        packages += ['python2.7-dev', 'g++', 'postgresql-9.4-postgis-2.1']
+        packages += ['python2.7-dev', 'g++']
     require.deb.packages(packages, update=True)
     package_filter_list = ['navitia-tyr*deb',
                            'navitia-common*deb']
