@@ -79,9 +79,6 @@ def update_tyr_conf():
 @task
 @roles('tyr')
 def setup_tyr():
-    packages = ['alembic']
-    require.deb.packages(packages)
-
     require.users.user('www-data')
 
     utils.require_directories([env.tyr_base_instances_dir,
