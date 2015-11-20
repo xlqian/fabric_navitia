@@ -437,14 +437,15 @@ class SupervisionHandler(object):
     @abstractmethod
     def stop_supervision(self, host, service, duration=None):
         """
-        TODO
+        stop the supervision for a service of a host
+        Optional: definition of a timer
         """
         return
 
     @abstractmethod
     def start_supervision(self, host, service):
         """
-        TODO
+        start or restart the supervision for a service of a host
         """
         return
 
@@ -460,27 +461,24 @@ class NagiosSupervisionHandler(SupervisionHandler):
         move_host = re.compile(r'@(.*?)\.')
         return move_host.search(host).group(1)
 
-    def stop_supervision(self, host, service, duration=None):
+    def stop_supervision(self, host, service, duration):
+        if not duration:
+            raise ValueError("'duration' attribute must be defined and positive.")
+
         start_dt = time.time()
         start_str = datetime.datetime.fromtimestamp(start_dt).strftime('%d-%m-%Y %H:%M:%S')
-        if duration is None:
-            print("ERROR: 'duration' attribute cannot be a NoneType")
-            return
 
         end_str = datetime.datetime.fromtimestamp(start_dt + (60 * duration)).strftime('%d-%m-%Y %H:%M:%S')
 
         ctp_host = self.format_host(host)
-        print(green(service))
         message = 'Deployment'
 
-        datas = {'cmd_typ': 56, 'cmd_mod': 2, 'host': '{}'.format(ctp_host), 'service': '{}'.format(service),
-                 'com_author': '{}'.format(self.user), 'com_data': '{}'.format(message), 'trigger': 0,
-                 'start_time': '{}'.format(start_str), 'end_time': '{}'.format(end_str), 'fixed': 1,
+        datas = {'cmd_typ': 56, 'cmd_mod': 2, 'host': ctp_host, 'service': service,
+                 'com_author': self.user, 'com_data': message, 'trigger': 0,
+                 'start_time': start_str, 'end_time': end_str, 'fixed': 1,
                  'hours': 2, 'minutes': 0, 'btnSubmit': 'Commit'}
 
-        requests.get("http://{}/cgi-bin/nagios3/cmd.cgi".format(self.url),
-                     auth=HTTPBasicAuth('{}'.format(self.user), '{}'.format(self.pwd)),
-                     params=datas, verify=False)
+        requests.get(self.url, auth=HTTPBasicAuth(self.user, self.pwd), params=datas, verify=False)
 
     def start_supervision(self, host, service):
         """
@@ -490,7 +488,7 @@ class NagiosSupervisionHandler(SupervisionHandler):
         pass
 
 
-def downtime(step):
+def supervision_downtime(step):
     """
     during the deployment, the supervision is stopping for specific services
     """

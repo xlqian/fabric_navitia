@@ -41,7 +41,7 @@ from fabfile.component.kraken import check_dead_instances
 from fabfile import utils
 from fabfile.utils import (get_bool_from_cli, show_version,
                            show_dead_kraken_status, TimeCollector,
-                           show_time_deploy, host_app_mapping, downtime)
+                           show_time_deploy, host_app_mapping, supervision_downtime)
 from prod_tasks import (remove_kraken_vip, switch_to_first_phase,
                         switch_to_second_phase, enable_all_nodes)
 
@@ -295,7 +295,7 @@ def upgrade_version():
 @task
 def upgrade_kraken(kraken_wait=True, up_confs=True):
     """Upgrade and restart all kraken instances"""
-    downtime(step='kraken')
+    supervision_downtime(step='kraken')
     kraken_wait = get_bool_from_cli(kraken_wait)
     execute(kraken.upgrade_engine_packages)
     execute(kraken.upgrade_monitor_kraken_packages)
