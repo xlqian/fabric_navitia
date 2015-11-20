@@ -41,8 +41,7 @@ import string
 import time
 import datetime
 import semver
-import abc
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
 import re
 
 import requests
@@ -435,14 +434,14 @@ def show_time_deploy(td, show=False):
 class SupervisionHandler(object):
     __metaclass__ = ABCMeta
 
-    @abc.abstractmethod
+    @abstractmethod
     def stop_supervision(self, host, service, duration=None):
         """
         TODO
         """
         return
 
-    @abc.abstractmethod
+    @abstractmethod
     def start_supervision(self, host, service):
         """
         TODO
@@ -471,6 +470,7 @@ class NagiosSupervisionHandler(SupervisionHandler):
         end_str = datetime.datetime.fromtimestamp(start_dt + (60 * duration)).strftime('%d-%m-%Y %H:%M:%S')
 
         ctp_host = self.format_host(host)
+        print(green(service))
         message = 'Deployment'
 
         datas = {'cmd_typ': 56, 'cmd_mod': 2, 'host': '{}'.format(ctp_host), 'service': '{}'.format(service),
@@ -490,20 +490,19 @@ class NagiosSupervisionHandler(SupervisionHandler):
         pass
 
 
-@contextmanager
-def alt_supervision(hosts, step, duration):
-    yield not env.supervision_handler
+def downtime(step):
+    """
+    during the deployment, the supervision is stopping for specific services
+    """
+    if not env.supervision_handler:
+        return
 
-    for host in hosts:
-        for instance in env.instances:
-            if step == 'bina':
-                service = 'data_ed_{}'.format(instance)
-            elif step == 'kraken':
-                service = 'kraken_{}'.format(instance)
+    step_data = env.supervision_config[step]
+    if step_data['downtime']:
+        for host in step_data['hosts']:
+            if '{instance}' in step_data['service']:
+                for instance in env.instances:
+                    service = step_data['service'].format(instance=instance)
+                    env.supervision_handler.stop_supervision(host, service, step_data['downtime'])
             else:
-                print("ERROR: '{}' attribute is not a valid step.".format(step))
-                continue
-
-            env.supervision_handler.stop_supervision(host, service, duration)
-            # yield
-            # env.supervision_handler.start_supervision(host, service)
+                env.supervision_handler.stop_supervision(host, step_data['service'], step_data['downtime'])

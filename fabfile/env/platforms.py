@@ -291,8 +291,23 @@ env.is_prod = False
 
 # use for supervision
 env.supervision_handler = None
-env.supervision_downtime_bina = 0
-env.supervision_downtime_kraken = 0
+env.supervision_config = dict(
+    tyr_beat=dict(
+        downtime=0,
+        hosts=[],
+        service=''
+    ),
+    bina=dict(
+        downtime=0,
+        hosts=[],
+        service=''
+    ),
+    kraken=dict(
+        downtime=0,
+        hosts=[],
+        service=''
+    )
+)
 
 @task
 def let(**kwargs):
