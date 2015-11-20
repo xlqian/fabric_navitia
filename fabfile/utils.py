@@ -41,6 +41,12 @@ import string
 import time
 import datetime
 import semver
+import abc
+from abc import ABCMeta
+import re
+
+import requests
+from requests.auth import HTTPBasicAuth
 
 from fabric.colors import green, yellow, red
 from fabric.context_managers import cd
@@ -426,50 +432,78 @@ def show_time_deploy(td, show=False):
     return time_deploy
 
 
-@roles('tyr_master')
-def downtime_request(host, start_date, end_date, service):
-    """ request for the downtime """
-    message = 'Deployment'
+class SupervisionHandler(object):
+    __metaclass__ = ABCMeta
 
-    run('curl --silent --show-error '
-        '--data cmd_typ=56 '
-        '--data cmd_mod=2 '
-        '--data host={} '
-        '--data service={} '
-        '--data "com_author={}" '
-        '--data "com_data={}" '
-        '--data trigger=0 '
-        '--data "start_time={}" '
-        '--data "end_time={}" '
-        '--data fixed=1 '
-        '--data hours=2 '
-        '--data minutes=0 '
-        '--data btnSubmit=Commit '
-        '--insecure '
-        'http://{}/cgi-bin/nagios3/cmd.cgi -u "{}:{}"'
-        .format(host, service, env.supervision_user, message, start_date,
-                end_date, env.supervision_url, env.supervision_user, env.supervision_password))
-
-
-def downtime_deployment(step='no'):
-    """ during the deployment on supervised hosts, activate downtime """
-    if not env.supervision_url:
+    @abc.abstractmethod
+    def stop_supervision(self, host, service, duration=None):
+        """
+        TODO
+        """
         return
-    tmp = time.time()
-    start_date = datetime.datetime.fromtimestamp(tmp).strftime('%d-%m-%Y %H:%M:%S')
 
-    if step == 'bina':
-        tmp += 60 * env.supervision_downtime_bina
-        end_date = datetime.datetime.fromtimestamp(tmp).strftime('%d-%m-%Y %H:%M:%S')
-        for host in env.supervision_host_tyr:
-            for instance in env.instances:
+    @abc.abstractmethod
+    def start_supervision(self, host, service):
+        """
+        TODO
+        """
+        return
+
+
+class NagiosSupervisionHandler(SupervisionHandler):
+    def __init__(self, url, user, pwd):
+        self.url = url
+        self.user = user
+        self.pwd = pwd
+
+    def format_host(self, host):
+        """the nagio supervisor only wants a short host name"""
+        move_host = re.compile(r'@(.*?)\.')
+        return move_host.search(host).group(1)
+
+    def stop_supervision(self, host, service, duration=None):
+        start_dt = time.time()
+        start_str = datetime.datetime.fromtimestamp(start_dt).strftime('%d-%m-%Y %H:%M:%S')
+        if duration is None:
+            print("ERROR: 'duration' attribute cannot be a NoneType")
+            return
+
+        end_str = datetime.datetime.fromtimestamp(start_dt + (60 * duration)).strftime('%d-%m-%Y %H:%M:%S')
+
+        ctp_host = self.format_host(host)
+        message = 'Deployment'
+
+        datas = {'cmd_typ': 56, 'cmd_mod': 2, 'host': '{}'.format(ctp_host), 'service': '{}'.format(service),
+                 'com_author': '{}'.format(self.user), 'com_data': '{}'.format(message), 'trigger': 0,
+                 'start_time': '{}'.format(start_str), 'end_time': '{}'.format(end_str), 'fixed': 1,
+                 'hours': 2, 'minutes': 0, 'btnSubmit': 'Commit'}
+
+        requests.get("http://{}/cgi-bin/nagios3/cmd.cgi".format(self.url),
+                     auth=HTTPBasicAuth('{}'.format(self.user), '{}'.format(self.pwd)),
+                     params=datas, verify=False)
+
+    def start_supervision(self, host, service):
+        """
+        for the moment we don't know how to put back the supervision
+        TODO
+        """
+        pass
+
+
+@contextmanager
+def alt_supervision(hosts, step, duration):
+    yield not env.supervision_handler
+
+    for host in hosts:
+        for instance in env.instances:
+            if step == 'bina':
                 service = 'data_ed_{}'.format(instance)
-                execute(downtime_request, host, start_date, end_date, service)
-    elif step == 'kraken':
-        tmp += 60 * env.supervision_downtime_kraken
-        end_date = datetime.datetime.fromtimestamp(tmp).strftime('%d-%m-%Y %H:%M:%S')
-        for host in env.supervision_host_eng:
-            for instance in env.instances:
+            elif step == 'kraken':
                 service = 'kraken_{}'.format(instance)
-                execute(downtime_request, host, start_date, end_date, service)
+            else:
+                print("ERROR: '{}' attribute is not a valid step.".format(step))
+                continue
 
+            env.supervision_handler.stop_supervision(host, service, duration)
+            # yield
+            # env.supervision_handler.start_supervision(host, service)

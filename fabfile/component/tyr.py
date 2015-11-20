@@ -47,7 +47,7 @@ from fabtools import require, python, files, service
 from fabfile.component import db
 from fabfile.component.kraken import get_no_data_instances
 from fabfile import utils
-from fabfile.utils import _install_packages, _upload_template, start_or_stop_with_delay
+from fabfile.utils import _install_packages, _upload_template, start_or_stop_with_delay, alt_supervision
 
 
 @task
@@ -372,40 +372,40 @@ def get_tyr_config(instance):
 @roles('tyr_master')
 def launch_rebinarization_upgrade(pilot_tyr_beat=True):
     """launch binarization on all instances for the upgrade"""
-
-    # avoid any other normal binarization during upgrade
-    if pilot_tyr_beat:
-        stop_tyr_beat()
-    # for each instance:
-    # - upgrade the ed database
-    # - binarize last processed data, blocking step (sync, which is good to
-    # ensure the binarization of this instance is done)
-    # - if kraken farm, disable the first engine kraken instance in lb; if
-    # standalone server nothing to do
-    # - restart corresponding kraken instance even if no data (to have the new
-    # binary)
-    # - test kraken instance via monitor-kraken
-    # - only continue to next instance if instance is ok, to avoid breaking all
-    # instances
-    try:
-        execute(get_no_data_instances)
-
-        def binarize_instance(i_name):
-            with utils.time_that(blue("data loaded for " + i_name + " in {elapsed}")):
-                print(blue("loading data for {}".format(i_name)))
-                update_ed_db(i_name)
-
-                if i_name in env.excluded_instances:
-                    print(blue("NOTICE: i_name {} has been excluded, skiping it".format(i_name)))
-                else:
-                    launch_rebinarization(i_name, True)
-
-            # we run the bina in parallele (if you want sequenciel run, set env.nb_thread_for_bina = 1)
-        with utils.Parallel(env.nb_thread_for_bina) as pool:
-            pool.map(binarize_instance, env.instances.keys())
-    finally:
+    with alt_supervision(env.roledefs['tyr'], 'bina', env.supervision_downtime_bina):
+        # avoid any other normal binarization during upgrade
         if pilot_tyr_beat:
-            start_tyr_beat()
+            stop_tyr_beat()
+        # for each instance:
+        # - upgrade the ed database
+        # - binarize last processed data, blocking step (sync, which is good to
+        # ensure the binarization of this instance is done)
+        # - if kraken farm, disable the first engine kraken instance in lb; if
+        # standalone server nothing to do
+        # - restart corresponding kraken instance even if no data (to have the new
+        # binary)
+        # - test kraken instance via monitor-kraken
+        # - only continue to next instance if instance is ok, to avoid breaking all
+        # instances
+        try:
+            execute(get_no_data_instances)
+
+            def binarize_instance(i_name):
+                with utils.time_that(blue("data loaded for " + i_name + " in {elapsed}")):
+                    print(blue("loading data for {}".format(i_name)))
+                    update_ed_db(i_name)
+
+                    if i_name in env.excluded_instances:
+                        print(blue("NOTICE: i_name {} has been excluded, skiping it".format(i_name)))
+                    else:
+                        launch_rebinarization(i_name, True)
+
+                # we run the bina in parallele (if you want sequenciel run, set env.nb_thread_for_bina = 1)
+            with utils.Parallel(env.nb_thread_for_bina) as pool:
+                pool.map(binarize_instance, env.instances.keys())
+        finally:
+            if pilot_tyr_beat:
+                start_tyr_beat()
 
 
 @task

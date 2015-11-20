@@ -289,12 +289,8 @@ env.use_protobuf_cpp = False
 
 env.is_prod = False
 
-# use for supervision by nagios
-env.supervision_user = ''
-env.supervision_password = ''
-env.supervision_url = ''
-env.supervision_host_tyr = {}
-env.supervision_host_eng = {}
+# use for supervision
+env.supervision_handler = None
 env.supervision_downtime_bina = 0
 env.supervision_downtime_kraken = 0
 
