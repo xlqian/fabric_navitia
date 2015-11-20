@@ -41,7 +41,7 @@ from fabfile.component.kraken import check_dead_instances
 from fabfile import utils
 from fabfile.utils import (get_bool_from_cli, show_version,
                            show_dead_kraken_status, TimeCollector,
-                           show_time_deploy, host_app_mapping)
+                           show_time_deploy, host_app_mapping, supervision_downtime)
 from prod_tasks import (remove_kraken_vip, switch_to_first_phase,
                         switch_to_second_phase, enable_all_nodes)
 
@@ -160,6 +160,7 @@ def deploy_prod_bina(up_confs=True, check_version=True, send_mail=False):
     print(yellow("Start time = {} || binarisation time = {:.2f}"
                  .format(time_start,
                          time_dict.get_duration('bina', format='hours'))))
+
 
 @task
 def deploy_prod_kraken(up_confs=True, kraken_wait=True, send_mail=False,
@@ -294,6 +295,7 @@ def upgrade_version():
 @task
 def upgrade_kraken(kraken_wait=True, up_confs=True):
     """Upgrade and restart all kraken instances"""
+    supervision_downtime(step='kraken')
     kraken_wait = get_bool_from_cli(kraken_wait)
     execute(kraken.upgrade_engine_packages)
     execute(kraken.upgrade_monitor_kraken_packages)
@@ -302,6 +304,7 @@ def upgrade_kraken(kraken_wait=True, up_confs=True):
         for instance in env.instances.values():
             execute(kraken.update_eng_instance_conf, instance)
     execute(kraken.restart_all_krakens, wait=kraken_wait)
+
 
 @task
 def upgrade_jormungandr(reload=True, up_confs=True):

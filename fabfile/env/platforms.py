@@ -289,6 +289,26 @@ env.use_protobuf_cpp = False
 
 env.is_prod = False
 
+# use for supervision
+env.supervision_handler = None
+env.supervision_config = dict(
+    tyr_beat=dict(
+        downtime=0,
+        hosts=[],
+        service=''
+    ),
+    bina=dict(
+        downtime=0,
+        hosts=[],
+        service=''
+    ),
+    kraken=dict(
+        downtime=0,
+        hosts=[],
+        service=''
+    )
+)
+
 @task
 def let(**kwargs):
     """

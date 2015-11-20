@@ -47,7 +47,7 @@ from fabtools import require, python, files, service
 from fabfile.component import db
 from fabfile.component.kraken import get_no_data_instances
 from fabfile import utils
-from fabfile.utils import _install_packages, _upload_template, start_or_stop_with_delay
+from fabfile.utils import _install_packages, _upload_template, start_or_stop_with_delay, supervision_downtime
 
 
 @task
@@ -361,7 +361,8 @@ def get_tyr_config(instance):
 @roles('tyr_master')
 def launch_rebinarization_upgrade(pilot_tyr_beat=True):
     """launch binarization on all instances for the upgrade"""
-
+    supervision_downtime(step='tyr_beat')
+    supervision_downtime(step='bina')
     # avoid any other normal binarization during upgrade
     if pilot_tyr_beat:
         stop_tyr_beat()

@@ -41,6 +41,11 @@ import string
 import time
 import datetime
 import semver
+from abc import ABCMeta, abstractmethod
+import re
+
+import requests
+from requests.auth import HTTPBasicAuth
 
 from fabric.colors import green, yellow, red
 from fabric.context_managers import cd
@@ -424,3 +429,78 @@ def show_time_deploy(td, show=False):
         print(yellow(time_deploy))
 
     return time_deploy
+
+
+class SupervisionHandler(object):
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def stop_supervision(self, host, service, duration=None):
+        """
+        stop the supervision for a service of a host
+        Optional: definition of a timer
+        """
+        return
+
+    @abstractmethod
+    def start_supervision(self, host, service):
+        """
+        start or restart the supervision for a service of a host
+        """
+        return
+
+
+class NagiosSupervisionHandler(SupervisionHandler):
+    def __init__(self, url, user, pwd):
+        self.url = url
+        self.user = user
+        self.pwd = pwd
+
+    def format_host(self, host):
+        """the nagio supervisor only wants a short host name"""
+        move_host = re.compile(r'@(.*?)\.')
+        return move_host.search(host).group(1)
+
+    def stop_supervision(self, host, service, duration):
+        if not duration:
+            raise ValueError("'duration' attribute must be defined and positive.")
+
+        start_dt = time.time()
+        start_str = datetime.datetime.fromtimestamp(start_dt).strftime('%d-%m-%Y %H:%M:%S')
+
+        end_str = datetime.datetime.fromtimestamp(start_dt + (60 * duration)).strftime('%d-%m-%Y %H:%M:%S')
+
+        ctp_host = self.format_host(host)
+        message = 'Deployment'
+
+        datas = {'cmd_typ': 56, 'cmd_mod': 2, 'host': ctp_host, 'service': service,
+                 'com_author': self.user, 'com_data': message, 'trigger': 0,
+                 'start_time': start_str, 'end_time': end_str, 'fixed': 1,
+                 'hours': 2, 'minutes': 0, 'btnSubmit': 'Commit'}
+
+        requests.get(self.url, auth=HTTPBasicAuth(self.user, self.pwd), params=datas, verify=False)
+
+    def start_supervision(self, host, service):
+        """
+        for the moment we don't know how to put back the supervision
+        TODO
+        """
+        pass
+
+
+def supervision_downtime(step):
+    """
+    during the deployment, the supervision is stopping for specific services
+    """
+    if not env.supervision_handler:
+        return
+
+    step_data = env.supervision_config[step]
+    if step_data['downtime']:
+        for host in step_data['hosts']:
+            if '{instance}' in step_data['service']:
+                for instance in env.instances:
+                    service = step_data['service'].format(instance=instance)
+                    env.supervision_handler.stop_supervision(host, service, step_data['downtime'])
+            else:
+                env.supervision_handler.stop_supervision(host, step_data['service'], step_data['downtime'])
