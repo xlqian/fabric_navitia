@@ -465,10 +465,11 @@ class NagiosSupervisionHandler(SupervisionHandler):
         if not duration:
             raise ValueError("'duration' attribute must be defined and positive.")
 
-        start_dt = time.time()
-        start_str = datetime.datetime.fromtimestamp(start_dt).strftime('%d-%m-%Y %H:%M:%S')
+        start_dt = datetime.datetime.now()
+        start_str = start_dt.strftime('%d-%m-%Y %H:%M:%S')
 
-        end_str = datetime.datetime.fromtimestamp(start_dt + (60 * duration)).strftime('%d-%m-%Y %H:%M:%S')
+        end_dt = start_dt + datetime.timedelta(minutes=duration)
+        end_str = end_dt.strftime('%d-%m-%Y %H:%M:%S')
 
         ctp_host = self.format_host(host)
         message = 'Deployment'
