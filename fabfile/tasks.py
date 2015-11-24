@@ -123,7 +123,7 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
         execute(kraken.swap_all_data_nav)
 
     time_dict.register_start('kraken')
-    execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
+    execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs, supervision=True)
     time_dict.register_end('kraken')
     execute(upgrade_jormungandr, up_confs=up_confs)
 
@@ -185,7 +185,7 @@ def deploy_prod_kraken(up_confs=True, kraken_wait=True, send_mail=False,
         raw_input(yellow("Please disable ENG1/WS1 and enable ENG2-4/WS2-4"))
     else:
         execute(switch_to_first_phase, env.eng_hosts_1, env.ws_hosts_1, env.ws_hosts_2)
-    execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
+    execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs, supervision=True)
     if check_dead:
         execute(check_dead_instances)
     execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
@@ -294,9 +294,10 @@ def upgrade_version():
         execute(tyr.update_ed_db, instance.name)
 
 @task
-def upgrade_kraken(kraken_wait=True, up_confs=True):
+def upgrade_kraken(kraken_wait=True, up_confs=True, supervision=False):
     """Upgrade and restart all kraken instances"""
-    supervision_downtime(step='kraken')
+    if supervision:
+        supervision_downtime(step='kraken')
     kraken_wait = get_bool_from_cli(kraken_wait)
     execute(kraken.upgrade_engine_packages)
     execute(kraken.upgrade_monitor_kraken_packages)
