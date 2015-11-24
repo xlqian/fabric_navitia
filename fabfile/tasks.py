@@ -251,7 +251,8 @@ def upgrade_tyr(up_confs=False, pilot_tyr_beat=True):
     execute(tyr.upgrade_db_tyr)
     if up_confs:
         tyr.update_tyr_confs()
-    restart_tyr(pilot_tyr_beat)
+    if pilot_tyr_beat:
+        restart_tyr(pilot_tyr_beat)
 
 @task
 def restart_tyr(tyr_beat=True):
