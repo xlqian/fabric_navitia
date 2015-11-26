@@ -108,7 +108,6 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
         exit(1)
     if check_version:
         execute(compare_version_candidate_installed, host_name='tyr')
-        return
     execute(check_last_dataset)
     if send_mail in ('start', 'all'):
         broadcast_email('start')
