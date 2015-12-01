@@ -107,7 +107,7 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
         print(red("This task is not for PROD plateform !!!"))
         exit(1)
     if check_version:
-        execute(compare_version_candidate_installed)
+        execute(compare_version_candidate_installed, host_name='tyr')
     execute(check_last_dataset)
     if send_mail in ('start', 'all'):
         broadcast_email('start')
@@ -120,7 +120,10 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
         time_dict.register_start('bina')
         execute(tyr.launch_rebinarization_upgrade, pilot_tyr_beat=False)
         time_dict.register_end('bina')
-        execute(kraken.swap_all_data_nav)
+
+    if check_version:
+        execute(compare_version_candidate_installed)
+    execute(kraken.swap_all_data_nav)
 
     time_dict.register_start('kraken')
     execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs, supervision=True)
@@ -134,7 +137,6 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
     status += show_time_deploy(time_dict)
     if send_mail in ('end', 'all'):
         broadcast_email('end', status)
-
 
 @task
 def deploy_prod_bina(up_confs=True, check_version=True, send_mail=False):
