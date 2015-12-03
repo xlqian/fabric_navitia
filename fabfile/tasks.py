@@ -250,7 +250,7 @@ def upgrade_tyr(up_confs=False, pilot_tyr_beat=True):
     execute(tyr.upgrade_tyr_packages)
     execute(tyr.setup_tyr_master)
     execute(tyr.upgrade_ed_packages)
-    execute(tyr.upgrade_db_tyr)
+    execute(tyr.upgrade_db_tyr, pilot_tyr_beat=pilot_tyr_beat)
     if up_confs:
         tyr.update_tyr_confs()
     if pilot_tyr_beat:
