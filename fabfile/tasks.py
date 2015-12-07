@@ -97,15 +97,13 @@ def upgrade_all_packages():
 
 @task
 def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True,
-                send_mail='no'):
+                send_mail='no', manual_lb=False, check_dead=True):
     """Upgrade all navitia packages, databases and launch rebinarisation of all instances """
     check_version = get_bool_from_cli(check_version)
     up_tyr = get_bool_from_cli(up_tyr)
     up_confs = get_bool_from_cli(up_confs)
     kraken_wait = get_bool_from_cli(kraken_wait)
-    if env.use_load_balancer:
-        print(red("This task is not for PROD plateform !!!"))
-        exit(1)
+
     if check_version:
         execute(compare_version_candidate_installed, host_name='tyr')
     execute(check_last_dataset)
@@ -125,10 +123,40 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
         execute(compare_version_candidate_installed)
     execute(kraken.swap_all_data_nav)
 
-    time_dict.register_start('kraken')
-    execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs, supervision=True)
-    time_dict.register_end('kraken')
-    execute(upgrade_jormungandr, up_confs=up_confs)
+    if env.use_load_balancer:
+        # Upgrade kraken/jormun on first hosts set
+        env.roledefs['eng'] = env.eng_hosts_1
+        env.roledefs['ws'] = env.ws_hosts_1
+        if manual_lb:
+            raw_input(yellow("Please disable ENG1/WS1 and enable ENG2-4/WS2-4"))
+        else:
+            execute(switch_to_first_phase, env.eng_hosts_1, env.ws_hosts_1, env.ws_hosts_2)
+        time_dict.register_start('kraken')
+        execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs, supervision=True)
+        if check_dead:
+            execute(check_dead_instances)
+        execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
+
+        # Upgrade kraken/jormun on remaining hosts
+        env.roledefs['eng'] = env.eng_hosts_2
+        env.roledefs['ws'] = env.ws_hosts_2
+        if manual_lb:
+            raw_input(yellow("Please enable ENG1/WS1 and disable ENG2-4/WS2-4"))
+        else:
+            execute(switch_to_second_phase, env.eng_hosts_1, env.eng_hosts_2,
+                    env.ws_hosts_1,  env.ws_hosts_2)
+        execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
+        time_dict.register_end('kraken')
+        execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
+        if not manual_lb:
+            execute(enable_all_nodes, env.eng_hosts, env.ws_hosts_1,  env.ws_hosts_2)
+        env.roledefs['eng'] = env.eng_hosts
+        env.roledefs['ws'] = env.ws_hosts
+    else:
+        time_dict.register_start('kraken')
+        execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs, supervision=True)
+        time_dict.register_end('kraken')
+        execute(upgrade_jormungandr, up_confs=up_confs)
 
     execute(tyr.start_tyr_beat)
     time_dict.register_end('total_deploy')
@@ -138,89 +166,9 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
     if send_mail in ('end', 'all'):
         broadcast_email('end', status)
 
-@task
-def deploy_prod_bina(up_confs=True, check_version=True, send_mail=False):
-    """Upgrade all navitia packages, databases and launch rebinarisation of all instances """
-    check_version = get_bool_from_cli(check_version)
-    up_confs = get_bool_from_cli(up_confs)
-    if check_version:
-        execute(compare_version_candidate_installed, host_name='tyr')
-    execute(check_last_dataset)
-    time_start = datetime.datetime.now()
-    status = "\n\nStart deployment : {}".format(time_start)
-    if send_mail:
-        broadcast_email('start', status)
-
-    time_dict = TimeCollector()
-    execute(tyr.stop_tyr_beat)
-
-    execute(upgrade_tyr, up_confs=up_confs, pilot_tyr_beat=False)
-    time_dict.register_start('bina')
-    execute(tyr.launch_rebinarization_upgrade, pilot_tyr_beat=False)
-    time_dict.register_end('bina')
-
-    print(yellow("Start time = {} || binarisation time = {:.2f}"
-                 .format(time_start,
-                         time_dict.get_duration('bina', format='hours'))))
-
-
-@task
-def deploy_prod_kraken(up_confs=True, kraken_wait=True, send_mail=False,
-                       check_dead=True, check_version=True,
-                       manual_lb=False, time_bina='no'):
-    up_confs = get_bool_from_cli(up_confs)
-    check_version = get_bool_from_cli(check_version)
-    check_dead = get_bool_from_cli(check_dead)
-    kraken_wait = get_bool_from_cli(kraken_wait)
-    if check_version:
-        execute(compare_version_candidate_installed)
-    execute(check_last_dataset)
-    execute(kraken.swap_all_data_nav)
-
-    time_dict = TimeCollector()
-
-    # Upgrade kraken/jormun on first hosts set
-    env.roledefs['eng'] = env.eng_hosts_1
-    env.roledefs['ws'] = env.ws_hosts_1
-    time_dict.register_start('kraken')
-    if manual_lb:
-        raw_input(yellow("Please disable ENG1/WS1 and enable ENG2-4/WS2-4"))
-    else:
-        execute(switch_to_first_phase, env.eng_hosts_1, env.ws_hosts_1, env.ws_hosts_2)
-    execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs, supervision=True)
-    if check_dead:
-        execute(check_dead_instances)
-    execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
-
-    # Upgrade kraken/jormun on remaining hosts
-    env.roledefs['eng'] = env.eng_hosts_2
-    env.roledefs['ws'] = env.ws_hosts_2
-    if manual_lb:
-        raw_input(yellow("Please enable ENG1/WS1 and disable ENG2-4/WS2-4"))
-    else:
-        execute(switch_to_second_phase, env.eng_hosts_1, env.eng_hosts_2,
-                env.ws_hosts_1,  env.ws_hosts_2)
-    execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
-    time_dict.register_end('kraken')
-    execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
-    if not manual_lb:
-        execute(enable_all_nodes, env.eng_hosts, env.ws_hosts_1,  env.ws_hosts_2)
-    env.roledefs['eng'] = env.eng_hosts
-    env.roledefs['ws'] = env.ws_hosts
-
-    execute(tyr.start_tyr_beat)
-    time_end = datetime.datetime.now()
-    warn_dict = jormungandr.check_kraken_jormun_after_deploy()
-    status = show_dead_kraken_status(warn_dict, show=True)
-    status += show_time_deploy(time_dict)
-    status += "\nBinarization time: {} hours".format(time_bina)
-    status += "\n\nEnd deployment : {}\n".format(time_end)
-    if send_mail:
-        broadcast_email('end', status)
-    if manual_lb:
+    if env.use_load_balancer and manual_lb:
         print(yellow("Please enable ENG1-4/WS1-4"))
 
-    print(yellow("End time = {}".format(time_end)))
 
 @task
 def broadcast_email(kind, status=None):
