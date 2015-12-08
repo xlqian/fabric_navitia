@@ -160,10 +160,10 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
 
     execute(tyr.start_tyr_beat)
     time_dict.register_end('total_deploy')
-    warn_dict = jormungandr.check_kraken_jormun_after_deploy()
-    status = show_dead_kraken_status(warn_dict, show=True)
-    status += show_time_deploy(time_dict)
     if send_mail in ('end', 'all'):
+        warn_dict = jormungandr.check_kraken_jormun_after_deploy()
+        status = show_dead_kraken_status(warn_dict, show=True)
+        status += show_time_deploy(time_dict)
         broadcast_email('end', status)
 
     if env.use_load_balancer and manual_lb:
