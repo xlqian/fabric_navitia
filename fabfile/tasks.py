@@ -44,7 +44,7 @@ from fabfile.utils import (get_bool_from_cli, show_version,
                            show_time_deploy, host_app_mapping, supervision_downtime)
 from prod_tasks import (remove_kraken_vip, switch_to_first_phase,
                         switch_to_second_phase, enable_all_nodes)
-
+from fabfile.component.load_balancer import _adc_connection
 
 #############################################
 #                                           #
@@ -106,6 +106,15 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
 
     if check_version:
         execute(compare_version_candidate_installed, host_name='tyr')
+
+    if env.use_load_balancer:
+        if manual_lb:
+            print(yellow("WARNING : you are in MANUAL mode :\n"
+                         "Check frequently for message asking you to switch nodes manually"))
+        else:
+            # check credential NOW
+            _adc_connection(check=True)
+
     execute(check_last_dataset)
     if send_mail in ('start', 'all'):
         broadcast_email('start')
