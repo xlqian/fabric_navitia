@@ -186,17 +186,12 @@ def upgrade_ed_packages():
 @task
 @roles('tyr_master')
 def update_ed_db(instance):
-    """ upgrade the instance database schema """
-    if exists("%s/%s" % (env.ed_basedir, instance)):
-        if env.dry_run is True:
-            print("cd {env}/{instance}; PYTHONPATH=. alembic upgrade head"
-                  .format(env=env.ed_basedir, instance=instance))
-        else:
-            with cd("{env}/{instance}".format(env=env.ed_basedir, instance=instance)):
-                run("PYTHONPATH=. alembic upgrade head")
-    else:
-        print(red("ERROR: {env}/{instance} does not exists. skipping db update"
-                  .format(env=env.ed_basedir, instance=instance)))
+    """ upgrade the instance database schema
+        "cd" command is executed manually (not in a context manager)
+        because it is not good to use global variable with parallel
+    """
+    path = "{env}/{instance}".format(env=env.ed_basedir, instance=instance)
+    run("cd " + path + " && PYTHONPATH=. alembic upgrade head")
 
 
 # TODO: testme
@@ -405,11 +400,13 @@ def launch_rebinarization(instance, use_temp=False):
         During upgrade, we need to regenerate data.nav.lz4 file because of
         serialization objects changes; we have to find the last input file
         processed
+        "cd" command is executed manually (not in a context manager)
+        because it is not good to use global variable with parallel
     """
-    with cd(env.tyr_basedir), shell_env(TYR_CONFIG_FILE=env.tyr_settings_file), settings(user=env.KRAKEN_USER):
+    with shell_env(TYR_CONFIG_FILE=env.tyr_settings_file), settings(user=env.KRAKEN_USER):
         print(blue("NOTICE: launching binarization on {} @{}".format(instance, time.strftime('%H:%M:%S'))))
         try:
-            run("python manage.py import_last_dataset {}{}".
+            run("cd " + env.tyr_basedir + " && python manage.py import_last_dataset {}{}".
                 format(instance, ' --custom_output_dir temp' if use_temp else ''))
         except:
             print(red("ERROR: failed binarization on {}".format(instance)))
