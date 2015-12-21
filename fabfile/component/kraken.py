@@ -462,7 +462,7 @@ def create_eng_instance(instance):
                "waiting 5 seconds, we will check if processus is running".format(
         instance=instance.name, server=get_host_addr(env.host_string))))
 
-    service.start("kraken_{} start".format(instance.name))
+    service.start("kraken_{}".format(instance.name))
     run("sleep 5")  # we wait a bit for the kraken to pop
 
     # test it !
