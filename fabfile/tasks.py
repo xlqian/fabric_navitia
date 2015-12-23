@@ -121,8 +121,9 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
 
     time_dict = TimeCollector()
     time_dict.register_start('total_deploy')
-    execute(tyr.stop_tyr_beat)
+
     if up_tyr:
+        execute(tyr.stop_tyr_beat)
         execute(upgrade_tyr, up_confs=up_confs, pilot_tyr_beat=False)
         time_dict.register_start('bina')
         execute(tyr.launch_rebinarization_upgrade, pilot_tyr_beat=False)
@@ -167,7 +168,8 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
         time_dict.register_end('kraken')
         execute(upgrade_jormungandr, up_confs=up_confs)
 
-    execute(tyr.start_tyr_beat)
+    if up_tyr:
+        execute(tyr.start_tyr_beat)
     time_dict.register_end('total_deploy')
     if send_mail in ('end', 'all'):
         warn_dict = jormungandr.check_kraken_jormun_after_deploy()
