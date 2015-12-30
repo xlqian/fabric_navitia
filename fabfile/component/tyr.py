@@ -578,15 +578,6 @@ def remove_tyr_instance(instance, purge_logs=False):
         # ex.: /var/log/tyr/northwest.log
         run("rm --force %s/%s.log" % (env.tyr_base_logdir, instance))
 
-    # purge instance in jormungandr database
-    execute(db.remove_instance_from_jormun_database, instance)
-
-    # purge the instance database and user
-    with warn_only():
-        execute(db.remove_postgresql_database, db.instance2postgresql_name(instance))
-        execute(db.remove_postgresql_user, db.instance2postgresql_name(instance))
-
-
 
 @task
 @roles('tyr')
@@ -603,8 +594,10 @@ def remove_at_instance(instance):
 def remove_ed_instance(instance):
     """Remove a ed instance entirely"""
     run("rm -rf %s/%s" % (env.ed_basedir, instance))
-    run("rm -rf %s/%s" % (env.tyr_base_destination_dir, instance))
-    run("rm -rf %s/%s" % (env.tyr_base_backup_dir, instance))
+    if env.tyr_base_destination_dir:
+        run("rm -rf %s/%s" % (env.tyr_base_destination_dir, instance))
+    if env.tyr_base_backup_dir:
+        run("rm -rf %s/%s" % (env.tyr_base_backup_dir, instance))
 
 
 @task

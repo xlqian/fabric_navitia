@@ -45,6 +45,7 @@ from fabfile.utils import (get_bool_from_cli, show_version,
 from prod_tasks import (remove_kraken_vip, switch_to_first_phase,
                         switch_to_second_phase, enable_all_nodes)
 from fabfile.component.load_balancer import _adc_connection
+from fabric.context_managers import warn_only
 
 #############################################
 #                                           #
@@ -415,16 +416,21 @@ def update_instance(instance):
     execute(tyr.deploy_default_synonyms, instance)
 
 @task
-def remove_instance(instance):
-    """Completely remove all components for a given instance"""
-    #TODO: deprecated, change with new instance handling
-    execute(tyr.remove_ed_instance, instance)
+def remove_instance(instance, admin=False):
+    """Completely remove all components for a given instance
+    Remove ed instance in jormungandr PostgreSQL db only
+    """
     execute(db.remove_instance_from_jormun_database, instance)
-    execute(kraken.remove_kraken_instance, instance)
+    with warn_only():
+        execute(db.remove_postgresql_database, db.instance2postgresql_name(instance))
+        execute(db.remove_postgresql_user, db.instance2postgresql_name(instance))
+
+    execute(tyr.remove_ed_instance, instance)
     execute(tyr.remove_tyr_instance, instance)
+    execute(kraken.remove_kraken_instance, instance)
     execute(jormungandr.remove_jormungandr_instance, instance)
-    execute(tyr.remove_ed_instance, instance)  # @guikcd, done twice ?
-    execute(remove_kraken_vip, instance)  # @guikcd only for not standalone no ?
+    if admin:
+        execute(remove_kraken_vip, instance)
 
 
 # TODO: test all rename_*

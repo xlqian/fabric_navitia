@@ -217,6 +217,8 @@ env.tyr_broker_username = 'guest'
 env.tyr_broker_password = 'guest'
 env.tyr_broker_exchange = 'navitia'
 
+env.tyr_base_backup_dir = ''
+env.tyr_base_destination_dir = ''
 env.tyr_base_instances_dir = '/etc/tyr.d'
 env.tyr_basedir = '/srv/tyr'
 env.tyr_base_logdir = '/var/log/tyr'
