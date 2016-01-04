@@ -431,20 +431,3 @@ def remove_instance(instance, admin=False):
     execute(jormungandr.remove_jormungandr_instance, instance)
     if admin:
         execute(remove_kraken_vip, instance)
-
-
-# TODO: test all rename_*
-@task
-def rename_instance(current_instance, new_instance):
-    """ Rename a given instance with new name
-        to keep databases item authorization"""
-    execute(tyr.stop_tyr_worker)
-    execute(tyr.rename_tyr_instance, current_instance, new_instance)
-    execute(jormungandr.remove_jormungandr_instance, current_instance)
-    execute(tyr.remove_tyr_instance, current_instance)
-
-    execute(db.rename_postgresql_database,
-            db.instance2postgresql_name(current_instance),
-            db.instance2postgresql_name(new_instance))
-    execute(db.rename_tyr_jormungandr_database, current_instance, new_instance)
-
