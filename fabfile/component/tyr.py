@@ -600,23 +600,6 @@ def remove_ed_instance(instance):
         run("rm -rf %s/%s" % (env.tyr_base_backup_dir, instance))
 
 
-@task
-@roles('tyr')
-def rename_tyr_instance(current_instance, new_instance):
-
-    # prepare the new instance name by creating all directory and files
-    utils.require_directory(os.path.join(env.ed_basedir, new_instance),
-                            owner=env.KRAKEN_USER, group=env.KRAKEN_USER, use_sudo=True)
-
-    # current data.nav.lz4
-    # FIXME: source dir is not the same on all platforms
-    run("cp {basedir}/{current_instance}/{datanav} {basedir}/{new_instance}/"
-        .format(basedir=env.ed_basedir,
-                current_instance=current_instance,
-                datanav=env.kraken_data_nav,
-                new_instance=new_instance))
-
-
 @roles('tyr')
 def deploy_default_synonyms(instance):
     """

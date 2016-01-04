@@ -493,9 +493,3 @@ def remove_kraken_instance(instance, purge_logs=False):
         # ex.: /var/log/kraken/navitia-bretagne.log
         run("rm --force %s-%s.log" % (env.kraken_log_name, instance.name))
 
-
-@task
-@roles('eng')
-def rename_kraken_instance(instance):
-    """Rename a kraken instance"""
-    pass
