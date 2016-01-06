@@ -47,7 +47,9 @@ from fabtools import require, python, files, service
 from fabfile.component import db
 from fabfile.component.kraken import get_no_data_instances
 from fabfile import utils
-from fabfile.utils import _install_packages, _upload_template, start_or_stop_with_delay, supervision_downtime
+from fabfile.utils import (_install_packages, _upload_template,
+                           start_or_stop_with_delay, supervision_downtime,
+                           get_real_instance)
 
 
 @task
@@ -578,15 +580,6 @@ def remove_tyr_instance(instance, purge_logs=False):
         # ex.: /var/log/tyr/northwest.log
         run("rm --force %s/%s.log" % (env.tyr_base_logdir, instance))
 
-    # purge instance in jormungandr database
-    execute(db.remove_instance_from_jormun_database, instance)
-
-    # purge the instance database and user
-    with warn_only():
-        execute(db.remove_postgresql_database, db.instance2postgresql_name(instance))
-        execute(db.remove_postgresql_user, db.instance2postgresql_name(instance))
-
-
 
 @task
 @roles('tyr')
@@ -602,26 +595,12 @@ def remove_at_instance(instance):
 @roles('tyr')
 def remove_ed_instance(instance):
     """Remove a ed instance entirely"""
-    run("rm -rf %s/%s" % (env.ed_basedir, instance))
-    run("rm -rf %s/%s" % (env.tyr_base_destination_dir, instance))
-    run("rm -rf %s/%s" % (env.tyr_base_backup_dir, instance))
-
-
-@task
-@roles('tyr')
-def rename_tyr_instance(current_instance, new_instance):
-
-    # prepare the new instance name by creating all directory and files
-    utils.require_directory(os.path.join(env.ed_basedir, new_instance),
-                            owner=env.KRAKEN_USER, group=env.KRAKEN_USER, use_sudo=True)
-
-    # current data.nav.lz4
-    # FIXME: source dir is not the same on all platforms
-    run("cp {basedir}/{current_instance}/{datanav} {basedir}/{new_instance}/"
-        .format(basedir=env.ed_basedir,
-                current_instance=current_instance,
-                datanav=env.kraken_data_nav,
-                new_instance=new_instance))
+    ed_dir = get_real_instance(instance).base_ed_dir
+    destination_dir = get_real_instance(instance).base_destination_dir
+    backup_dir = get_real_instance(instance).backup_dir
+    run("rm -rf %s" % ed_dir)
+    run("rm -rf %s" % destination_dir)
+    run("rm -rf %s" % backup_dir)
 
 
 @roles('tyr')

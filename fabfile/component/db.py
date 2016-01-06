@@ -39,11 +39,6 @@ from fabtools import require
 from fabfile.utils import  get_psql_version, _upload_template
 
 
-def instance2postgresql_name(instance):
-    #DEPRECATED
-    """Return the database name after applying our rules"""
-    return "ed_{}".format(instance.replace('-', '_'))
-
 @task
 @roles('db')
 def start_services():
@@ -162,21 +157,6 @@ def create_postgresql_database(database, username=None):
 
 @task
 @roles('db')
-def rename_postgresql_database(current_database, new_database):
-    """ Rename a postgresql database and the SAME corresponding username"""
-
-    _upload_template("db/rename_postgresql_database_user.sql.jinja",
-            "/var/lib/postgresql/postgres_{}.sql".format(current_database),
-            context={
-                'current_database': current_database,
-                'new_database': new_database,
-            }
-    )
-    run('su - postgres --command="psql postgres < /var/lib/postgresql/postgres_{}.sql"'.format(current_database))
-    run("rm -f /var/lib/postgresql/postgres_{}.sql".format(current_database))
-
-@task
-@roles('db')
 def remove_postgresql_database(database):
     """Remove a postgresql database"""
     run('su - postgres --command="dropdb {database}"'
@@ -224,22 +204,6 @@ def remove_instance_from_jormun_database(instance):
     run('su - postgres --command="psql jormungandr < /var/lib/postgresql/postgres_{}.sql"'.format(instance))
     run("rm -f /var/lib/postgresql/postgres_{}.sql".format(instance))
 
-
-@task
-@roles('db')
-def rename_tyr_jormungandr_database(current_instance, new_instance):
-    """ Rename the instance id in the jormungandr database """
-
-    _upload_template("db/rename_tyr_jormungandr_database.sql.jinja", \
-            "/var/lib/postgresql/postgres_{}.sql".format(current_instance),
-            context={
-                'current_database': current_instance,
-                'new_database': new_instance,
-            }
-    )
-    run('su - postgres --command="psql {} < /var/lib/postgresql/postgres_{}.sql"'
-            .format(env.jormungandr_postgresql_database, current_instance))
-    run("rm -f /var/lib/postgresql/postgres_{}.sql".format(current_instance))
 
 
 @task
