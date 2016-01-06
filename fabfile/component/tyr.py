@@ -47,7 +47,9 @@ from fabtools import require, python, files, service
 from fabfile.component import db
 from fabfile.component.kraken import get_no_data_instances
 from fabfile import utils
-from fabfile.utils import _install_packages, _upload_template, start_or_stop_with_delay, supervision_downtime
+from fabfile.utils import (_install_packages, _upload_template,
+                           start_or_stop_with_delay, supervision_downtime,
+                           get_real_instance)
 
 
 @task
@@ -593,11 +595,12 @@ def remove_at_instance(instance):
 @roles('tyr')
 def remove_ed_instance(instance):
     """Remove a ed instance entirely"""
-    run("rm -rf %s/%s" % (env.ed_basedir, instance))
-    if env.tyr_base_destination_dir:
-        run("rm -rf %s/%s" % (env.tyr_base_destination_dir, instance))
-    if env.tyr_base_backup_dir:
-        run("rm -rf %s/%s" % (env.tyr_base_backup_dir, instance))
+    ed_dir = get_real_instance(instance).base_ed_dir
+    destination_dir = get_real_instance(instance).base_destination_dir
+    backup_dir = get_real_instance(instance).backup_dir
+    run("rm -rf %s" % ed_dir)
+    run("rm -rf %s" % destination_dir)
+    run("rm -rf %s" % backup_dir)
 
 
 @roles('tyr')

@@ -39,11 +39,6 @@ from fabtools import require
 from fabfile.utils import  get_psql_version, _upload_template
 
 
-def instance2postgresql_name(instance):
-    #DEPRECATED
-    """Return the database name after applying our rules"""
-    return "ed_{}".format(instance.replace('-', '_'))
-
 @task
 @roles('db')
 def start_services():

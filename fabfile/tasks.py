@@ -41,11 +41,12 @@ from fabfile.component.kraken import check_dead_instances
 from fabfile import utils
 from fabfile.utils import (get_bool_from_cli, show_version,
                            show_dead_kraken_status, TimeCollector,
-                           show_time_deploy, host_app_mapping, supervision_downtime)
+                           show_time_deploy, host_app_mapping,
+                           supervision_downtime, get_real_instance)
 from prod_tasks import (remove_kraken_vip, switch_to_first_phase,
                         switch_to_second_phase, enable_all_nodes)
 from fabfile.component.load_balancer import _adc_connection
-from fabric.context_managers import warn_only
+
 
 #############################################
 #                                           #
@@ -418,16 +419,15 @@ def update_instance(instance):
 @task
 def remove_instance(instance, admin=False):
     """Completely remove all components for a given instance
-    Remove ed instance in jormungandr PostgreSQL db only
+    Remove instance in jormungandr db manually
+    TODO: remove instance db automatically
     """
     execute(db.remove_instance_from_jormun_database, instance)
-    with warn_only():
-        execute(db.remove_postgresql_database, db.instance2postgresql_name(instance))
-        execute(db.remove_postgresql_user, db.instance2postgresql_name(instance))
-
+    execute(db.remove_postgresql_database, get_real_instance(instance).db_name)
+    execute(db.remove_postgresql_user, get_real_instance(instance).db_user)
     execute(tyr.remove_ed_instance, instance)
     execute(tyr.remove_tyr_instance, instance)
     execute(kraken.remove_kraken_instance, instance)
     execute(jormungandr.remove_jormungandr_instance, instance)
-    if admin:
+    if admin and env.use_load_balancer:
         execute(remove_kraken_vip, instance)
