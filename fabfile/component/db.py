@@ -36,7 +36,7 @@ from fabric.operations import run, sudo
 from fabric.tasks import execute
 from fabric.api import env
 from fabtools import require
-from fabfile.utils import  get_psql_version, _upload_template
+from fabfile.utils import  get_psql_version, _upload_template, get_real_instance
 
 
 @task
@@ -245,3 +245,14 @@ def create_instance_db(instance):
 
     require.postgres.user(postgresql_user, instance.db_password)
     require.postgres.database(postgresql_database, postgresql_user)
+
+@task
+@roles('db')
+def create_privileges_instance_db(instance):
+    postgres_database = get_real_instance(instance).db_name
+    postgres_connection_user = 'sudo -i -u postgres psql -A -t --dbname={}'.format(postgres_database)
+
+    for table in env.postgres_tables:
+        run('{} -c "GRANT SELECT ON ALL TABLES IN SCHEMA {} TO {};"'
+            .format(postgres_connection_user, table, postgres_database))
+
