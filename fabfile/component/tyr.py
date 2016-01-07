@@ -154,6 +154,7 @@ def upgrade_tyr_packages():
     _upload_template('tyr/tyr_worker.jinja', env.tyr_worker_service_file,
                      user='root', mode='755', context={'env': env})
 
+
 @task
 @roles('tyr_master')
 def upgrade_db_tyr(pilot_tyr_beat=True):
@@ -162,6 +163,14 @@ def upgrade_db_tyr(pilot_tyr_beat=True):
     if pilot_tyr_beat:
         require.service.start('tyr_beat')
     require.service.start('tyr_worker')
+
+
+@task
+@roles('tyr_master')
+def upgrade_cities_db():
+    with cd(env.tyr_basedir):
+        run("alembic --config cities_alembic.ini upgrade head")
+
 
 @task
 @roles('tyr_master')
@@ -493,8 +502,20 @@ def test_tyr_backup_file_presence():
 @task
 def update_tyr_confs():
     execute(update_tyr_conf)
+    execute(update_cities_conf)
     for instance in env.instances.values():
         execute(update_tyr_instance_conf, instance)
+
+
+@task
+@roles('tyr_master')
+def update_cities_conf():
+
+    _upload_template("tyr/cities_alembic.ini.jinja",
+                     "{}/cities_alembic.ini".format(env.tyr_basedir),
+                     context={'env': env})
+
+
 
 @task
 @roles('tyr')

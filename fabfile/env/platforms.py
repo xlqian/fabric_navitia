@@ -282,7 +282,10 @@ env.kraken_database_file = '{base_dest}/{instance}/data.nav.lz4'
 #in general we don't want to configure apache
 env.setup_apache = False
 
-env.cities_database_uri = None
+env.use_cities = True
+env.cities_db_name = 'cities'
+env.cities_db_password = 'password'
+env.cities_db_user = 'navitia'
 
 #use protobuff cpp implementation (needs up to date probobuf version (at least 2.6))
 env.use_protobuf_cpp = False

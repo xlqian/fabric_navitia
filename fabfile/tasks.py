@@ -214,8 +214,10 @@ def upgrade_tyr(up_confs=False, pilot_tyr_beat=True):
     execute(tyr.upgrade_db_tyr, pilot_tyr_beat=pilot_tyr_beat)
     if up_confs:
         tyr.update_tyr_confs()
+    execute(tyr.upgrade_cities_db)
     if pilot_tyr_beat:
         restart_tyr(pilot_tyr_beat)
+
 
 @task
 def restart_tyr(tyr_beat=True):

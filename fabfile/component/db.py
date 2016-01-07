@@ -55,10 +55,16 @@ def setup_db():
         if "postgis" in package and "postgres" in package and not "doc" in package:
             require.deb.package(package.replace(',', ''))
 
-    # db creation
+    # tyr db creation
     require.postgres.user(env.tyr_postgresql_user, env.tyr_postgresql_password)
     require.postgres.database(env.tyr_postgresql_database, owner=env.tyr_postgresql_user, locale='en_US.UTF-8')
     postgis_initdb(env.tyr_postgresql_database)
+
+    #cities db creation
+    if env.use_cities:
+        require.postgres.user(env.cities_db_user, env.cities_db_password)
+        require.postgres.database(env.cities_db_name, owner=env.cities_db_user, locale='en_US.UTF-8')
+        postgis_initdb(env.cities_db_name)
 
 @task
 @roles('db')
