@@ -66,6 +66,11 @@ def setup_db():
         require.postgres.database(env.cities_db_name, owner=env.cities_db_user, locale='en_US.UTF-8')
         postgis_initdb(env.cities_db_name)
 
+    # read_only user db creation
+    require.postgres.user(env.postgres_read_only_user, env.postgres_read_only_password)
+    require.postgres.database(env.postgres_read_only_database, owner=env.postgres_read_only_user, locale='en_US.UTF-8')
+    postgis_initdb(env.postgres_read_only_database)
+
 @task
 @roles('db')
 def postgis_initdb(instance_db):
@@ -252,7 +257,7 @@ def create_privileges_instance_db(instance):
     postgres_database = get_real_instance(instance).db_name
     postgres_connection_user = 'sudo -i -u postgres psql -A -t --dbname={}'.format(postgres_database)
 
-    for table in env.postgres_tables:
+    for schema in env.postgres_schemas:
         run('{} -c "GRANT SELECT ON ALL TABLES IN SCHEMA {} TO {};"'
-            .format(postgres_connection_user, table, postgres_database))
+            .format(postgres_connection_user, schema, env.postgres_read_only_user))
 
