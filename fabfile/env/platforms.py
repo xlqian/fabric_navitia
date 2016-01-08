@@ -246,7 +246,6 @@ env.tyr_postgresql_password = 'jormungandr'
 
 
 # variables for read_only user
-env.postgres_read_only_database = 'read_only'
 env.postgres_read_only_user = 'read_only'
 env.postgres_read_only_password = 'read_only'
 env.postgres_schemas = ['georef', 'public', 'navitia']

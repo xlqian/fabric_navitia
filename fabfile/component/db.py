@@ -68,8 +68,7 @@ def setup_db():
 
     # read_only user db creation
     require.postgres.user(env.postgres_read_only_user, env.postgres_read_only_password)
-    require.postgres.database(env.postgres_read_only_database, owner=env.postgres_read_only_user, locale='en_US.UTF-8')
-    postgis_initdb(env.postgres_read_only_database)
+
 
 @task
 @roles('db')
