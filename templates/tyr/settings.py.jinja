@@ -21,8 +21,8 @@ SQLALCHEMY_DATABASE_URI = 'postgresql://{{tyr_postgresql_user}}:{{tyr_postgresql
 INSTANCES_DIR = '{{env.tyr_base_instances_dir}}'
 
 
-{% if env.cities_database_uri %}
-CITIES_DATABASE_URI = '{{env.cities_database_uri}}'
+{% if env.use_cities %}
+CITIES_DATABASE_URI = 'user={{env.cities_db_user}} password={{env.cities_db_password}} host={{env.postgresql_database_host}} port=5432 dbname={{env.cities_db_name}}'
 {% else %}
 CITIES_DATABASE_URI = None
 {% endif %}
