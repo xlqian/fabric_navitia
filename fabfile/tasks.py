@@ -417,6 +417,7 @@ def update_instance(instance):
     execute(jormungandr.deploy_jormungandr_instance_conf, instance)
     execute(kraken.create_eng_instance, instance)
     execute(tyr.deploy_default_synonyms, instance)
+    execute(db.create_privileges_instance_db, instance)
 
 @task
 def remove_instance(instance, admin=False):

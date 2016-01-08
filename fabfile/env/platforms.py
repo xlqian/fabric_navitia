@@ -244,6 +244,12 @@ env.tyr_postgresql_database = 'jormungandr'
 env.tyr_postgresql_user = 'jormungandr'
 env.tyr_postgresql_password = 'jormungandr'
 
+
+# variables for read_only user
+env.postgres_read_only_user = 'read_only'
+env.postgres_read_only_password = 'read_only'
+env.postgres_schemas = ['georef', 'public', 'navitia']
+
 # redis
 env.tyr_redis_password = None
 # index of the database use in redis, between 0 and 15 by default
