@@ -445,9 +445,6 @@ def create_eng_instance(instance):
     require.files.directory(env.kraken_log_basedir,
                             owner=env.KRAKEN_USER, group=env.KRAKEN_USER, use_sudo=True)
 
-    require.files.directory(instance.base_destination_dir,
-                            owner=env.KRAKEN_USER, group=env.KRAKEN_USER, use_sudo=True)
-
     update_eng_instance_conf(instance)
 
     # kraken.ini, pid and binary symlink
