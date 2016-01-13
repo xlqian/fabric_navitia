@@ -168,8 +168,9 @@ def upgrade_db_tyr(pilot_tyr_beat=True):
 @task
 @roles('tyr_master')
 def upgrade_cities_db():
-    with cd(env.tyr_basedir):
-        run("alembic --config cities_alembic.ini upgrade head")
+    if env.use_cities:
+        with cd(env.tyr_basedir):
+            run("alembic --config cities_alembic.ini upgrade head")
 
 
 @task
@@ -510,10 +511,10 @@ def update_tyr_confs():
 @task
 @roles('tyr_master')
 def update_cities_conf():
-
-    _upload_template("tyr/cities_alembic.ini.jinja",
-                     "{}/cities_alembic.ini".format(env.tyr_basedir),
-                     context={'env': env})
+    if env.use_cities:
+        _upload_template("tyr/cities_alembic.ini.jinja",
+                         "{}/cities_alembic.ini".format(env.tyr_basedir),
+                         context={'env': env})
 
 
 
