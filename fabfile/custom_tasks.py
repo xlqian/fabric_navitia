@@ -41,7 +41,7 @@ from fabric.operations import run, put, sudo
 from fabric.tasks import execute
 from fabfile import utils
 from fabfile.component import db, tyr
-from fabric.api import env
+from fabric.api import env, local
 
 
 @task
@@ -138,3 +138,11 @@ def install_system_python_protobuf():
         sudo("pip uninstall --yes protobuf")
     sudo("! (pip freeze | grep -q protobuf)")
     sudo("apt-get --yes install python-protobuf")
+
+
+@task
+def get_packages(url):
+    """
+    retrieve debian package to install Navitia by source
+    """
+    local("wget --no-check-certificate {}".format(url))

@@ -49,7 +49,7 @@ from requests.auth import HTTPBasicAuth
 
 from fabric.colors import green, yellow, red
 from fabric.context_managers import cd
-from fabric.api import env, task, roles, run, put, sudo, warn_only, execute, local
+from fabric.api import env, task, roles, run, put, sudo, warn_only, execute
 from fabric.contrib.files import exists
 from fabtools.files import upload_template
 from fabtools import require
@@ -505,11 +505,3 @@ def supervision_downtime(step):
                     env.supervision_handler.stop_supervision(host, service, step_data['downtime'])
             else:
                 env.supervision_handler.stop_supervision(host, step_data['service'], step_data['downtime'])
-
-@task
-def retrieve_debian_package(url):
-    """
-    retrieve debian package to install Navitia by source
-    """
-    wget_command = 'wget --no-check-certificate '
-    local("{} {}".format(wget_command, url))
