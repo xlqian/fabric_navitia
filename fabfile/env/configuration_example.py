@@ -1,6 +1,5 @@
 from fabric.api import env
 from fabfile.instance import add_instance
-import common
 
 
 def simple_one(addr_server_ed, addr_server_kraken=None):
