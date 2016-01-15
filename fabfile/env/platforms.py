@@ -298,6 +298,10 @@ env.use_protobuf_cpp = False
 
 env.is_prod = False
 
+# exclude an instance if there is no existing data.nav.lz4
+# see backup_datanav()tasks.tyr.backup_datanav
+env.excluded_instances = []
+
 # use for supervision
 env.supervision_handler = None
 env.supervision_config = dict(
