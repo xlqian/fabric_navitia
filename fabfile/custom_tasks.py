@@ -35,6 +35,8 @@ This file contains some specific tasks not to be run everytime
 import os
 import string
 import random
+import uuid
+from datetime import datetime
 from fabric.colors import red
 from fabric.context_managers import cd, warn_only
 from fabric.contrib.files import exists
@@ -147,8 +149,10 @@ def get_packages(url):
     """
     retrieve debian package to install Navitia by source
     """
-    random_nb = ''.join([random.choice(string.ascii_letters + string.digits) for n in xrange(10)])
-    mktemp = '/tmp/tmp.{}'.format(random_nb)
+    mktemp = '/tmp/navitia_packages_{}'.format(datetime.now().strftime("%Y%m%d-%H%M%S"))
+
+    env.debian_packages_path = mktemp
+
     local("mkdir {mktemp} && cd {mktemp} && wget --no-check-certificate {url}"
           .format(mktemp=mktemp, url=url))
-    local("cd {} && unzip -j archive".format(mktemp))
+    local("cd {} && unzip -j archive.zip".format(mktemp))

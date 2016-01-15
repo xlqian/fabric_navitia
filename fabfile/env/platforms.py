@@ -40,9 +40,8 @@ env.distrib = 'ubuntu14.04'
 env.KRAKEN_USER = 'www-data'
 env.TYR_USER = env.KRAKEN_USER
 
-#setup
-env.packages_url = 'https://ci.navitia.io/job/navitia_release/lastSuccessfulBuild/artifact/*zip*/archive.zip'
-env.packages_destination = '/tmp'
+# local path to navitia packages
+env.debian_packages_path = None
 
 env.KRAKEN_RABBITMQ_OK_PORT = 5672
 env.KRAKEN_RABBITMQ_WRONG_PORT = 56722
