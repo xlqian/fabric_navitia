@@ -69,6 +69,8 @@ def _install_packages(package_filter):
         #it is not optimal, each package will be potentially copied several times, we'll have to improve that
         with temporary_directory() as tmp_dir:
             for package in package_filter:
+                if env.debian_packages_path:
+                    package = "{path}/{package}".format(path=env.debian_packages_path, package=package)
                 put(package, tmp_dir)
             with cd(tmp_dir):
                 with warn_only():#@TODO: catch only on error
