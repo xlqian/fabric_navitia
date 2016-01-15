@@ -33,6 +33,8 @@
 This file contains some specific tasks not to be run everytime
 """
 import os
+import string
+import random
 from fabric.colors import red
 from fabric.context_managers import cd, warn_only
 from fabric.contrib.files import exists
@@ -41,7 +43,7 @@ from fabric.operations import run, put, sudo
 from fabric.tasks import execute
 from fabfile import utils
 from fabfile.component import db, tyr
-from fabric.api import env
+from fabric.api import env, local
 
 
 @task
@@ -138,3 +140,15 @@ def install_system_python_protobuf():
         sudo("pip uninstall --yes protobuf")
     sudo("! (pip freeze | grep -q protobuf)")
     sudo("apt-get --yes install python-protobuf")
+
+
+@task
+def get_packages(url):
+    """
+    retrieve debian package to install Navitia by source
+    """
+    random_nb = ''.join([random.choice(string.ascii_letters + string.digits) for n in xrange(10)])
+    mktemp = '/tmp/tmp.{}'.format(random_nb)
+    local("mkdir {mktemp} && cd {mktemp} && wget --no-check-certificate {url}"
+          .format(mktemp=mktemp, url=url))
+    local("cd {} && unzip -j archive".format(mktemp))
