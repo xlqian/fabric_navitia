@@ -111,6 +111,9 @@ env.redis_port = 6379
 env.ed_basedir = '/srv/ed'
 env.ed_datadir = '/srv/data'
 
+# defines additional jormungandr settings (KEY = value)
+env.jormungandr_additional_settings = {}
+
 ##############################
 # jormungandr
 ##############################
