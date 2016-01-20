@@ -70,6 +70,9 @@ SAVE_STAT = {{env.jormungandr_save_stats}}
 BROKER_URL = 'amqp://{{env.jormungandr_broker_username}}:{{env.jormungandr_broker_password}}@{{env.rabbitmq_host}}:{{env.rabbitmq_port}}//'
 EXCHANGE_NAME = '{{env.stat_broker_exchange}}'
 
+{% for key, value in env.jormungandr_additional_settings.iteritems() %}
+{{key}} = {{value}}
+{% endfor %}
 
 {% if env.jormungandr_enable_redis %}
 CACHE_CONFIGURATION = {
