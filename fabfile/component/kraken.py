@@ -145,6 +145,8 @@ def enable_rabbitmq_standalone():
 def restart_all_krakens(wait=True):
     """restart and test all kraken instances"""
     wait = get_bool_from_cli(wait)
+    if env.distrib == 'debian8':
+        run('systemctl daemon-reload')
     start_or_stop_with_delay('apache2', env.APACHE_START_DELAY * 1000, 500, only_once=env.APACHE_START_ONLY_ONCE)
     for instance in env.instances.values():
         restart_kraken(instance.name, wait=wait)
