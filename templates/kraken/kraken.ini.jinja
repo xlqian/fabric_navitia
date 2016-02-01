@@ -9,6 +9,7 @@ instance_name = {{instance.name}}
 nb_threads = {{instance.kraken_nb_threads}}
 {% if instance.enable_realtime %}
 is_realtime_enabled = true
+kirin_timeout = {{env.kirin_timeout}}
 {% endif %}
 
 [LOG]
