@@ -253,7 +253,7 @@ env.postgres_read_only_password = 'read_only'
 env.postgres_schemas = ['georef', 'public', 'navitia']
 
 # kirin
-env.kirin_timeout = 180
+env.kirin_timeout = 60000
 
 # redis
 env.tyr_redis_password = None
