@@ -10,6 +10,7 @@ nb_threads = {{instance.kraken_nb_threads}}
 {% if instance.enable_realtime %}
 is_realtime_enabled = true
 {% endif %}
+kirin_timeout = {{env.kirin_timeout}}
 
 [LOG]
 log4cplus.rootLogger={{env.kraken_log_level}}, ALL_MSGS

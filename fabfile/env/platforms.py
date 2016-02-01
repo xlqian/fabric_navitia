@@ -252,6 +252,9 @@ env.postgres_read_only_user = 'read_only'
 env.postgres_read_only_password = 'read_only'
 env.postgres_schemas = ['georef', 'public', 'navitia']
 
+# kirin
+env.kirin_timeout = 180
+
 # redis
 env.tyr_redis_password = None
 # index of the database use in redis, between 0 and 15 by default
