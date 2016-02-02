@@ -162,8 +162,6 @@ def upgrade_db_tyr(pilot_tyr_beat=True):
         run('python manage.py db upgrade')
     if pilot_tyr_beat:
         require.service.start('tyr_beat')
-    if env.distrib == 'debian8':
-        run('systemctl daemon-reload')
     require.service.start('tyr_worker')
 
 
