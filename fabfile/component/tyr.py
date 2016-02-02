@@ -181,6 +181,7 @@ def setup_tyr_master():
     utils.require_directory(env.ed_basedir, owner='www-data', group='www-data', use_sudo=True)
     _upload_template('tyr/tyr_beat.jinja', env.tyr_beat_service_file,
                      user='root', mode='755', context={'env': env})
+    execute(utils.update_init)
 
 @task
 @roles('tyr')
