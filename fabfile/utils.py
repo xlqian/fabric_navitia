@@ -292,8 +292,8 @@ def show_version(action='show', host='eng', init=False):
 
 @task
 def update_init():
-    installed = show_version(action='get', init=True)
-    if installed != '(None)':
+    installed, candidate = show_version(action='get', init=True)
+    if installed != '(none)':
         run('systemctl daemon-reload')
 
 class send_mail(object):
