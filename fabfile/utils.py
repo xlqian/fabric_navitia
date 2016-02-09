@@ -241,11 +241,8 @@ host_app_mapping = dict(
 )
 
 @task
-def get_version(host, init=False):
-    if init:
-        app_name = 'systemd'
-    else:
-        app_name = host_app_mapping[host]
+def get_version(host):
+    app_name = host_app_mapping[host]
     with settings(host_string=env.roledefs[host][0]):
         sudo('apt-get update')
         lines = run('apt-cache policy %s' % app_name).split('\n')
@@ -257,7 +254,7 @@ def get_version(host, init=False):
         return installed, candidate
 
 @task
-def show_version(action='show', host='eng', init=False):
+def show_version(action='show', host='eng'):
     """
     prints, gets or checks versions (installed and candidate) from navitia-kraken/navitia-tyr/navitia-jormungandr package
     show: print versions on stdout
@@ -265,7 +262,7 @@ def show_version(action='show', host='eng', init=False):
          installed and candidate can be tuples if different versions are coexisting
     check: return True if candidate version is different from installed
     """
-    versions = execute(get_version, host, init)
+    versions = execute(get_version, host)
     def summarize(iterable):
         s = tuple(set(iterable))
         if len(s) == 1:
@@ -291,10 +288,12 @@ def show_version(action='show', host='eng', init=False):
 
 
 @task
-def update_init():
-    installed, candidate = show_version(action='get', init=True)
-    if installed != '(none)':
-        run('systemctl daemon-reload')
+def update_init(host='tyr_master'):
+    with settings(host_string=env.roledefs[host][0]):
+        try:
+            run('systemctl daemon-reload')
+        except:
+            print(yellow("Systemd is not installed"))
 
 class send_mail(object):
     """
