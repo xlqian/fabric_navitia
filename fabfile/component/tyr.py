@@ -193,7 +193,6 @@ def upgrade_ed_packages():
                            'navitia-cities*deb']
     _install_packages(package_filter_list)
 
-    require.postgres.server()
 
 @task
 @roles('tyr_master')
