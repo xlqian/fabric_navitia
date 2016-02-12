@@ -424,7 +424,7 @@ def update_eng_instance_conf(instance):
                      },
                      mode='755'
     )
-    execute(update_init, host='eng')
+    update_init(host='eng')
 
 @task
 @roles('eng')

@@ -288,12 +288,10 @@ def show_version(action='show', host='eng'):
 
 
 @task
-def update_init(host='tyr_master'):
-    with settings(host_string=env.roledefs[host][0]):
-        try:
-            run('systemctl daemon-reload')
-        except:
-            print(yellow("Systemd is not installed"))
+def update_init(host):
+    with settings(host_string=env.roledefs[host][0], warn_only=True):
+        run('systemctl daemon-reload')
+
 
 class send_mail(object):
     """
