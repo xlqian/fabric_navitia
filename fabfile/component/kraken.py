@@ -37,17 +37,17 @@ from retrying import Retrying
 import simplejson as json
 from urllib2 import Request, urlopen, HTTPError
 
-from fabfile.utils import get_bool_from_cli
 from fabric.colors import blue, red, green, yellow
 from fabric.context_managers import settings, warn_only
 from fabric.contrib.files import exists, sed
 from fabric.decorators import roles, serial
 from fabric.operations import run, get
 from fabric.api import task, env, sudo
+from fabric.api import execute
 from fabtools import require, service, files, python
 
-from fabfile.utils import (_install_packages, get_real_instance, _upload_template,
-                           start_or_stop_with_delay, get_host_addr, show_version)
+from fabfile.utils import (get_bool_from_cli, _install_packages, get_real_instance, _upload_template,
+                           start_or_stop_with_delay, get_host_addr, show_version, update_init)
 
 
 @task
@@ -424,6 +424,7 @@ def update_eng_instance_conf(instance):
                      },
                      mode='755'
     )
+    update_init(host='eng')
 
 @task
 @roles('eng')

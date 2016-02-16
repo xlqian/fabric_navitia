@@ -287,6 +287,16 @@ def show_version(action='show', host='eng'):
         return semver.compare(candidate, installed) > 0
 
 
+@task
+def update_init(host):
+    with settings(host_string=env.roledefs[host][0]):
+        with settings(warn_only=True):
+            result = run('which systemd')
+        if result == '':
+            print('systemd is not installed')
+        else:
+            run('systemctl daemon-reload')
+
 class send_mail(object):
     """
     Mail sending class.
