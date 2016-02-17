@@ -32,6 +32,8 @@
 import StringIO
 import ConfigParser
 from io import BytesIO
+import json
+import fabtools
 import requests
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import ConnectionError
@@ -114,61 +116,6 @@ def upgrade_ws_packages():
             use_sudo=True,
             exists_action='w')
 
-
-@task
-def get_jormungandr_config(server, instance):
-    """Get jormungandr configuration of a given instance"""
-
-    with settings(host_string=server):
-        config_path = instance.jormungandr_config_file
-
-        # first get the configfile here
-        temp_file = StringIO.StringIO()
-        if exists(config_path):
-            get(config_path, temp_file)
-        else:
-            print(red("ERROR: can't find %s" % config_path))
-            exit(1)
-
-        config = ConfigParser.RawConfigParser(allow_no_value=True)
-        config.readfp(BytesIO(temp_file.getvalue()))
-
-        if 'instance' in config.sections():
-            return config
-        else:
-            return None
-
-# TODO: testme and putme
-@task
-def set_jormungandr_config(server, instance, key=None, socket=None,
-        cheap_journey=None):
-    """ Use the given kraken in the jormungandr server
-        This is really useful for testing upgrades in production
-    """
-
-    with settings(host_string=server):
-        # get the remote config file and localy change it, put it after
-        # better than just sed() directly remote
-        remote_config = get_jormungandr_config(server, instance)
-
-        with open('/tmp/testinstance', 'wb') as configfile:
-            remote_config.write(configfile)
-
-        local_config = ConfigParser.ConfigParser()
-        local_config.read('/tmp/testinstance')
-
-        if key:
-            local_config.set('instance', 'key', key)
-        if socket:
-            local_config.set('instance', 'socket', socket)
-        if cheap_journey:
-            local_config.set('functional', 'cheap_journey', cheap_journey)
-
-        with open('/tmp/testinstance', 'wb') as configfile:
-            local_config.write(configfile)
-
-        # finally, put the local on remote dest
-        #put('/tmp/testinstance', )
 
 @task
 def reload_jormun_safe(server, safe=True):
@@ -344,82 +291,16 @@ def test_jormungandr(server, instance=None, fail_if_error=True):
 @roles('ws')
 def deploy_jormungandr_instance_conf(instance):
 
-    _upload_template("jormungandr/jormungandr.ini.jinja",
+    _upload_template("jormungandr/instance.json.jinja",
                      instance.jormungandr_config_file,
                      context={
                          'env': env,
                          'instance': instance,
+                         'json': json
                      },
                      use_sudo=True
     )
 
-@task
-@roles('ws')
-def create_jormungandr_instance(instance, cheap_journey=False):
-    #DEPRECATED
-    """Create a jormungandr instance
-        * Deploy /etc/jormungadr.d/<instance>.ini template
-        * Reload apache
-    """
-
-    # get the port config from the kraken engine
-    config = kraken.get_kraken_config(env.roledefs['eng'][0], instance)
-    zmq_socket = config.get('GENERAL', 'zmq_socket')
-    instance_port = env.KRAKEN_RE_PORT.match(zmq_socket)
-    port = instance_port.group('port')
-
-    _upload_template("jormungandr/jormungandr.ini.jinja",
-                     instance.jormungandr_config_file,
-                     context={
-                         'env': env,
-                         'instance': instance,
-                         'socket': "tcp://{}:{}".format(env.jormungandr_instance_socket, port),
-                         'cheap_journey': cheap_journey,
-                     },
-                     use_sudo=True
-    )
-
-    # testing if instance appears in JSON return on URI /v1/coverage on each
-    # Jormungandr
-    headers = {'Host': env.jormungandr_url }
-
-    server = env.host_string
-    print("→ server: {}".format(server))
-    execute(reload_jormun_safe, server)
-    request_str = 'http://{}/v1/coverage/{}/status'.format(get_host_addr(server), instance)
-    print("request_string: {}".format(request_str))
-
-    try:
-        response = requests.get(request_str, headers=headers)
-    except (ConnectionError, HTTPError) as e:
-        print(red("HTTP Error %s: %s" % (e.code, e.readlines()[0])))
-        exit(1)
-    except Exception as e:
-        print(red("Error when connecting to %s: %s" % (env.jormungandr_url, e)))
-        exit(1)
-
-    try:
-        result = response.json()
-    except JSONDecodeError:
-        print(red("cannot read json response : {}".format(response.text)))
-        exit(1)
-
-    if result['status']['kraken_version']:
-        print(green("OK: Test {} OK".format(instance)))
-
-    # really test the instance, warning, maybe no data so 503 returned
-    test_jormungandr(get_host_addr(env.host_string), instance, fail_if_error=False)
-
-@task
-@roles('ws')
-def remove_jormungandr_instance(instance):
-    #DEPRECATED
-    """Remove a jormungandr instance entirely
-        * Remove ini file which declare the instance
-        * Reload apache
-    """
-    run("rm --force %s/%s.ini" % (env.jormungandr_instances_dir, instance))
-
-    for server in env.roledefs['ws']:
-        print("→ server: {}".format(server))
-        execute(reload_jormun_safe, server)
+    # the old configuration file were .ini, now it's json, we need to clean up
+    if fabtools.files.is_file(instance.jormungandr_old_ini_config_file):
+        fabtools.files.remove(instance.jormungandr_old_ini_config_file)

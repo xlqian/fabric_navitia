@@ -45,7 +45,7 @@ class Instance:
     def __init__(self, name, db_password, db_local='fr_FR.UTF8',
                  is_free=False, chaos_database=None, rt_topics=[],
                  zmq_socket_port=None, db_name=None, db_user=None, source_dir=None,
-                 enable_realtime=False):
+                 enable_realtime=False, realtime_proxies=[]):
         self.name = name
         self.db_password = db_password
         self.is_free = is_free
@@ -72,6 +72,7 @@ class Instance:
         self._source_dir = source_dir if source_dir != 'auto' else '/srv/ed/source/{}/{}/FUSIO/EXPORT/'.\
             format(self.name.upper(), (getattr(env, 'fusio_name', None) or env.name).upper())
         self.enable_realtime = enable_realtime
+        self.realtime_proxies = realtime_proxies
 
     #we might want to overload all those properties
 
@@ -110,8 +111,13 @@ class Instance:
         return "{kraken_dir}/{instance}".format(kraken_dir=env.kraken_basedir, instance=self.name)
 
     @property
-    def jormungandr_config_file(self):
+    def jormungandr_old_ini_config_file(self):
+        # DEPRECATED, keep only for the ini to json migration
         return os.path.join(env.jormungandr_instances_dir, self.name + '.ini')
+
+    @property
+    def jormungandr_config_file(self):
+        return os.path.join(env.jormungandr_instances_dir, self.name + '.json')
 
 
 def add_instance(name, db_pwd, **kwargs):

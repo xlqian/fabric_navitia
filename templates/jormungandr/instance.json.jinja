@@ -1,0 +1,17 @@
+{
+    "key": "{{instance.name}}",
+    "zmq_socket": "{{instance.jormungandr_zmq_socket_for_instance}}",
+{% if instance.realtime_proxies %}
+    "realtime_proxies": [
+{% for proxy in instance.realtime_proxies %}
+        {
+            "id": "{{proxy.id}}",
+            "class": "{{proxy.class_path}}",
+{% if proxy.constructor_args %}
+            "args": {{json.dumps(proxy.constructor_args, indent=2)}}
+{% endif %}
+        }
+{% endfor %}
+    ]
+{% endif %}
+}
