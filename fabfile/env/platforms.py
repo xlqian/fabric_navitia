@@ -284,8 +284,8 @@ env.instances = {}
 env.kraken_threshold = 0.15
 
 # those 3 strings template will be formated with base = tyr base directory and instance = name of the instance
-env.tyr_backup_dir_template = '{base}/backup'
-env.tyr_source_dir_template = '{base}/source'
+env.tyr_backup_dir_template = '{base}/{instance}/backup'
+env.tyr_source_dir_template = '{base}/{instance}/source'
 env.tyr_destination_dir_template = '{base}/destination'
 
 env.kraken_database_file = '{base_dest}/{instance}/data.nav.lz4'
