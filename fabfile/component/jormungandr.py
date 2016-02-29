@@ -114,7 +114,8 @@ def upgrade_ws_packages():
 
     require.python.install_requirements('/usr/share/jormungandr/requirements.txt',
             use_sudo=True,
-            exists_action='w')
+            exists_action='w',
+            upgrade=True)
 
 
 @task
