@@ -150,7 +150,7 @@ def upgrade_tyr_packages():
     _install_packages(package_filter_list)
     if not python.is_pip_installed():
         python.install_pip()
-    require.python.install_requirements('/usr/share/tyr/requirements.txt', use_sudo=True, exists_action='w')
+    require.python.install_requirements('/usr/share/tyr/requirements.txt', use_sudo=True, exists_action='w', upgrade=True)
     _upload_template('tyr/tyr_worker.jinja', env.tyr_worker_service_file,
                      user='root', mode='755', context={'env': env})
 
