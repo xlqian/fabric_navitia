@@ -112,7 +112,9 @@ def upgrade_ws_packages():
     if not python.is_pip_installed():
         python.install_pip()
 
-    require.python.install_requirements('/usr/share/jormungandr/requirements.txt',
+    #we want the version of the system for these packages
+    run('''sed -e "/protobuf/d" -e "/psycopg2/d"  /usr/share/jormungandr/requirements.txt > /tmp/jormungandr_requirements.txt''')
+    require.python.install_requirements('/tmp/jormungandr_requirements.txt',
             use_sudo=True,
             exists_action='w',
             upgrade=True)
