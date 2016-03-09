@@ -7,6 +7,9 @@ database = {{instance.kraken_database}}
 zmq_socket = {{instance.kraken_zmq_socket}}
 instance_name = {{instance.name}}
 nb_threads = {{instance.kraken_nb_threads}}
+{% if instance.cache_raptor %}
+raptor_cache_size = {{instance.cache_raptor}}
+{% endif %}
 {% if instance.enable_realtime %}
 is_realtime_enabled = true
 kirin_timeout = {{env.kirin_timeout}}

@@ -45,7 +45,7 @@ class Instance:
     def __init__(self, name, db_password, db_local='fr_FR.UTF8',
                  is_free=False, chaos_database=None, rt_topics=[],
                  zmq_socket_port=None, db_name=None, db_user=None, source_dir=None,
-                 enable_realtime=False, realtime_proxies=[]):
+                 enable_realtime=False, realtime_proxies=[], cache_raptor=None):
         self.name = name
         self.db_password = db_password
         self.is_free = is_free
@@ -73,6 +73,7 @@ class Instance:
             format(self.name.upper(), (getattr(env, 'fusio_name', None) or env.name).upper())
         self.enable_realtime = enable_realtime
         self.realtime_proxies = realtime_proxies
+        self.cache_raptor = cache_raptor
 
     #we might want to overload all those properties
 
