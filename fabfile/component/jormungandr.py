@@ -313,3 +313,16 @@ def deploy_jormungandr_instance_conf(instance):
     # the old configuration file were .ini, now it's json, we need to clean up
     if fabtools.files.is_file(instance.jormungandr_old_ini_config_file):
         fabtools.files.remove(instance.jormungandr_old_ini_config_file)
+
+@task
+@roles('ws')
+def remove_jormungandr_instance(instance):
+    """Remove a jormungandr instance entirely
+        * Remove json file which declare the instance
+        * Reload apache
+    """
+    run("rm --force %s/%s.json" % (env.jormungandr_instances_dir, instance))
+
+    for server in env.roledefs['ws']:
+        print("→ server: {}".format(server))
+        execute(reload_jormun_safe, server)
