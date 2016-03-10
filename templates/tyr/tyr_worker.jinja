@@ -14,7 +14,7 @@
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 NAME=tyr_worker
 DAEMON="/usr/local/bin/celery"
-DAEMON_OPTS="-A tyr.tasks --detach --events worker"
+DAEMON_OPTS="-A tyr.tasks --detach -Ofair --events worker"
 USER={{env.KRAKEN_USER}}
 GROUP={{env.KRAKEN_USER}}
 PID=/tmp/tyr_worker.pid
