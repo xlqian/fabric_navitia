@@ -74,19 +74,22 @@ EXCHANGE_NAME = '{{env.stat_broker_exchange}}'
 {{key}} = {{value}}
 {% endfor %}
 
-{% if env.jormungandr_enable_redis %}
 CACHE_CONFIGURATION = {
+{% if env.jormungandr_enable_redis %}
     'CACHE_TYPE': 'redis',
     {% if env.jormungandr_redis_password %}
     'CACHE_REDIS_URL': 'redis://{{env.jormungandr_redis_user}}:{{env.jormungandr_redis_password}}@{{env.redis_host}}:{{env.redis_port}}/{{env.jormungandr_redis_db}}',
     {% else %}
     'CACHE_REDIS_URL': 'redis://{{env.redis_host}}:{{env.redis_port}}/{{env.jormungandr_redis_db}}',
     {% endif %}
+{% else %}
+    'CACHE_TYPE': 'simple',
+{% endif %}
     'CACHE_KEY_PREFIX': 'jormungandr.',
     'TIMEOUT_PTOBJECTS': {{env.jormungandr_cache_timeout}},
     'TIMEOUT_AUTHENTICATION': {{env.jormungandr_cache_timeout}},
     'TIMEOUT_PARAMS': {{env.jormungandr_cache_timeout}},
+    'TIMEOUT_TIMEO': {{env.jormungandr_cache_timeo}},
 }
-{% endif %}
 
 
