@@ -217,6 +217,7 @@ def test_jormungandr(server, instance=None, fail_if_error=True):
         request_str = 'http://{s}/v1/coverage/{i}/status'.format(s=server, i=instance)
     else:
         request_str = 'http://{}/v1/coverage'.format(server)
+    print request_str
 
     try:
         response = requests.get(request_str, headers=headers, auth=HTTPBasicAuth(env.token, ''))

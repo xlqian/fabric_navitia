@@ -175,6 +175,11 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
         execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs, supervision=True)
         time_dict.register_end('kraken')
         execute(upgrade_jormungandr, up_confs=up_confs)
+        # check deployment is OK
+        for server in env.roledefs['ws']:
+            instance = random.choice(env.instances.values())
+            execute(jormungandr.test_jormungandr, utils.get_host_addr(server), instance=instance.name)
+
 
     if up_tyr:
         execute(tyr.start_tyr_beat)
