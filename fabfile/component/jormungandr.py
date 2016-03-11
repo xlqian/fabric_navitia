@@ -214,9 +214,9 @@ def test_jormungandr(server, instance=None, fail_if_error=True):
     headers = {'Host': env.jormungandr_url}
 
     if instance:
-        request_str = 'http://{s}/v1/coverage/{i}/status'.format(s=server, i=instance)
+        request_str = 'http://{s}{p}/v1/coverage/{i}/status'.format(s=server, p=env.jormungandr_url_prefix, i=instance)
     else:
-        request_str = 'http://{}/v1/coverage'.format(server)
+        request_str = 'http://{}{}/v1/coverage'.format(server, env.jormungandr_url_prefix)
     print request_str
 
     try:
