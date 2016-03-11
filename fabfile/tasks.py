@@ -46,6 +46,7 @@ from fabfile.utils import (get_bool_from_cli, show_version,
 from prod_tasks import (remove_kraken_vip, switch_to_first_phase,
                         switch_to_second_phase, enable_all_nodes)
 from fabfile.component.load_balancer import _adc_connection
+import random
 
 
 #############################################
@@ -148,6 +149,11 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
         if check_dead:
             execute(check_dead_instances)
         execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
+
+        # check first hosts set before upgrading the second one
+        for server in env.roledefs['ws']:
+            instance = random.choice(env.instances.values())
+            execute(jormungandr.test_jormungandr, utils.get_host_addr(server), instance=instance.name)
 
         # Upgrade kraken/jormun on remaining hosts
         env.roledefs['eng'] = env.eng_hosts_2
