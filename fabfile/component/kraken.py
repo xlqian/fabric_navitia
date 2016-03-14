@@ -36,6 +36,7 @@ import os.path
 from retrying import Retrying
 import simplejson as json
 from urllib2 import Request, urlopen, HTTPError
+import requests
 
 from fabric.colors import blue, red, green, yellow
 from fabric.context_managers import settings, warn_only
@@ -295,23 +296,20 @@ def _test_kraken(query, fail_if_error=True):
     """
     poll on kraken monitor until it gets a 'running' status
     """
-    print("calling : {}".format(query.get_full_url()))
+    print("calling : {}".format(query))
     try:
-        response = urlopen(query)
-    except HTTPError as e:
+        response = requests.get(query, timeout=2)
+    except requests.exceptions.Timeout as t:
+        print("timeout error {}".format(t))
         if fail_if_error:
-            print("HTTP Error %s on %s" % (e.code, e.readlines()[0]))
             exit(1)
         else:
-            # we want response a file so transform the string as stringio
-            # now jor ws return a 503 when the instance is loading data
-            response = StringIO.StringIO(e.readlines()[0])
-
+            return None
     except Exception as e:
         print("Error when connecting to monitor: %s" % e)
         exit(1)
 
-    return json.loads(response.read())
+    return json.loads(response.text)
 
 
 @task
@@ -322,11 +320,11 @@ def test_kraken(instance, fail_if_error=True, wait=False, loaded_is_ok=None):
     wait = get_bool_from_cli(wait)
 
     # env.host will call the monitor kraken on the current host
-    request = Request('http://{}:{}/{}/?instance={}'.format(env.host,
-        env.kraken_monitor_port, env.kraken_monitor_location_dir, instance.name))
+    request = 'http://{}:{}/{}/?instance={}'.format(env.host,
+        env.kraken_monitor_port, env.kraken_monitor_location_dir, instance.name)
 
     if wait:
-        # we wait until we get a gestion and the instance is 'loaded'
+        # we wait until we get a response and the instance is 'loaded'
         try:
             result = Retrying(stop_max_delay=env.KRAKEN_RESTART_DELAY * 1000,
                               wait_fixed=1000, retry_on_result=lambda x: x is None or not x['loaded']) \
