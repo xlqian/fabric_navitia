@@ -306,7 +306,7 @@ def _test_kraken(query, fail_if_error=True):
             # we want response a file so transform the string as stringio
             # now jor ws return a 503 when the instance is loading data
             response = StringIO.StringIO(e.readlines()[0])
-
+            print response
     except Exception as e:
         print("Error when connecting to monitor: %s" % e)
         exit(1)
