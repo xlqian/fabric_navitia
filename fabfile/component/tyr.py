@@ -118,7 +118,7 @@ def setup_tyr():
 
     update_tyr_conf()
 
-    if env.distrib == 'debian8':
+    if env.distrib == 'debian8' and env.use_systemd:
         _upload_template('tyr/systemd_tyr_worker.jinja', env.tyr_worker_service_file,
                      user='root', mode='644', context={'env': env})
     else:
@@ -159,7 +159,7 @@ def upgrade_tyr_packages():
     #we want the version of the system for these packages
     run('''sed -e "/protobuf/d" -e "/psycopg2/d"  /usr/share/tyr/requirements.txt > /tmp/tyr_requirements.txt''')
     require.python.install_requirements('/tmp/tyr_requirements.txt', use_sudo=True, exists_action='w', upgrade=True)
-    if env.distrib == 'debian8':
+    if env.distrib == 'debian8' and env.use_systemd:
         _upload_template('tyr/systemd_tyr_worker.jinja', env.tyr_worker_service_file,
                      user='root', mode='644', context={'env': env})
     else:
@@ -190,7 +190,7 @@ def upgrade_cities_db():
 @roles('tyr_master')
 def setup_tyr_master():
     utils.require_directory(env.ed_basedir, owner='www-data', group='www-data', use_sudo=True)
-    if env.distrib == 'debian8':
+    if env.distrib == 'debian8' and env.use_systemd:
         _upload_template('tyr/systemd_tyr_beat.jinja', env.tyr_beat_service_file,
                      user='root', mode='644', context={'env': env})
     else:

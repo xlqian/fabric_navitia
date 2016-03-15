@@ -43,6 +43,9 @@ env.TYR_USER = env.KRAKEN_USER
 # local path to navitia packages
 env.debian_packages_path = None
 
+# debian8 using systemd
+env.use_systemd = None
+
 env.KRAKEN_RABBITMQ_OK_PORT = 5672
 env.KRAKEN_RABBITMQ_WRONG_PORT = 56722
 env.PUPPET_RESTART_DELAY = 30
