@@ -230,7 +230,6 @@ env.tyr_settings_file_sh = os.path.join(env.tyr_basedir, 'settings.sh')
 env.tyr_wsgi_file = os.path.join(env.tyr_basedir, 'settings.wsgi')
 env.tyr_beat_service_file = '/etc/init.d/tyr_beat'
 env.tyr_worker_service_file = '/etc/init.d/tyr_worker'
-env.tyr_reloader_service_file = '/etc/init.d/tyr_reloader'
 
 env.tyr_ws_url = 'localhost'
 env.tyr_ws_port = 86
