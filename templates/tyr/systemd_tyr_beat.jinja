@@ -1,0 +1,19 @@
+#
+## File managed by fabric, don't edit directly
+#
+
+[Unit]
+Description=start celery beat for tyr
+After=network.target
+
+[Service]
+Type=forking
+PIDFile=/tmp/tyr_beat.pid
+Environment=TYR_CONFIG_FILE={{env.tyr_settings_file}}
+ExecStart=/sbin/start-stop-daemon --start --chdir /tmp --exec /usr/local/bin/celery beat -- --uid={{env.KRAKEN_USER}} --gid={{env.KRAKEN_USER}} --pidfile=/tmp/tyr_beat.pid --app=tyr.tasks --detach
+ExecReload=/bin/kill -HUP $MAINPID
+ExecStop=/bin/kill -s TERM $MAINPID
+
+[Install]
+WantedBy=multi-user.target
+
