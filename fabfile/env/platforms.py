@@ -46,6 +46,9 @@ env.debian_packages_path = None
 # debian8 using systemd
 env.use_systemd = False
 
+# init path
+env.init_path = '/etc/init.d/'
+
 env.KRAKEN_RABBITMQ_OK_PORT = 5672
 env.KRAKEN_RABBITMQ_WRONG_PORT = 56722
 env.PUPPET_RESTART_DELAY = 30
@@ -231,8 +234,8 @@ env.tyr_migration_dir = os.path.join(env.tyr_basedir, 'migrations')
 env.tyr_settings_file = os.path.join(env.tyr_basedir, 'settings.py')
 env.tyr_settings_file_sh = os.path.join(env.tyr_basedir, 'settings.sh')
 env.tyr_wsgi_file = os.path.join(env.tyr_basedir, 'settings.wsgi')
-env.tyr_beat_service_file = '/etc/init.d/tyr_beat'
-env.tyr_worker_service_file = '/etc/init.d/tyr_worker'
+env.tyr_beat_service_file = os.path.join(env.init_path, 'tyr_beat')
+env.tyr_worker_service_file = os.path.join(env.init_path, 'tyr_worker')
 
 env.tyr_ws_url = 'localhost'
 env.tyr_ws_port = 86
