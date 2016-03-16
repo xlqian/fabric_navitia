@@ -398,7 +398,7 @@ def update_all_configurations():
     execute(kraken.get_no_data_instances)
     execute(jormungandr.update_jormungandr_conf)
     execute(kraken.update_monitor_configuration)
-    execute(tyr.update_tyr_conf)
+    execute(tyr.update_tyr_confs)
     for instance in env.instances.values():
         execute(tyr.update_tyr_instance_conf, instance)
         execute(jormungandr.deploy_jormungandr_instance_conf, instance)

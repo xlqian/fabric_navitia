@@ -54,7 +54,7 @@ from fabfile.utils import (_install_packages, _upload_template,
 
 @task
 @roles('tyr')
-def update_tyr_conf():
+def update_tyr_config_file():
     _upload_template("tyr/settings.py.jinja", env.tyr_settings_file,
                      context={
                         'env': env,
@@ -116,7 +116,7 @@ def setup_tyr():
                               mode='766',
                               use_sudo=True)
 
-    update_tyr_conf()
+    update_tyr_confs()
 
     _upload_template('tyr/tyr_worker.jinja', env.tyr_worker_service_file,
                      user='root', mode='755', context={'env': env})
@@ -505,7 +505,7 @@ def test_tyr_backup_file_presence():
 
 @task
 def update_tyr_confs():
-    execute(update_tyr_conf)
+    execute(update_tyr_config_file)
     execute(update_cities_conf)
     for instance in env.instances.values():
         execute(update_tyr_instance_conf, instance)
