@@ -413,14 +413,24 @@ def update_eng_instance_conf(instance):
                      }
     )
 
-    _upload_template("kraken/kraken.initscript.jinja",
-                     "/etc/init.d/kraken_%s" % instance.name,
-                     context={'env': env,
-                              'instance': instance.name,
-                              'kraken_base_conf': env.kraken_basedir,
-                     },
-                     mode='755'
-    )
+    if env.use_systemd:
+        _upload_template("kraken/systemd_kraken.jinja",
+                         "{}/kraken_{}.service".format(env.init_path, instance.name),
+                         context={'env': env,
+                                  'instance': instance.name,
+                                  'kraken_base_conf': env.kraken_basedir,
+                         },
+                         mode='644'
+        )
+    else:
+        _upload_template("kraken/kraken.initscript.jinja",
+                         "{}/kraken_{}".format(env.init_path, instance.name),
+                         context={'env': env,
+                                  'instance': instance.name,
+                                  'kraken_base_conf': env.kraken_basedir,
+                         },
+                         mode='755'
+        )
     update_init(host='eng')
 
 @task
@@ -479,12 +489,12 @@ def remove_kraken_instance(instance, purge_logs=False):
     """
     instance = get_real_instance(instance)
 
-    sudo("service kraken_%s stop; sleep 3" % instance.name)
+    sudo("service kraken_{} stop; sleep 3".format(instance.name))
 
-    run("update-rc.d -f kraken_%s remove" % instance.name)
-    run("rm --force /etc/init.d/kraken_%s" % instance.name)
-    run("rm --recursive --force %s/%s/" % (env.kraken_basedir, instance.name))
+    run("update-rc.d -f kraken_{} remove".format(instance.name))
+    run("rm --force {}/kraken_{}".format(env.init_path, instance.name))
+    run("rm --recursive --force {}/{}/".format(env.kraken_basedir, instance.name))
     if purge_logs:
         # ex.: /var/log/kraken/navitia-bretagne.log
-        run("rm --force %s-%s.log" % (env.kraken_log_name, instance.name))
+        run("rm --force {}-{}.log".format(env.kraken_log_name, instance.name))
 
