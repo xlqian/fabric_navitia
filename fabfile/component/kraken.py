@@ -35,7 +35,6 @@ from io import BytesIO
 import os.path
 from retrying import Retrying
 import simplejson as json
-from urllib2 import Request, urlopen, HTTPError
 import requests
 
 from fabric.colors import blue, red, green, yellow
@@ -222,8 +221,8 @@ def check_dead_instances():
     threshold = env.kraken_threshold * len(env.instances.values())
     for instance in env.instances.values():
         # env.host will call the monitor kraken on the current host
-        request = Request('http://{}:{}/{}/?instance={}'.format(env.host,
-            env.kraken_monitor_port, env.kraken_monitor_location_dir, instance.name))
+        request = 'http://{}:{}/{}/?instance={}'.format(env.host,
+            env.kraken_monitor_port, env.kraken_monitor_location_dir, instance.name)
         result = _test_kraken(request, fail_if_error=False)
         if not result or result['status'] == 'timeout' or result['loaded'] is False:
             dead += 1
