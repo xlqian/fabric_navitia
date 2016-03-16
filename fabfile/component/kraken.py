@@ -35,7 +35,6 @@ from io import BytesIO
 import os.path
 from retrying import Retrying
 import simplejson as json
-from urllib2 import urlopen, HTTPError
 import requests
 
 from fabric.colors import blue, red, green, yellow
