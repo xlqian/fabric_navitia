@@ -8,8 +8,8 @@ After=network.target
 
 [Service]
 Type=forking
-PIDFile=/srv/kraken/{{instance}}/kraken.pid
-ExecStart=/sbin/start-stop-daemon --start --background --make-pidfile --pidfile /srv/kraken/{{instance}}/kraken.pid -c {{env.KRAKEN_USER}} -g {{env.KRAKEN_USER}} --chdir /srv/kraken/{{instance}}/ --exec /srv/kraken/{{instance}}/kraken
+PIDFile={{kraken_base_conf}}/{{instance}}/kraken.pid
+ExecStart=/sbin/start-stop-daemon --start --background --make-pidfile --pidfile {{kraken_base_conf}}/{{instance}}/kraken.pid -c {{env.KRAKEN_USER}} -g {{env.KRAKEN_USER}} --chdir {{kraken_base_conf}}/{{instance}}/ --exec {{kraken_base_conf}}/{{instance}}/kraken
 ExecReload=/bin/kill -HUP $MAINPID
 ExecStop=/bin/kill -s TERM $MAINPID
 

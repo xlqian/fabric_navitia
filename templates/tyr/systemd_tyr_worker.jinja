@@ -10,7 +10,7 @@ After=network.target
 Type=forking
 PIDFile=/tmp/tyr_worker.pid
 Environment=TYR_CONFIG_FILE={{env.tyr_settings_file}}
-ExecStart=/sbin/start-stop-daemon --start --exec /usr/local/bin/celery worker -- --uid={{env.KRAKEN_USER}} --gid={{env.KRAKEN_USER}} --pidfile=/tmp/tyr_worker.pid --app=tyr.tasks --detach -Ofair --events
+ExecStart=/sbin/start-stop-daemon --start --exec /usr/local/bin/celery worker -- --uid={{env.TYR_USER}} --gid={{env.TYR_USER}} --pidfile=/tmp/tyr_worker.pid --app=tyr.tasks --detach -Ofair --events
 ExecReload=/bin/kill -HUP $MAINPID
 ExecStop=/bin/kill -s TERM $MAINPID
 

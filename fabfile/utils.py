@@ -297,6 +297,7 @@ def update_init(host):
         else:
             run('systemctl daemon-reload')
 
+
 class send_mail(object):
     """
     Mail sending class.
