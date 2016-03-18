@@ -55,18 +55,14 @@ def service_path():
         return '/etc/init.d/'
 env.service_path = service_path
 
-def service_name(service, instance=None):
+def service_name(service):
     """
-    Use an adapted service name according to the OS
+    Use an adapted service name with the path according to the OS
     """
     if env.use_systemd:
-        if service == 'kraken':
-            return service + '_{}.service'.format(instance)
-        return service + '.service'
+        return env.service_path() + service + '.service'
     else:
-        if service == 'kraken':
-            return service + '_{}'.format(instance)
-        return service
+        return env.service_path() + service
 env.service_name = service_name
 
 env.KRAKEN_RABBITMQ_OK_PORT = 5672
@@ -254,8 +250,6 @@ env.tyr_migration_dir = os.path.join(env.tyr_basedir, 'migrations')
 env.tyr_settings_file = os.path.join(env.tyr_basedir, 'settings.py')
 env.tyr_settings_file_sh = os.path.join(env.tyr_basedir, 'settings.sh')
 env.tyr_wsgi_file = os.path.join(env.tyr_basedir, 'settings.wsgi')
-env.tyr_beat_service_file = os.path.join(env.service_path(), env.service_name('tyr_beat'))
-env.tyr_worker_service_file = os.path.join(env.service_path(), env.service_name('tyr_worker'))
 
 env.tyr_ws_url = 'localhost'
 env.tyr_ws_port = 86

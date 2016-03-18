@@ -416,7 +416,7 @@ def update_eng_instance_conf(instance):
 
     if env.use_systemd:
         _upload_template("kraken/systemd_kraken.jinja",
-                         "{}/{}".format(env.service_path(), env.service_name('kraken', instance.name)),
+                         "{}".format(env.service_name('kraken_{}'.format(instance.name))),
                          context={'env': env,
                                   'instance': instance.name,
                                   'kraken_base_conf': env.kraken_basedir,
@@ -425,7 +425,7 @@ def update_eng_instance_conf(instance):
         )
     else:
         _upload_template("kraken/kraken.initscript.jinja",
-                         "{}/{}".format(env.service_path(), env.service_name('kraken', instance.name)),
+                         "{}".format(env.service_name('kraken_{}'.format(instance.name))),
                          context={'env': env,
                                   'instance': instance.name,
                                   'kraken_base_conf': env.kraken_basedir,
@@ -490,10 +490,10 @@ def remove_kraken_instance(instance, purge_logs=False):
     """
     instance = get_real_instance(instance)
 
-    sudo("service {} stop; sleep 3".format(env.service_name('kraken', instance.name)))
+    sudo("service kraken_{} stop; sleep 3".format(instance.name))
 
-    run("update-rc.d -f {} remove".format(env.service_name('kraken', instance.name)))
-    run("rm --force {}/{}".format(env.service_path(), env.service_name('kraken', instance.name)))
+    run("update-rc.d -f kraken_{} remove".format(instance.name))
+    run("rm --force {}/kraken_{}".format(env.service_path(), instance.name))
     run("rm --recursive --force {}/{}/".format(env.kraken_basedir, instance.name))
     if purge_logs:
         # ex.: /var/log/kraken/navitia-bretagne.log
