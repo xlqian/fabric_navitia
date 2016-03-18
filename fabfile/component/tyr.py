@@ -118,8 +118,13 @@ def setup_tyr():
 
     update_tyr_conf()
 
-    _upload_template('tyr/tyr_worker.jinja', env.tyr_worker_service_file,
-                     user='root', mode='755', context={'env': env})
+    if env.use_systemd:
+        _upload_template('tyr/systemd_tyr_worker.jinja', env.service_name('tyr_worker'),
+                         user='root', mode='644', context={'env': env})
+    else:
+        _upload_template('tyr/tyr_worker.jinja', env.service_name('tyr_worker'),
+                         user='root', mode='755', context={'env': env})
+    utils.update_init(host='tyr')
 
     if not files.is_dir(env.tyr_migration_dir):
         files.symlink('/usr/share/tyr/migrations/', env.tyr_migration_dir, use_sudo=True)
@@ -154,8 +159,13 @@ def upgrade_tyr_packages():
     #we want the version of the system for these packages
     run('''sed -e "/protobuf/d" -e "/psycopg2/d"  /usr/share/tyr/requirements.txt > /tmp/tyr_requirements.txt''')
     require.python.install_requirements('/tmp/tyr_requirements.txt', use_sudo=True, exists_action='w', upgrade=True)
-    _upload_template('tyr/tyr_worker.jinja', env.tyr_worker_service_file,
-                     user='root', mode='755', context={'env': env})
+    if env.use_systemd:
+        _upload_template('tyr/systemd_tyr_worker.jinja', env.service_name('tyr_worker'),
+                         user='root', mode='644', context={'env': env})
+    else:
+        _upload_template('tyr/tyr_worker.jinja', env.service_name('tyr_worker'),
+                         user='root', mode='755', context={'env': env})
+    utils.update_init(host='tyr')
 
 
 @task
@@ -180,8 +190,12 @@ def upgrade_cities_db():
 @roles('tyr_master')
 def setup_tyr_master():
     utils.require_directory(env.ed_basedir, owner='www-data', group='www-data', use_sudo=True)
-    _upload_template('tyr/tyr_beat.jinja', env.tyr_beat_service_file,
-                     user='root', mode='755', context={'env': env})
+    if env.use_systemd:
+        _upload_template('tyr/systemd_tyr_beat.jinja', env.service_name('tyr_beat'),
+                         user='root', mode='644', context={'env': env})
+    else:
+        _upload_template('tyr/tyr_beat.jinja',env.service_name('tyr_beat'),
+                         user='root', mode='755', context={'env': env})
     utils.update_init(host='tyr')
 
 @task

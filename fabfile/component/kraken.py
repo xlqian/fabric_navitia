@@ -46,8 +46,9 @@ from fabric.api import task, env, sudo
 from fabric.api import execute
 from fabtools import require, service, files, python
 
-from fabfile.utils import (get_bool_from_cli, _install_packages, get_real_instance, _upload_template,
-                           start_or_stop_with_delay, get_host_addr, show_version, update_init)
+from fabfile import utils
+from fabfile.utils import (get_bool_from_cli, _install_packages, get_real_instance,
+                           _upload_template, start_or_stop_with_delay, get_host_addr)
 
 
 @task
@@ -231,7 +232,7 @@ def check_dead_instances():
                   "There are {} dead instances.".format(dead)))
         exit(1)
 
-    installed_kraken, candidate_kraken = show_version(action='get')
+    installed_kraken, candidate_kraken = utils.show_version(action='get')
     if installed_kraken != candidate_kraken:
         # if update of packages did not work
         print(red("Installed kraken version ({}) is different "
@@ -413,15 +414,25 @@ def update_eng_instance_conf(instance):
                      }
     )
 
-    _upload_template("kraken/kraken.initscript.jinja",
-                     "/etc/init.d/kraken_%s" % instance.name,
-                     context={'env': env,
-                              'instance': instance.name,
-                              'kraken_base_conf': env.kraken_basedir,
-                     },
-                     mode='755'
-    )
-    update_init(host='eng')
+    if env.use_systemd:
+        _upload_template("kraken/systemd_kraken.jinja",
+                         "{}".format(env.service_name('kraken_{}'.format(instance.name))),
+                         context={'env': env,
+                                  'instance': instance.name,
+                                  'kraken_base_conf': env.kraken_basedir,
+                         },
+                         mode='644'
+        )
+    else:
+        _upload_template("kraken/kraken.initscript.jinja",
+                         "{}".format(env.service_name('kraken_{}'.format(instance.name))),
+                         context={'env': env,
+                                  'instance': instance.name,
+                                  'kraken_base_conf': env.kraken_basedir,
+                         },
+                         mode='755'
+        )
+    utils.update_init(host='eng')
 
 @task
 @roles('eng')
@@ -479,12 +490,12 @@ def remove_kraken_instance(instance, purge_logs=False):
     """
     instance = get_real_instance(instance)
 
-    sudo("service kraken_%s stop; sleep 3" % instance.name)
+    sudo("service kraken_{} stop; sleep 3".format(instance.name))
 
-    run("update-rc.d -f kraken_%s remove" % instance.name)
-    run("rm --force /etc/init.d/kraken_%s" % instance.name)
-    run("rm --recursive --force %s/%s/" % (env.kraken_basedir, instance.name))
+    run("update-rc.d -f kraken_{} remove".format(instance.name))
+    run("rm --force {}/kraken_{}".format(env.service_path(), instance.name))
+    run("rm --recursive --force {}/{}/".format(env.kraken_basedir, instance.name))
     if purge_logs:
         # ex.: /var/log/kraken/navitia-bretagne.log
-        run("rm --force %s-%s.log" % (env.kraken_log_name, instance.name))
+        run("rm --force {}-{}.log".format(env.kraken_log_name, instance.name))
 

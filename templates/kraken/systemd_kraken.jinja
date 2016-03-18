@@ -1,0 +1,18 @@
+#
+## File managed by fabric, don't edit directly
+#
+
+[Unit]
+Description=start kraken_{{instance}}
+After=network.target
+
+[Service]
+Type=forking
+PIDFile={{kraken_base_conf}}/{{instance}}/kraken.pid
+ExecStart=/sbin/start-stop-daemon --start --background --make-pidfile --pidfile {{kraken_base_conf}}/{{instance}}/kraken.pid -c {{env.KRAKEN_USER}} -g {{env.KRAKEN_USER}} --chdir {{kraken_base_conf}}/{{instance}}/ --exec {{kraken_base_conf}}/{{instance}}/kraken
+ExecReload=/bin/kill -HUP $MAINPID
+ExecStop=/bin/kill -s TERM $MAINPID
+
+[Install]
+WantedBy=multi-user.target
+

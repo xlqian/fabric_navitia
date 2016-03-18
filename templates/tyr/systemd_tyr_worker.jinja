@@ -1,0 +1,18 @@
+#
+## File managed by fabric, don't edit directly
+#
+
+[Unit]
+Description=start tyr workers
+After=network.target
+
+[Service]
+Type=forking
+PIDFile=/tmp/tyr_worker.pid
+Environment=TYR_CONFIG_FILE={{env.tyr_settings_file}}
+ExecStart=/sbin/start-stop-daemon --start --exec /usr/local/bin/celery worker -- --uid={{env.TYR_USER}} --gid={{env.TYR_USER}} --pidfile=/tmp/tyr_worker.pid --app=tyr.tasks --detach -Ofair --events
+ExecReload=/bin/kill -HUP $MAINPID
+ExecStop=/bin/kill -s TERM $MAINPID
+
+[Install]
+WantedBy=multi-user.target
