@@ -7,11 +7,9 @@ database = {{instance.kraken_database}}
 zmq_socket = {{instance.kraken_zmq_socket}}
 instance_name = {{instance.name}}
 nb_threads = {{instance.kraken_nb_threads}}
+display_contributors = {{env.feed_publisher}}
 {% if instance.cache_raptor %}
 raptor_cache_size = {{instance.cache_raptor}}
-{% endif %}
-{% if env.feed_publisher %}
-display_contributors = True
 {% endif %}
 {% if instance.enable_realtime %}
 is_realtime_enabled = true
