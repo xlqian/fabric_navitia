@@ -520,7 +520,6 @@ def update_cities_conf():
                          context={'env': env})
 
 
-
 @task
 @roles('tyr')
 def update_tyr_instance_conf(instance):
@@ -532,6 +531,8 @@ def update_tyr_instance_conf(instance):
                      },
     )
 
+    utils.require_directory(instance.base_ed_dir,
+                            owner=env.KRAKEN_USER, group=env.KRAKEN_USER, use_sudo=True)
     # /srv/ed/$instance/alembic.ini, used by update_ed_db()
     _upload_template("tyr/ed_alembic.ini.jinja",
                      "{}/alembic.ini".format(instance.base_ed_dir),
@@ -566,8 +567,6 @@ def create_tyr_instance(instance):
     execute(db.create_instance_db, instance)
 
     # /srv/ed/destination/$instance & /srv/ed/backup/$instance
-    utils.require_directory(instance.base_ed_dir,
-                            owner=env.KRAKEN_USER, group=env.KRAKEN_USER, use_sudo=True)
     utils.require_directory(instance.source_dir,
                             owner=env.KRAKEN_USER, group=env.KRAKEN_USER, use_sudo=True)
     utils.require_directory(instance.backup_dir, is_on_nfs4=True,

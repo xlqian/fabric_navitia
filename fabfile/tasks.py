@@ -75,8 +75,8 @@ def setup():
     """
     execute(upgrade_all_packages)
     execute(db.setup_db)
-    execute(tyr.setup_tyr)
     execute(tyr.setup_tyr_master)
+    execute(tyr.setup_tyr)
     execute(kraken.setup_kraken)
     execute(jormungandr.setup_jormungandr)
     execute(tyr.upgrade_db_tyr)
@@ -180,7 +180,6 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
     for server in env.roledefs['ws']:
         instance = random.choice(env.instances.values())
         execute(jormungandr.test_jormungandr, utils.get_host_addr(server), instance=instance.name)
-
 
     if up_tyr:
         execute(tyr.start_tyr_beat)
