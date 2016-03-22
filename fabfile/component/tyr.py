@@ -54,7 +54,7 @@ from fabfile.utils import (_install_packages, _upload_template,
 
 @task
 @roles('tyr')
-def update_tyr_conf():
+def update_tyr_config_file():
     _upload_template("tyr/settings.py.jinja", env.tyr_settings_file,
                      context={
                         'env': env,
@@ -116,7 +116,7 @@ def setup_tyr():
                               mode='766',
                               use_sudo=True)
 
-    update_tyr_conf()
+    update_tyr_confs()
 
     if env.use_systemd:
         _upload_template('tyr/systemd_tyr_worker.jinja', env.service_name('tyr_worker'),
@@ -519,7 +519,7 @@ def test_tyr_backup_file_presence():
 
 @task
 def update_tyr_confs():
-    execute(update_tyr_conf)
+    execute(update_tyr_config_file)
     execute(update_cities_conf)
     for instance in env.instances.values():
         execute(update_tyr_instance_conf, instance)
@@ -534,7 +534,6 @@ def update_cities_conf():
                          context={'env': env})
 
 
-
 @task
 @roles('tyr')
 def update_tyr_instance_conf(instance):
@@ -546,6 +545,8 @@ def update_tyr_instance_conf(instance):
                      },
     )
 
+    utils.require_directory(instance.base_ed_dir,
+                            owner=env.KRAKEN_USER, group=env.KRAKEN_USER, use_sudo=True)
     # /srv/ed/$instance/alembic.ini, used by update_ed_db()
     _upload_template("tyr/ed_alembic.ini.jinja",
                      "{}/alembic.ini".format(instance.base_ed_dir),
@@ -580,8 +581,6 @@ def create_tyr_instance(instance):
     execute(db.create_instance_db, instance)
 
     # /srv/ed/destination/$instance & /srv/ed/backup/$instance
-    utils.require_directory(instance.base_ed_dir,
-                            owner=env.KRAKEN_USER, group=env.KRAKEN_USER, use_sudo=True)
     utils.require_directory(instance.source_dir,
                             owner=env.KRAKEN_USER, group=env.KRAKEN_USER, use_sudo=True)
     utils.require_directory(instance.backup_dir, is_on_nfs4=True,
