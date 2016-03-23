@@ -68,7 +68,7 @@ def setup_kraken():
                 apache_conf_path,
                 "{}/conf-enabled/monitor-kraken.conf".format(env.base_apache),
                 use_sudo=True)
-            run("service apache2 stop")
+            sudo("service apache2 stop")
     require.service.started('apache2')
 
 @task
