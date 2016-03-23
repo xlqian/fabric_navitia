@@ -60,8 +60,15 @@ def setup_kraken():
         use_sudo=True)
     update_monitor_configuration()
     if env.setup_apache:
-        _upload_template('kraken/monitor_apache_config.jinja', env.kraken_monitor_apache_config_file,
+        apache_conf_path = env.apache_conf_path('monitor-kraken')
+        _upload_template('kraken/monitor_apache_config.jinja', apache_conf_path,
                      context={'env': env}, backup=False)
+        if float(env.apache_version() >= 2.4) :
+            files.symlink(
+                apache_conf_path,
+                "{}/conf-enabled/monitor-kraken.conf".format(env.base_apache),
+                use_sudo=True)
+            run("service apache2 stop")
     require.service.started('apache2')
 
 @task

@@ -35,6 +35,7 @@ from fabric.colors import yellow
 import re
 import os
 from importlib import import_module
+from fabric.operations import run
 
 env.distrib = 'ubuntu14.04'
 env.KRAKEN_USER = 'www-data'
@@ -136,6 +137,32 @@ env.ed_datadir = '/srv/data'
 # defines additional jormungandr settings (KEY = value)
 env.jormungandr_additional_settings = {}
 
+# Apache
+env.base_apache = '/etc/apache2/'
+def apache_version():
+    """
+    Return the apache version
+    """
+    lines = run('apt-cache policy apache2').split('\n')
+    try:
+        installed = lines[1].strip().split()[-1]
+    except IndexError:
+        installed= None
+    return installed.rsplit('.', 1)[0]
+env.apache_version = apache_version
+
+def apache_conf_path(service):
+    """
+    Use an adapted service name with the path according to the apache2 version
+    """
+    version = float(apache_version())
+    if version < 2.4:
+        return env.base_apache + 'conf.d/' + service
+    else:
+        return env.base_apache + 'conf-available/' + service + '.conf'
+env.apache_conf_path = apache_conf_path
+
+
 ##############################
 # jormungandr
 ##############################
@@ -232,7 +259,6 @@ env.kraken_monitor_listen_port = env.kraken_monitor_port
 env.kraken_monitor_basedir = '/srv/monitor'
 env.kraken_monitor_wsgi_file = os.path.join(env.kraken_monitor_basedir, 'monitor.wsgi')
 env.kraken_monitor_config_file = os.path.join(env.kraken_monitor_basedir, 'settings.py')
-env.kraken_monitor_apache_config_file = '/etc/apache2/conf.d/monitor-kraken.conf'
 
 env.feed_publisher = False
 

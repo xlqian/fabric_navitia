@@ -12,16 +12,15 @@ WSGIImportScript {{env.kraken_monitor_wsgi_file}} process-group=monitor-kraken a
 WSGIScriptAlias /{{env.kraken_monitor_location_dir}} {{env.kraken_monitor_wsgi_file}}
 SetEnv PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION cpp
 <Location /{{env.kraken_monitor_location_dir}}/>
+{% if env.apache_conf_path('monitor-kraken') == '/etc/apache2/conf-available/monitor-kraken.conf' %}
+    Require all granted
+</Location>
+{% else %}
     Order allow,deny
     Allow from all
-
-    # mod_authz_core
-    Require all granted
 </Location>
 <Directory {{env.kraken_monitor_basedir}}>
     Order allow,deny
     Allow from all
-
-    # mod_authz_core
-    Require all granted
 </Directory>
+{% endif %}
