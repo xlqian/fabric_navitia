@@ -63,12 +63,9 @@ def setup_kraken():
         apache_conf_path = env.apache_conf_path('monitor-kraken')
         _upload_template('kraken/monitor_apache_config.jinja', apache_conf_path,
                      context={'env': env}, backup=False)
-        if float(env.apache_version() >= 2.4) :
-            files.symlink(
-                apache_conf_path,
-                "{}/conf-enabled/monitor-kraken.conf".format(env.base_apache),
-                use_sudo=True)
-            sudo("service apache2 stop")
+        if env.apache_version() >= 2.4:
+            sudo('a2enconf monitor-kraken.conf')
+            sudo("service apache2 reload")
     require.service.started('apache2')
 
 @task

@@ -148,14 +148,14 @@ def apache_version():
         installed = lines[1].strip().split()[-1]
     except IndexError:
         installed= None
-    return installed.rsplit('.', 1)[0]
+    return float(installed.rsplit('.', 1)[0])
 env.apache_version = apache_version
 
 def apache_conf_path(service):
     """
     Use an adapted service name with the path according to the apache2 version
     """
-    version = float(apache_version())
+    version = apache_version()
     if version < 2.4:
         return env.base_apache + 'conf.d/' + service
     else:
