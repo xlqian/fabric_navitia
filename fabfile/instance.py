@@ -82,6 +82,10 @@ class Instance:
     #we might want to overload all those properties
 
     @property
+    def kraken_engines_url(self):
+        return (e.split('@')[1] for e in self.kraken_engines)
+
+    @property
     def target_lz4_file(self):
         return "{base_dest}/{instance}/data.nav.lz4".format(base_dest=env.tyr_base_destination_dir, instance=self.name)
 

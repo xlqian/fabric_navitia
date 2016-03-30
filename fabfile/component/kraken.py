@@ -221,9 +221,9 @@ def purge_data_nav(force=False):
 @task
 def check_dead_instances():
     dead = 0
-    threshold = env.kraken_threshold * len(env.instances.values())
+    threshold = env.kraken_threshold * len(env.instances)
     for instance in env.instances.values():
-        for host in (e.split('@')[0] for e in instance.kraken_engines):
+        for host in instance.kraken_engines_url:
             request = 'http://{}:{}/{}/?instance={}'.format(host,
                 env.kraken_monitor_port, env.kraken_monitor_location_dir, instance.name)
             result = _test_kraken(request, fail_if_error=False)
@@ -323,7 +323,7 @@ def test_kraken(instance, fail_if_error=True, wait=False, loaded_is_ok=None, hos
     instance = get_real_instance(instance)
     wait = get_bool_from_cli(wait)
 
-    hosts = hosts or (e.split('@')[1] for e in instance.kraken_engines)
+    hosts = hosts or instance.kraken_engines_url
     will_return = len(hosts) == 1
     for host in hosts:
         request = 'http://{}:{}/{}/?instance={}'.format(host,
