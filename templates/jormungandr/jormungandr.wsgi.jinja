@@ -1,6 +1,10 @@
 #
 ## File managed by fabric, don't edit directly
 #
+
+# this import might fix a strange thread problem: http://bugs.python.org/issue7980
+import _strptime
+
 import os
 try:
     config_file = '{{env.jormungandr_base_dir}}/newrelic.ini'
