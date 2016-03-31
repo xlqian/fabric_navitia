@@ -251,12 +251,13 @@ def restart_kraken(instance, test=True, wait=True):
     instance = get_real_instance(instance)
     wait = get_bool_from_cli(wait)
     if instance.name not in env.excluded_instances:
-        with settings(hosts=instance.kraken_engines):
-            kraken = 'kraken_' + instance.name
-            start_or_stop_with_delay(kraken, 4000, 500, start=False, only_once=True)
-            start_or_stop_with_delay(kraken, 4000, 500, only_once=env.KRAKEN_START_ONLY_ONCE)
+        for host in instance.kraken_engines:
+            with settings(host_string=host):
+                kraken = 'kraken_' + instance.name
+                start_or_stop_with_delay(kraken, 4000, 500, start=False, only_once=True)
+                start_or_stop_with_delay(kraken, 4000, 500, only_once=env.KRAKEN_START_ONLY_ONCE)
         if test:
-            test_kraken(instance, fail_if_error=False, wait=wait, hosts=instance.kraken_engines)
+            test_kraken(instance, fail_if_error=False, wait=wait)
     else:
         print(yellow("{} has no data, not testing it".format(instance.name)))
 
@@ -267,17 +268,19 @@ def stop_kraken(instance):
     """
     instance = get_real_instance(instance)
     kraken = 'kraken_' + instance.name
-    with settings(hosts=instance.kraken_engines):
-        start_or_stop_with_delay(kraken, 4000, 500, start=False, only_once=True)
+    for host in instance.kraken_engines:
+        with settings(host_string=host):
+            start_or_stop_with_delay(kraken, 4000, 500, start=False, only_once=True)
 
 
 @task
 def get_kraken_config(server, instance):
     """Get kraken configuration of a given instance"""
+    # TODO this task is never used and it looks like a function (inconsistent)
 
     instance = get_real_instance(instance)
     
-    with settings(host_string=server):
+    with settings(host_string=env.make_ssh_url(server)):
         config_path = "%s/%s/kraken.ini" % (env.kraken_basedir, instance.name)
 
         # first get the configfile here
@@ -289,7 +292,8 @@ def get_kraken_config(server, instance):
             exit(1)
 
         config = ConfigParser.RawConfigParser(allow_no_value=True)
-        config.readfp(BytesIO(temp_file.getvalue()))
+        config_text = temp_file.getvalue()
+        config.readfp(BytesIO(config_text))
 
         if 'GENERAL' in config.sections():
             return config
