@@ -46,20 +46,20 @@ class Instance:
             self.kraken_zmq_socket = 'ipc://{kraken_dir}/{instance}/kraken.sock'.format(
                 kraken_dir=env.kraken_basedir, instance=self.name)
             self.jormungandr_zmq_socket_for_instance = self.kraken_zmq_socket
-            self.zmq_server, self.kraken_engines = None, env.make_ssh_url(env.roledefs['eng'])
+            self.zmq_server, self.kraken_engines = None, list(env.roledefs['eng'])
         elif zmq_socket_port:
             if zmq_server:
                 if isinstance(zmq_server, basestring):
                     self.zmq_server = zmq_server
                     if zmq_server == 'localhost':
-                        self.kraken_engines = env.make_ssh_url(env.roledefs['ws'])
+                        self.kraken_engines = list(env.roledefs['ws'])
                     else:
                         self.kraken_engines = [env.make_ssh_url(zmq_server)]
                 else:
                     # zmq_server is a list
                     self.zmq_server, self.kraken_engines = env.zmq_server, env.make_ssh_url(zmq_server)
             else:
-                self.zmq_server, self.kraken_engines = env.zmq_server, env.make_ssh_url(env.roledefs['eng'])
+                self.zmq_server, self.kraken_engines = env.zmq_server, list(env.roledefs['eng'])
             self.jormungandr_zmq_socket_for_instance = 'tcp://{server}:{port}'.format(
                 server=self.zmq_server, port=zmq_socket_port)
         else:

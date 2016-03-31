@@ -40,7 +40,7 @@ import requests
 from fabric.api import task, env, sudo
 from fabric.colors import blue, red, green, yellow
 from fabric.context_managers import settings
-from fabric.contrib.files import exists, sed
+from fabric.contrib.files import exists, sed, is_link
 from fabric.decorators import roles, serial
 from fabric.operations import run, get
 from fabric.utils import abort
@@ -323,7 +323,7 @@ def test_kraken(instance, fail_if_error=True, wait=False, loaded_is_ok=None, hos
     instance = get_real_instance(instance)
     wait = get_bool_from_cli(wait)
 
-    hosts = hosts or instance.kraken_engines_url
+    hosts = list(hosts or instance.kraken_engines_url)
     will_return = len(hosts) == 1
     for host in hosts:
         request = 'http://{}:{}/{}/?instance={}'.format(host,
@@ -341,46 +341,53 @@ def test_kraken(instance, fail_if_error=True, wait=False, loaded_is_ok=None, hos
         else:
             result = _test_kraken(request, fail_if_error)
 
-        if result['status'] != 'running':
-            if result['status'] == 'no_data':
-                print(yellow("WARNING: instance {} has no loaded data".format(instance.name)))
+        try:
+            if result['status'] != 'running':
+                if result['status'] == 'no_data':
+                    print(yellow("WARNING: instance {} has no loaded data".format(instance.name)))
+                    if will_return:
+                        return False
+                if fail_if_error:
+                    print(red("ERROR: Instance {} is not running ! ({})".format(instance.name, result)))
+                    if will_return:
+                        return False
+                print(yellow("WARNING: Instance {} is not running ! ({})".format(instance.name, result)))
                 if will_return:
                     return False
+
+            if not result['is_connected_to_rabbitmq']:
+                print(yellow("WARNING: Instance {} is not connected to rabbitmq".format(instance.name)))
+                if will_return:
+                    return False
+
+            if loaded_is_ok is None:
+                loaded_is_ok = wait
+            if not loaded_is_ok:
+                if result['loaded']:
+                    print(yellow("WARNING: instance {} has loaded data".format(instance.name)))
+                    if will_return:
+                        return True
+                else:
+                    print(green("OK: instance {} has correct values: {}".format(instance.name, result)))
+                    if will_return:
+                        return False
+            else:
+                if result['loaded']:
+                    print(green("OK: instance {} has correct values: {}".format(instance.name, result)))
+                    if will_return:
+                        return True
+                elif fail_if_error:
+                    abort(red("CRITICAL: instance {} has no loaded data".format(instance.name)))
+                else:
+                    print(yellow("WARNING: instance {} has no loaded data".format(instance.name)))
+                    if will_return:
+                        return False
+        except KeyError:
+            print(red("CRITICAL: instance {} does not return a correct result".format(instance.name)))
+            print(result)
             if fail_if_error:
-                print(red("ERROR: Instance {} is not running ! ({})".format(instance.name, result)))
-                if will_return:
-                    return False
-            print(yellow("WARNING: Instance {} is not running ! ({})".format(instance.name, result)))
-            if will_return:
-                return False
+                abort('')
 
-        if not result['is_connected_to_rabbitmq']:
-            print(yellow("WARNING: Instance {} is not connected to rabbitmq".format(instance.name)))
-            if will_return:
-                return False
-
-        if loaded_is_ok is None:
-            loaded_is_ok = wait
-        if not loaded_is_ok:
-            if result['loaded']:
-                print(yellow("WARNING: instance {} has loaded data".format(instance.name)))
-                if will_return:
-                    return True
-            else:
-                print(green("OK: instance {} has correct values: {}".format(instance.name, result)))
-                if will_return:
-                    return False
-        else:
-            if result['loaded']:
-                print(green("OK: instance {} has correct values: {}".format(instance.name, result)))
-                if will_return:
-                    return True
-            elif fail_if_error:
-                abort(red("CRITICAL: instance {} has no loaded data".format(instance.name)))
-            else:
-                print(yellow("WARNING: instance {} has no loaded data".format(instance.name)))
-                if will_return:
-                    return False
 
 @task
 @roles('eng')
@@ -418,35 +425,36 @@ def update_monitor_configuration():
 @task
 def update_eng_instance_conf(instance):
     instance = get_real_instance(instance)
-    with settings(hosts=instance.kraken_engines):
-        _upload_template("kraken/kraken.ini.jinja", "%s/%s/kraken.ini" %
-                         (env.kraken_basedir, instance.name),
-                         context={
-                             'env': env,
-                             'instance': instance,
-                         }
-        )
+    for host in instance.kraken_engines:
+        with settings(host_string=host):
+            _upload_template("kraken/kraken.ini.jinja", "%s/%s/kraken.ini" %
+                             (env.kraken_basedir, instance.name),
+                             context={
+                                 'env': env,
+                                 'instance': instance,
+                             }
+            )
 
-        if env.use_systemd:
-            _upload_template("kraken/systemd_kraken.jinja",
-                             "{}".format(env.service_name('kraken_{}'.format(instance.name))),
-                             context={'env': env,
-                                      'instance': instance.name,
-                                      'kraken_base_conf': env.kraken_basedir,
-                             },
-                             mode='644'
-            )
-        else:
-            _upload_template("kraken/kraken.initscript.jinja",
-                             "{}".format(env.service_name('kraken_{}'.format(instance.name))),
-                             context={'env': env,
-                                      'instance': instance.name,
-                                      'kraken_base_conf': env.kraken_basedir,
-                             },
-                             mode='755'
-            )
-        # TODO check this
-        utils.update_init(host='eng')
+            if env.use_systemd:
+                _upload_template("kraken/systemd_kraken.jinja",
+                                 "{}".format(env.service_name('kraken_{}'.format(instance.name))),
+                                 context={'env': env,
+                                          'instance': instance.name,
+                                          'kraken_base_conf': env.kraken_basedir,
+                                 },
+                                 mode='644'
+                )
+            else:
+                _upload_template("kraken/kraken.initscript.jinja",
+                                 "{}".format(env.service_name('kraken_{}'.format(instance.name))),
+                                 context={'env': env,
+                                          'instance': instance.name,
+                                          'kraken_base_conf': env.kraken_basedir,
+                                 },
+                                 mode='755'
+                )
+            # TODO check this, make it consistent with env.use_systemd
+            utils.update_init(host='eng')
 
 
 @task
@@ -459,38 +467,40 @@ def create_eng_instance(instance):
         * Start the service
     """
     instance = get_real_instance(instance)
-    with settings(hosts=instance.kraken_engines):
-        # base_conf
-        require.files.directory(instance.kraken_basedir,
-                                owner=env.KRAKEN_USER, group=env.KRAKEN_USER, use_sudo=True)
-        # logs
-        require.files.directory(env.kraken_log_basedir,
-                                owner=env.KRAKEN_USER, group=env.KRAKEN_USER, use_sudo=True)
+    for host in instance.kraken_engines:
+        with settings(host_string=host):
+            # base_conf
+            require.files.directory(instance.kraken_basedir,
+                                    owner=env.KRAKEN_USER, group=env.KRAKEN_USER, use_sudo=True)
+            # logs
+            require.files.directory(env.kraken_log_basedir,
+                                    owner=env.KRAKEN_USER, group=env.KRAKEN_USER, use_sudo=True)
 
-        update_eng_instance_conf(instance)
+            update_eng_instance_conf(instance)
 
-        # kraken.ini, pid and binary symlink
-        if not exists("{}/{}/kraken".format(env.kraken_basedir, instance.name)):
+            # kraken.ini, pid and binary symlink
             kraken_bin = "{}/{}/kraken".format(env.kraken_basedir, instance.name)
-            files.symlink("/usr/bin/kraken", kraken_bin, use_sudo=True)
-            sudo('chown {user} {bin}'.format(user=env.KRAKEN_USER, bin=kraken_bin))
+            if not is_link(kraken_bin):
+                files.symlink("/usr/bin/kraken", kraken_bin, use_sudo=True)
+                sudo('chown -h {user} {bin}'.format(user=env.KRAKEN_USER, bin=kraken_bin))
 
-        #run("chmod 755 /etc/init.d/kraken_{}".format(instance))
-        if not env.use_systemd:
-            sudo("update-rc.d kraken_{} defaults".format(instance.name))
-        print(blue("INFO: Kraken {instance} instance is starting on {server}, "
-                   "waiting 5 seconds, we will check if processus is running".format(
-            instance=instance.name, server=get_host_addr(env.host_string))))
+            #run("chmod 755 /etc/init.d/kraken_{}".format(instance))
+            # TODO refactor this and test it on systemd and non-systemd machines
+            if not env.use_systemd:
+                sudo("update-rc.d kraken_{} defaults".format(instance.name))
+            print(blue("INFO: Kraken {instance} instance is starting on {server}, "
+                       "waiting 5 seconds, we will check if processus is running".format(
+                instance=instance.name, server=get_host_addr(env.host_string))))
 
-        service.start("kraken_{}".format(instance.name))
-        run("sleep 5")  # we wait a bit for the kraken to pop
+            service.start("kraken_{}".format(instance.name))
+            run("sleep 5")  # we wait a bit for the kraken to pop
 
-        # test it !
-        # execute(test_kraken, get_host_addr(env.host_string), instance, fail_if_error=False)
-        print("server: {}".format(env.host_string))
-        run("pgrep --list-name --full {}".format(instance.name))
-        print(blue("INFO: kraken {instance} instance is running on {server}".
-                   format(instance=instance.name, server=get_host_addr(env.host_string))))
+            # test it !
+            # execute(test_kraken, get_host_addr(env.host_string), instance, fail_if_error=False)
+            with settings(warn_only=True):
+                run("pgrep --list-name --full {}".format(instance.name))
+            print(blue("INFO: kraken {instance} instance is running on {server}".
+                       format(instance=instance.name, server=get_host_addr(env.host_string))))
 
 
 @task
@@ -516,17 +526,17 @@ def remove_kraken_instance(instance, purge_logs=False, apply_on='engines'):
     else:
         abort("Bad 'apply_on' parameter value: {}".format(apply_on))
 
-    with settings(
-        hosts=hosts,
-        exclude_hosts=exclude_hosts,
-        warn_only=True
-    ):
-        sudo("service kraken_{} stop; sleep 3".format(instance.name))
+    for host in set(hosts) - set(exclude_hosts):
+        with settings(
+            host_string=host,
+            warn_only=True
+        ):
+            sudo("service kraken_{} stop; sleep 3".format(instance.name))
 
-        if not env.use_systemd:
-            run("update-rc.d -f kraken_{} remove".format(instance.name))
-        run("rm --force {}/kraken_{}".format(env.service_path(), instance.name))
-        run("rm --recursive --force {}/{}/".format(env.kraken_basedir, instance.name))
-        if purge_logs:
-            # ex.: /var/log/kraken/navitia-bretagne.log
-            run("rm --force {}-{}.log".format(env.kraken_log_name, instance.name))
+            if not env.use_systemd:
+                run("update-rc.d -f kraken_{} remove".format(instance.name))
+            sudo("rm --force {}/kraken_{}".format(env.service_path(), instance.name))
+            sudo("rm --recursive --force {}/{}/".format(env.kraken_basedir, instance.name))
+            if purge_logs:
+                # ex.: /var/log/kraken/navitia-bretagne.log
+                sudo("rm --force {}-{}.log".format(env.kraken_log_name, instance.name))

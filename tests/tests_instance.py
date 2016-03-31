@@ -3,6 +3,7 @@
 import unittest
 
 from fabric.api import env
+from fabric.context_managers import settings
 
 from fabfile.instance import add_instance
 
@@ -11,7 +12,7 @@ class TestInstance(unittest.TestCase):
     def test_file_socket(self):
         env.use_zmq_socket_file = True
         env.roledefs = {
-            'eng': ('aaa', 'bbb')
+            'eng': ('root@aaa', 'root@bbb')
         }
         instance = add_instance('toto', 'pzekgjp8aeog')
         self.assertEqual(instance, env.instances['toto'])
@@ -28,7 +29,7 @@ class TestInstance(unittest.TestCase):
         env.use_zmq_socket_file = False
         env.zmq_server = 'localhost'
         env.roledefs = {
-            'eng': ('aaa', 'bbb')
+            'eng': ('root@aaa', 'root@bbb')
         }
         instance = add_instance('toto', 'pzekgjp8aeog', zmq_socket_port=30001)
         self.assertEqual(instance.zmq_server, 'localhost')
@@ -39,18 +40,40 @@ class TestInstance(unittest.TestCase):
         env.use_zmq_socket_file = False
         env.zmq_server = 'vip.truc'
         env.roledefs = {
-            'eng': ('aaa', 'bbb')
+            'eng': ('root@aaa', 'root@bbb')
         }
         instance = add_instance('toto', 'pzekgjp8aeog', zmq_socket_port=30001)
         self.assertEqual(instance.zmq_server, 'vip.truc')
         self.assertEqual(instance.jormungandr_zmq_socket_for_instance, 'tcp://vip.truc:30001')
         self.assertEqual(instance.kraken_engines, ['root@aaa', 'root@bbb'])
 
+    def test_default_server_altered_user(self):
+        env.use_zmq_socket_file = False
+        env.zmq_server = 'vip.truc'
+        env.roledefs = {
+            'eng': ('navitia@aaa', 'navitia@bbb')
+        }
+        with settings(default_ssh_user='navitia'):
+            instance = add_instance('toto', 'pzekgjp8aeog', zmq_socket_port=30001)
+        self.assertEqual(instance.zmq_server, 'vip.truc')
+        self.assertEqual(instance.jormungandr_zmq_socket_for_instance, 'tcp://vip.truc:30001')
+        self.assertEqual(instance.kraken_engines, ['navitia@aaa', 'navitia@bbb'])
+
+    def test_default_server_altered_roledefs(self):
+        env.use_zmq_socket_file = False
+        env.zmq_server = 'vip.truc'
+        env.roledefs = {
+            'eng': ('root@aaa', 'root@bbb')
+        }
+        instance = add_instance('toto', 'pzekgjp8aeog', zmq_socket_port=30001)
+        env.roledefs['eng'] = []
+        self.assertEqual(instance.kraken_engines, ['root@aaa', 'root@bbb'])
+
     def test_localhost_zmq_server(self):
         env.use_zmq_socket_file = False
         env.roledefs = {
-            'eng': ('aaa', 'bbb'),
-            'ws': ('aaa',)
+            'eng': ('root@aaa', 'root@bbb'),
+            'ws': ('root@aaa',)
         }
         instance = add_instance('toto', 'pzekgjp8aeog', zmq_socket_port=30001, zmq_server='localhost')
         self.assertEqual(instance.zmq_server, 'localhost')
@@ -60,7 +83,7 @@ class TestInstance(unittest.TestCase):
     def test_single_zmq_server(self):
         env.use_zmq_socket_file = False
         env.roledefs = {
-            'eng': ('aaa', 'bbb')
+            'eng': ('root@aaa', 'root@bbb')
         }
         instance = add_instance('toto', 'pzekgjp8aeog', zmq_socket_port=30001, zmq_server='bbb')
         self.assertEqual(instance.zmq_server, 'bbb')
@@ -71,7 +94,7 @@ class TestInstance(unittest.TestCase):
         env.use_zmq_socket_file = False
         env.zmq_server = 'vip.truc'
         env.roledefs = {
-            'eng': ('aaa', 'bbb', 'ccc', 'ddd')
+            'eng': ('root@aaa', 'root@bbb', 'root@ccc', 'root@ddd')
         }
         instance = add_instance('toto', 'pzekgjp8aeog', zmq_socket_port=30001, zmq_server=('bbb', 'ccc'))
         self.assertEqual(instance.zmq_server, 'vip.truc')
