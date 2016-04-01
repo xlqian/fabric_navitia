@@ -146,8 +146,9 @@ def enable_rabbitmq_standalone():
 def restart_all_krakens(wait=True):
     """restart and test all kraken instances"""
     wait = get_bool_from_cli(wait)
-    with settings(roles=['eng']):
-        start_or_stop_with_delay('apache2', env.APACHE_START_DELAY * 1000, 500, only_once=env.APACHE_START_ONLY_ONCE)
+    for host in env.roledefs['eng']:
+        with settings(host_string=host):
+            start_or_stop_with_delay('apache2', env.APACHE_START_DELAY * 1000, 500, only_once=env.APACHE_START_ONLY_ONCE)
     for instance in env.instances.values():
         restart_kraken(instance, wait=wait)
 
