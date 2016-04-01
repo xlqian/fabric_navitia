@@ -60,6 +60,7 @@ class Instance:
                     self.zmq_server, self.kraken_engines = env.zmq_server, env.make_ssh_url(zmq_server)
             else:
                 self.zmq_server, self.kraken_engines = env.zmq_server, list(env.roledefs['eng'])
+            self.kraken_zmq_socket = 'tcp://*:{port}'.format(port=zmq_socket_port)
             self.jormungandr_zmq_socket_for_instance = 'tcp://{server}:{port}'.format(
                 server=self.zmq_server, port=zmq_socket_port)
         else:

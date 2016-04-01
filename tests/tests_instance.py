@@ -18,6 +18,8 @@ class TestInstance(unittest.TestCase):
         self.assertEqual(instance, env.instances['toto'])
         self.assertIsNone(instance.zmq_server)
         self.assertEqual(instance.kraken_engines, ['root@aaa', 'root@bbb'])
+        self.assertEqual(instance.jormungandr_zmq_socket_for_instance, 'ipc:///srv/kraken/toto/kraken.sock')
+        self.assertEqual(instance.kraken_zmq_socket, 'ipc:///srv/kraken/toto/kraken.sock')
 
     def test_missing_zmq_port(self):
         env.use_zmq_socket_file = False
@@ -33,8 +35,9 @@ class TestInstance(unittest.TestCase):
         }
         instance = add_instance('toto', 'pzekgjp8aeog', zmq_socket_port=30001)
         self.assertEqual(instance.zmq_server, 'localhost')
-        self.assertEqual(instance.jormungandr_zmq_socket_for_instance, 'tcp://localhost:30001')
         self.assertEqual(instance.kraken_engines, ['root@aaa', 'root@bbb'])
+        self.assertEqual(instance.jormungandr_zmq_socket_for_instance, 'tcp://localhost:30001')
+        self.assertEqual(instance.kraken_zmq_socket, 'tcp://*:30001')
 
     def test_default_server(self):
         env.use_zmq_socket_file = False
@@ -44,8 +47,9 @@ class TestInstance(unittest.TestCase):
         }
         instance = add_instance('toto', 'pzekgjp8aeog', zmq_socket_port=30001)
         self.assertEqual(instance.zmq_server, 'vip.truc')
-        self.assertEqual(instance.jormungandr_zmq_socket_for_instance, 'tcp://vip.truc:30001')
         self.assertEqual(instance.kraken_engines, ['root@aaa', 'root@bbb'])
+        self.assertEqual(instance.jormungandr_zmq_socket_for_instance, 'tcp://vip.truc:30001')
+        self.assertEqual(instance.kraken_zmq_socket, 'tcp://*:30001')
 
     def test_default_server_altered_user(self):
         env.use_zmq_socket_file = False
@@ -56,10 +60,12 @@ class TestInstance(unittest.TestCase):
         with settings(default_ssh_user='navitia'):
             instance = add_instance('toto', 'pzekgjp8aeog', zmq_socket_port=30001)
         self.assertEqual(instance.zmq_server, 'vip.truc')
-        self.assertEqual(instance.jormungandr_zmq_socket_for_instance, 'tcp://vip.truc:30001')
         self.assertEqual(instance.kraken_engines, ['navitia@aaa', 'navitia@bbb'])
+        self.assertEqual(instance.jormungandr_zmq_socket_for_instance, 'tcp://vip.truc:30001')
+        self.assertEqual(instance.kraken_zmq_socket, 'tcp://*:30001')
 
     def test_default_server_altered_roledefs(self):
+        # check that attribute kraken_engines is a copy from env.roledefs, not a reference
         env.use_zmq_socket_file = False
         env.zmq_server = 'vip.truc'
         env.roledefs = {
@@ -77,8 +83,9 @@ class TestInstance(unittest.TestCase):
         }
         instance = add_instance('toto', 'pzekgjp8aeog', zmq_socket_port=30001, zmq_server='localhost')
         self.assertEqual(instance.zmq_server, 'localhost')
-        self.assertEqual(instance.jormungandr_zmq_socket_for_instance, 'tcp://localhost:30001')
         self.assertEqual(instance.kraken_engines, ['root@aaa'])
+        self.assertEqual(instance.jormungandr_zmq_socket_for_instance, 'tcp://localhost:30001')
+        self.assertEqual(instance.kraken_zmq_socket, 'tcp://*:30001')
 
     def test_single_zmq_server(self):
         env.use_zmq_socket_file = False
@@ -87,8 +94,9 @@ class TestInstance(unittest.TestCase):
         }
         instance = add_instance('toto', 'pzekgjp8aeog', zmq_socket_port=30001, zmq_server='bbb')
         self.assertEqual(instance.zmq_server, 'bbb')
-        self.assertEqual(instance.jormungandr_zmq_socket_for_instance, 'tcp://bbb:30001')
         self.assertEqual(instance.kraken_engines, ['root@bbb'])
+        self.assertEqual(instance.jormungandr_zmq_socket_for_instance, 'tcp://bbb:30001')
+        self.assertEqual(instance.kraken_zmq_socket, 'tcp://*:30001')
 
     def test_multiple_zmq_server(self):
         env.use_zmq_socket_file = False
@@ -98,8 +106,9 @@ class TestInstance(unittest.TestCase):
         }
         instance = add_instance('toto', 'pzekgjp8aeog', zmq_socket_port=30001, zmq_server=('bbb', 'ccc'))
         self.assertEqual(instance.zmq_server, 'vip.truc')
-        self.assertEqual(instance.jormungandr_zmq_socket_for_instance, 'tcp://vip.truc:30001')
         self.assertEqual(instance.kraken_engines, ['root@bbb', 'root@ccc'])
+        self.assertEqual(instance.jormungandr_zmq_socket_for_instance, 'tcp://vip.truc:30001')
+        self.assertEqual(instance.kraken_zmq_socket, 'tcp://*:30001')
 
 
 if __name__ == '__main__':
