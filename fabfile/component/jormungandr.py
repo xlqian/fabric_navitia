@@ -295,13 +295,7 @@ def test_jormungandr(server, instance=None, fail_if_error=True):
 @roles('ws')
 def deploy_jormungandr_instance_conf(instance):
     config = {'key': instance.name, 'zmq_socket': instance.jormungandr_zmq_socket_for_instance}
-    config['realtime_proxies'] = []
-    for proxy in instance.realtime_proxies:
-        proxy_config = {'id': proxy.id, 'class': proxy.class_path}
-        if proxy.constructor_args:
-            proxy_config['args'] = proxy.constructor_args
-        config['realtime_proxies'].append(proxy_config)
-
+    config['realtime_proxies'] = instance.realtime_proxies
 
     _upload_template("jormungandr/instance.json.jinja",
                      instance.jormungandr_config_file,
