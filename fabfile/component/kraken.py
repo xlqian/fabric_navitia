@@ -467,7 +467,8 @@ def create_eng_instance(instance):
         sudo('chown {user} {bin}'.format(user=env.KRAKEN_USER, bin=kraken_bin))
 
     #run("chmod 755 /etc/init.d/kraken_{}".format(instance))
-    sudo("update-rc.d kraken_{} defaults".format(instance.name))
+    if not env.use_systemd:
+        sudo("update-rc.d kraken_{} defaults".format(instance.name))
     print(blue("INFO: Kraken {instance} instance is starting on {server}, "
                "waiting 5 seconds, we will check if processus is running".format(
         instance=instance.name, server=get_host_addr(env.host_string))))
@@ -495,8 +496,8 @@ def remove_kraken_instance(instance, purge_logs=False):
     instance = get_real_instance(instance)
 
     sudo("service kraken_{} stop; sleep 3".format(instance.name))
-
-    run("update-rc.d -f kraken_{} remove".format(instance.name))
+    if not env.use_systemd:
+        run("update-rc.d -f kraken_{} remove".format(instance.name))
     run("rm --force {}/kraken_{}".format(env.service_path(), instance.name))
     run("rm --recursive --force {}/{}/".format(env.kraken_basedir, instance.name))
     if purge_logs:
