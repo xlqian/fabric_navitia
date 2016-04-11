@@ -126,11 +126,7 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
     time_dict.register_start('total_deploy')
 
     if up_tyr:
-        execute(tyr.stop_tyr_beat)
-        execute(upgrade_tyr, up_confs=up_confs, pilot_tyr_beat=False)
-        time_dict.register_start('bina')
-        execute(tyr.launch_rebinarization_upgrade, pilot_tyr_beat=False)
-        time_dict.register_end('bina')
+        execute(update_tyr_step, time_dict, only_bina=False)
 
     if check_version:
         execute(compare_version_candidate_installed)
@@ -181,8 +177,8 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
         instance = random.choice(env.instances.values())
         execute(jormungandr.test_jormungandr, utils.get_host_addr(server), instance=instance.name)
 
-    if up_tyr:
-        execute(tyr.start_tyr_beat)
+    # start tyr_beat even if up_tyr is False
+    execute(tyr.start_tyr_beat)
     time_dict.register_end('total_deploy')
     if send_mail in ('end', 'all'):
         warn_dict = jormungandr.check_kraken_jormun_after_deploy()
@@ -202,6 +198,21 @@ def broadcast_email(kind, status=None):
         env.mail_class.send_start(status)
     elif kind == 'end':
         env.mail_class.send_end(status)
+
+
+@task
+def update_tyr_step(time_dict=None, only_bina=True, up_confs=True):
+    if not time_dict:
+        time_dict = TimeCollector()
+    execute(tyr.stop_tyr_beat)
+    execute(upgrade_tyr, up_confs=up_confs, pilot_tyr_beat=False)
+    time_dict.register_start('bina')
+    execute(tyr.launch_rebinarization_upgrade, pilot_tyr_beat=False)
+    time_dict.register_end('bina')
+    if only_bina:
+        print show_time_deploy(time_dict)
+        return
+    return time_dict
 
 
 @task
