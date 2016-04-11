@@ -201,7 +201,7 @@ def broadcast_email(kind, status=None):
 
 
 @task
-def update_tyr_step(time_dict=None, only_bina=True):
+def update_tyr_step(time_dict=None, only_bina=True, up_confs=True):
     if not time_dict:
         time_dict = TimeCollector()
     execute(tyr.stop_tyr_beat)
