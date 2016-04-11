@@ -177,7 +177,7 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
         instance = random.choice(env.instances.values())
         execute(jormungandr.test_jormungandr, utils.get_host_addr(server), instance=instance.name)
 
-    # start tyr_beat even if up_tyr already running
+    # start tyr_beat even if up_tyr is False
     execute(tyr.start_tyr_beat)
     time_dict.register_end('total_deploy')
     if send_mail in ('end', 'all'):
