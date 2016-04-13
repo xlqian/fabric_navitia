@@ -114,6 +114,7 @@ def upgrade_ws_packages():
 
     #we want the version of the system for these packages
     run('''sed -e "/protobuf/d" -e "/psycopg2/d"  /usr/share/jormungandr/requirements.txt > /tmp/jormungandr_requirements.txt''')
+    run('git config --global url."https://".insteadOf git://')
     require.python.install_requirements('/tmp/jormungandr_requirements.txt',
             use_sudo=True,
             exists_action='w',
