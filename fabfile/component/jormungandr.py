@@ -50,7 +50,7 @@ from fabric.api import execute, task, env, sudo
 from fabtools import require, python
 
 from fabfile.component import kraken, load_balancer
-from fabfile.utils import (_install_packages, _upload_template,
+from fabfile.utils import (_install_packages, _upload_template, get_real_instance,
                            start_or_stop_with_delay, get_bool_from_cli, get_host_addr, show_version)
 
 
@@ -292,9 +292,10 @@ def test_jormungandr(server, instance=None, fail_if_error=True):
     return True
 
 
-@task()
+@task
 @roles('ws')
 def deploy_jormungandr_instance_conf(instance):
+    instance = get_real_instance(instance)
     config = {'key': instance.name, 'zmq_socket': instance.jormungandr_zmq_socket_for_instance}
     config['realtime_proxies'] = instance.realtime_proxies
 
@@ -310,6 +311,7 @@ def deploy_jormungandr_instance_conf(instance):
     if fabtools.files.is_file(instance.jormungandr_old_ini_config_file):
         fabtools.files.remove(instance.jormungandr_old_ini_config_file)
 
+
 @task
 @roles('ws')
 def remove_jormungandr_instance(instance):
@@ -319,6 +321,13 @@ def remove_jormungandr_instance(instance):
     """
     run("rm --force %s/%s.json" % (env.jormungandr_instances_dir, instance))
 
+    # TODO refactor this (seems NxN) !
     for server in env.roledefs['ws']:
         print("→ server: {}".format(server))
         execute(reload_jormun_safe, server)
+
+
+@task
+def deploy_jormungandr_all_instances_conf():
+    for instance in env.instances.itervalues():
+        execute(deploy_jormungandr_instance_conf, instance)
