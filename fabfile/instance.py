@@ -30,38 +30,48 @@
 # www.navitia.io
 
 from fabric.api import env
+from fabric.utils import abort
 import os.path
-
-all_zmq_ports = [0]
-
-
-def get_next_zmq_socket():
-    port = max(all_zmq_ports) + 1
-    all_zmq_ports.append(port)
-    return 'tcp://*:{}'.format(env.KRAKEN_START_PORT + port)
 
 
 class Instance:
     def __init__(self, name, db_password, db_local='fr_FR.UTF8',
                  is_free=False, chaos_database=None, rt_topics=[],
                  zmq_socket_port=None, db_name=None, db_user=None, source_dir=None,
-                 enable_realtime=False, realtime_proxies=[], cache_raptor=None):
+                 enable_realtime=False, realtime_proxies=[], cache_raptor=None, zmq_server=None):
         self.name = name
         self.db_password = db_password
         self.is_free = is_free
         if env.use_zmq_socket_file:
-            self.kraken_zmq_socket = 'ipc://{kraken_dir}/{instance}/kraken.sock'.format(kraken_dir=env.kraken_basedir, instance=self.name)
+            self.kraken_zmq_socket = 'ipc://{kraken_dir}/{instance}/kraken.sock'.format(
+                kraken_dir=env.kraken_basedir, instance=self.name)
             self.jormungandr_zmq_socket_for_instance = self.kraken_zmq_socket
-        else:
-            if zmq_socket_port is not None and env.zmq_server is not None:
-                # kraken needs to listen to all but jomgandr needs to communicates with the engine
-                self.kraken_zmq_socket = 'tcp://*:{port}'.format(port=zmq_socket_port)
-                self.jormungandr_zmq_socket_for_instance = 'tcp://{server}:{port}'.format(server=env.zmq_server, port=zmq_socket_port)
-                all_zmq_ports.append(zmq_socket_port)
+            self.zmq_server, self.kraken_engines = None, list(env.roledefs['eng'])
+        elif zmq_socket_port:
+            if zmq_server:
+                if isinstance(zmq_server, basestring):
+                    if zmq_server == 'localhost':
+                        self.zmq_server = zmq_server
+                        self.kraken_engines = list(env.roledefs['ws'])
+                    else:
+                        self.kraken_engines = [env.make_ssh_url(zmq_server)]
+                        self.zmq_server = env.zmq_server or zmq_server
+                else:
+                    # zmq_server is a list
+                    if env.zmq_server:
+                        self.zmq_server, self.kraken_engines = env.zmq_server, env.make_ssh_url(zmq_server)
+                    else:
+                        abort('Platform configuration file must include a env.zmq_server specification '
+                              '(see fabfile.env.platforms for some instructions)')
             else:
-                print 'no zmq configuration defined, use default'
-                self.kraken_zmq_socket = get_next_zmq_socket()
-                self.jormungandr_zmq_socket_for_instance = self.kraken_zmq_socket
+                self.zmq_server, self.kraken_engines = env.zmq_server, list(env.roledefs['eng'])
+            self.kraken_zmq_socket = 'tcp://*:{port}'.format(port=zmq_socket_port)
+            self.jormungandr_zmq_socket_for_instance = 'tcp://{server}:{port}'.format(
+                server=self.zmq_server, port=zmq_socket_port)
+        else:
+            abort('Instance configuration must include a ZMQ port, aborting '
+                  '(see fabfile.env.platforms for some instructions)')
+
         self.kraken_nb_threads = env.KRAKEN_NB_THREADS
         self.db_local = db_local
         self.chaos_database = chaos_database
@@ -76,6 +86,10 @@ class Instance:
         self.cache_raptor = cache_raptor
 
     #we might want to overload all those properties
+
+    @property
+    def kraken_engines_url(self):
+        return (e.split('@')[1] for e in self.kraken_engines)
 
     @property
     def target_lz4_file(self):
@@ -122,6 +136,5 @@ class Instance:
 
 
 def add_instance(name, db_pwd, **kwargs):
-    env.instances[name] = Instance(name, db_pwd, **kwargs)
-
-
+    instance = env.instances[name] = Instance(name, db_pwd, **kwargs)
+    return instance

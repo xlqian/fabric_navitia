@@ -46,6 +46,7 @@ env.debian_packages_path = None
 
 env.use_systemd = False
 
+
 def service_path():
     """
     Use an adapted service path according to the OS
@@ -56,6 +57,7 @@ def service_path():
         return '/etc/init.d/'
 env.service_path = service_path
 
+
 def service_name(service):
     """
     Use an adapted service name with the path according to the OS
@@ -65,6 +67,23 @@ def service_name(service):
     else:
         return env.service_path() + service
 env.service_name = service_name
+
+env.default_ssh_user = 'root'
+
+
+def make_ssh_url(serv, *args):
+    """
+    given an url, returns user@url
+    will return a list [user@url1, user@url2, ...] if serv is iterable
+    or if more than one argument is given
+    """
+    if args:
+        serv = [serv]
+        serv.extend(args)
+    elif isinstance(serv, basestring):
+        return "{}@{}".format(env.default_ssh_user, serv)
+    return ["{}@{}".format(env.default_ssh_user, s) for s in serv]
+env.make_ssh_url = make_ssh_url
 
 env.KRAKEN_RABBITMQ_OK_PORT = 5672
 env.KRAKEN_RABBITMQ_WRONG_PORT = 56722
@@ -77,17 +96,47 @@ env.KRAKEN_START_ONLY_ONCE = True
 env.TYR_START_ONLY_ONCE = True
 env.APACHE_START_ONLY_ONCE = True
 
+# ======= ZMQ configuration =======
+# (jormun <--> kraken communication)
+# You specify your kraken architecture here
+#
+# A-   single machines architectures
+# A.1- file sockets (default)
+# configuration:
+env.use_zmq_socket_file = True
+# A.2- true sockets
+# configuration:
+# env.use_zmq_socket_file = False
+# env.zmq_server = 'localhost'
+# additionally, a zmq socket port must be specified in add_instance(...)
+#
+# B-  multi machine architectures
+# In all cases below, a zmq socket port must be specified in add_instance(...)
+# B.1 each kraken on a single engine
+# configuration:
+# env.use_zmq_socket_file = False
+# additionally, a single zmq address must be specified in add_instance(...)
+# this address must be a member of env.rolesdef['eng']
+# B-2 each kraken on all engines
+# configuration:
+# env.use_zmq_socket_file = False
+# env.zmq_server = 'virtual_server_address'
+# this address refers to a reverse proxy (load balancer)
+# B-3 each kraken on a subset of machines
+# configuration:
+# env.use_zmq_socket_file = False
+# env.zmq_server = 'virtual_server_address'
+# this address refers to a reverse proxy (load balancer)
+# additionally, a list of zmq addresses must be specified in add_instance(...)
+# these addresses must be members of env.rolesdef['eng']
+
 # get the port in kraken.ini zmq_socket directive
 # ex.: "zmq_socket = tcp://*:1234"
 env.KRAKEN_RE_PORT = re.compile('^tcp://.*\:(?P<port>[0-9]*)')
-env.zmq_server = 'localhost'
 
 # kraken.ini defaults number of thread for an instance
 env.KRAKEN_NB_THREADS = 4
 env.KRAKEN_START_PORT = 30000
-
-# use ZMQ socket file or use inet socket auto increment
-env.use_zmq_socket_file = True
 
 env.AT_BASE_LOGDIR = '/var/log/connectors-rt'
 
