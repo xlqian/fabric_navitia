@@ -112,20 +112,20 @@ env.use_zmq_socket_file = True
 #
 # B-  multi machine architectures
 # In all cases below, a zmq socket port must be specified in add_instance(...)
-# B.1 kraken on a single engine
+# B.1 each kraken on a single engine
 # configuration:
 # env.use_zmq_socket_file = False
 # additionally, a single zmq address must be specified in add_instance(...)
 # this address must be a member of env.rolesdef['eng']
-# B-2 kraken on all engines
+# B-2 each kraken on all engines
 # configuration:
 # env.use_zmq_socket_file = False
-# env.zmq_server = 'server_address'
+# env.zmq_server = 'virtual_server_address'
 # this address refers to a reverse proxy (load balancer)
 # B-3 each kraken on a subset of machines
 # configuration:
 # env.use_zmq_socket_file = False
-# env.zmq_server = 'server_address'
+# env.zmq_server = 'virtual_server_address'
 # this address refers to a reverse proxy (load balancer)
 # additionally, a list of zmq addresses must be specified in add_instance(...)
 # these addresses must be members of env.rolesdef['eng']

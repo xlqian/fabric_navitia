@@ -50,14 +50,19 @@ class Instance:
         elif zmq_socket_port:
             if zmq_server:
                 if isinstance(zmq_server, basestring):
-                    self.zmq_server = zmq_server
                     if zmq_server == 'localhost':
+                        self.zmq_server = zmq_server
                         self.kraken_engines = list(env.roledefs['ws'])
                     else:
                         self.kraken_engines = [env.make_ssh_url(zmq_server)]
+                        self.zmq_server = env.zmq_server or zmq_server
                 else:
                     # zmq_server is a list
-                    self.zmq_server, self.kraken_engines = env.zmq_server, env.make_ssh_url(zmq_server)
+                    if env.zmq_server:
+                        self.zmq_server, self.kraken_engines = env.zmq_server, env.make_ssh_url(zmq_server)
+                    else:
+                        abort('Platform configuration file must include a env.zmq_server specification '
+                              '(see fabfile.env.platforms for some instructions)')
             else:
                 self.zmq_server, self.kraken_engines = env.zmq_server, list(env.roledefs['eng'])
             self.kraken_zmq_socket = 'tcp://*:{port}'.format(port=zmq_socket_port)
