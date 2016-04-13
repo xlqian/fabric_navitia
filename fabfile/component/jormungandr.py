@@ -293,24 +293,23 @@ def test_jormungandr(server, instance=None, fail_if_error=True):
 
 
 @task
+@roles('ws')
 def deploy_jormungandr_instance_conf(instance):
     instance = get_real_instance(instance)
     config = {'key': instance.name, 'zmq_socket': instance.jormungandr_zmq_socket_for_instance}
     config['realtime_proxies'] = instance.realtime_proxies
 
-    for host in instance.kraken_engines:
-        with settings(host_string=host):
-            _upload_template("jormungandr/instance.json.jinja",
-                             instance.jormungandr_config_file,
-                             context={
-                                 'json': json.dumps(config, indent=4)
-                             },
-                             use_sudo=True
-            )
+    _upload_template("jormungandr/instance.json.jinja",
+                     instance.jormungandr_config_file,
+                     context={
+                         'json': json.dumps(config, indent=4)
+                     },
+                     use_sudo=True
+    )
 
-            # the old configuration file were .ini, now it's json, we need to clean up
-            if fabtools.files.is_file(instance.jormungandr_old_ini_config_file):
-                fabtools.files.remove(instance.jormungandr_old_ini_config_file)
+    # the old configuration file were .ini, now it's json, we need to clean up
+    if fabtools.files.is_file(instance.jormungandr_old_ini_config_file):
+        fabtools.files.remove(instance.jormungandr_old_ini_config_file)
 
 
 @task
@@ -322,6 +321,7 @@ def remove_jormungandr_instance(instance):
     """
     run("rm --force %s/%s.json" % (env.jormungandr_instances_dir, instance))
 
+    # TODO refactor this (seems NxN) !
     for server in env.roledefs['ws']:
         print("→ server: {}".format(server))
         execute(reload_jormun_safe, server)
@@ -330,4 +330,4 @@ def remove_jormungandr_instance(instance):
 @task
 def deploy_jormungandr_all_instances_conf():
     for instance in env.instances.itervalues():
-        deploy_jormungandr_instance_conf(instance)
+        execute(deploy_jormungandr_instance_conf, instance)
