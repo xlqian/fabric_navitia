@@ -406,6 +406,9 @@ env.is_prod = False
 # see backup_datanav()tasks.tyr.backup_datanav
 env.excluded_instances = []
 
+# url of the autocomplete service
+env.mimir_url = None
+
 # use for supervision
 env.supervision_handler = None
 env.supervision_config = dict(

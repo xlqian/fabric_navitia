@@ -93,3 +93,14 @@ CACHE_CONFIGURATION = {
 }
 
 
+{% if env.mimir_url %}
+AUTOCOMPLETE = {
+    "class_path": "jormungandr.autocomplete.elastic_search.Elasticsearch",
+    'kwargs': {
+        "hosts": ["{{env.mimir_url}}"],
+        "user": "",
+        "password": "",
+        "use_ssl": False
+    }
+}
+{% endif %}

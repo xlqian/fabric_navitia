@@ -105,3 +105,6 @@ REDIS_DB = {{tyr_redis_db}}
 EMAIL_CHECK_MX = False
 EMAIL_CHECK_SMTP = False
 
+{% if env.mimir_url %}
+MIMIR_URL = '{{env.mimir_url}}'
+{% endif %}
