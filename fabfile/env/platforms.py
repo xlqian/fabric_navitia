@@ -82,7 +82,7 @@ def make_ssh_url(serv, *args):
         serv.extend(args)
     elif isinstance(serv, basestring):
         return "{}@{}".format(env.default_ssh_user, serv)
-    return ["{}@{}".format(env.default_ssh_user, s) for s in serv]
+    return [make_ssh_url(s) for s in serv]
 env.make_ssh_url = make_ssh_url
 
 env.KRAKEN_RABBITMQ_OK_PORT = 5672
