@@ -42,14 +42,13 @@ from fabric.context_managers import settings, warn_only, cd, shell_env
 from fabric.contrib.files import exists
 from fabric.decorators import roles
 from fabric.operations import run, get, sudo, put
-from fabtools import require, python, files, service
+from fabtools import require, python, files
 
 from fabfile.component import db
 from fabfile.component.kraken import get_no_data_instances
-from fabfile import utils
-from fabfile.utils import (_install_packages, _upload_template,
-                           start_or_stop_with_delay, supervision_downtime,
-                           get_real_instance)
+from fabfile.utils import (_install_packages, _upload_template, update_init, Parallel,
+                           start_or_stop_with_delay, supervision_downtime, time_that,
+                           get_real_instance, require_directories, require_directory)
 
 
 @task
@@ -83,7 +82,7 @@ def update_tyr_config_file():
 def setup_tyr():
     require.users.user('www-data')
 
-    utils.require_directories([env.tyr_base_instances_dir,
+    require_directories([env.tyr_base_instances_dir,
                                env.tyr_basedir,
                                ],
                               owner=env.TYR_USER,
@@ -91,13 +90,13 @@ def setup_tyr():
                               mode='755',
                               use_sudo=True)
 
-    utils.require_directory(env.tyr_base_logdir,
+    require_directory(env.tyr_base_logdir,
                               owner=env.TYR_USER,
                               group=env.TYR_USER,
                               mode='777',
                               use_sudo=True)
 
-    utils.require_directory(env.tyr_base_destination_dir,
+    require_directory(env.tyr_base_destination_dir,
                               is_on_nfs4=False,
                               owner=env.TYR_USER,
                               group=env.TYR_USER,
@@ -124,7 +123,7 @@ def setup_tyr():
     else:
         _upload_template('tyr/tyr_worker.jinja', env.service_name('tyr_worker'),
                          user='root', mode='755', context={'env': env})
-    utils.update_init(host='tyr')
+    update_init(host='tyr')
 
     if not files.is_dir(env.tyr_migration_dir):
         files.symlink('/usr/share/tyr/migrations/', env.tyr_migration_dir, use_sudo=True)
@@ -166,7 +165,7 @@ def upgrade_tyr_packages():
     else:
         _upload_template('tyr/tyr_worker.jinja', env.service_name('tyr_worker'),
                          user='root', mode='755', context={'env': env})
-    utils.update_init(host='tyr')
+    update_init(host='tyr')
 
 
 @task
@@ -190,14 +189,14 @@ def upgrade_cities_db():
 @task
 @roles('tyr_master')
 def setup_tyr_master():
-    utils.require_directory(env.ed_basedir, owner='www-data', group='www-data', use_sudo=True)
+    require_directory(env.ed_basedir, owner='www-data', group='www-data', use_sudo=True)
     if env.use_systemd:
         _upload_template('tyr/systemd_tyr_beat.jinja', env.service_name('tyr_beat'),
                          user='root', mode='644', context={'env': env})
     else:
         _upload_template('tyr/tyr_beat.jinja',env.service_name('tyr_beat'),
                          user='root', mode='755', context={'env': env})
-    utils.update_init(host='tyr')
+    update_init(host='tyr')
 
 @task
 @roles('tyr')
@@ -406,7 +405,7 @@ def launch_rebinarization_upgrade(pilot_tyr_beat=True):
         execute(get_no_data_instances)
 
         def binarize_instance(i_name):
-            with utils.time_that(blue("data loaded for " + i_name + " in {elapsed}")):
+            with time_that(blue("data loaded for " + i_name + " in {elapsed}")):
                 print(blue("loading data for {}".format(i_name)))
                 update_ed_db(i_name)
 
@@ -416,7 +415,7 @@ def launch_rebinarization_upgrade(pilot_tyr_beat=True):
                     launch_rebinarization(i_name, True)
 
             # we run the bina in parallele (if you want sequenciel run, set env.nb_thread_for_bina = 1)
-        with utils.Parallel(env.nb_thread_for_bina) as pool:
+        with Parallel(env.nb_thread_for_bina) as pool:
             pool.map(binarize_instance, env.instances.keys())
     finally:
         if pilot_tyr_beat:
@@ -546,7 +545,7 @@ def update_tyr_instance_conf(instance):
                      },
     )
 
-    utils.require_directory(instance.base_ed_dir,
+    require_directory(instance.base_ed_dir,
                             owner=env.KRAKEN_USER, group=env.KRAKEN_USER, use_sudo=True)
     # /srv/ed/$instance/alembic.ini, used by update_ed_db()
     _upload_template("tyr/ed_alembic.ini.jinja",
@@ -582,14 +581,14 @@ def create_tyr_instance(instance):
     execute(db.create_instance_db, instance)
 
     # /srv/ed/destination/$instance & /srv/ed/backup/$instance
-    utils.require_directory(instance.source_dir,
+    require_directory(instance.source_dir,
                             owner=env.KRAKEN_USER, group=env.KRAKEN_USER, use_sudo=True)
-    utils.require_directory(instance.backup_dir, is_on_nfs4=True,
+    require_directory(instance.backup_dir, is_on_nfs4=True,
                             owner=env.KRAKEN_USER, group=env.KRAKEN_USER, use_sudo=True)
-    utils.require_directory(instance.base_destination_dir, is_on_nfs4=True,
+    require_directory(instance.base_destination_dir, is_on_nfs4=True,
                             owner=env.KRAKEN_USER, group=env.KRAKEN_USER, use_sudo=True)
 
-    utils.require_directory(env.tyr_base_logdir,
+    require_directory(env.tyr_base_logdir,
                       owner=env.TYR_USER, group=env.TYR_USER,
                       mode='755', use_sudo=True)
     require.files.file(os.path.join(env.tyr_base_logdir, instance.name + '.log'),
