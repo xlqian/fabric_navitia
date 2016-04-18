@@ -33,9 +33,6 @@
 This file contains some specific tasks not to be run everytime
 """
 import os
-import string
-import random
-import uuid
 from datetime import datetime
 from fabric.colors import red
 from fabric.context_managers import cd, warn_only
@@ -43,7 +40,7 @@ from fabric.contrib.files import exists
 from fabric.decorators import task, roles
 from fabric.operations import run, put, sudo
 from fabric.tasks import execute
-from fabfile import utils
+from fabfile.utils import _upload_template, _random_generator, apt_get_update
 from fabfile.component import db, tyr
 from fabric.api import env, local
 
@@ -82,14 +79,14 @@ def cities_integration():
     # postgresql user + dedicated database
     postgresql_user = 'cities'
     postgresql_database = postgresql_user
-    password = utils._random_generator()
+    password = _random_generator()
     execute(db.create_postgresql_user, "cities", password)
     execute(db.create_postgresql_database, "cities")
 
     # init_db.sh
     execute(db.postgis_initdb, "cities")
 
-    utils._upload_template("tyr/cities_alembic.ini.jinja",
+    _upload_template("tyr/cities_alembic.ini.jinja",
                      "{}/cities_alembic.ini".format(env.tyr_basedir),
                      context={
                          'env': env,
@@ -135,7 +132,7 @@ def install_system_python_protobuf():
     """
     force uninstall python protobuf to allow using system protobuf
     """
-    sudo("apt-get update")
+    apt_get_update()
     sudo("apt-get --yes remove python-protobuf")
     sudo("apt-get --yes autoremove")
     with warn_only():

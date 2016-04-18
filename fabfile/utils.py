@@ -97,10 +97,6 @@ def start_puppet():
     run("service puppet stop")
 
 
-def update_packages_list():
-    run("apt-get update")
-
-
 @task
 @roles('tyr_master')
 def compute_instance_status(instance):
@@ -200,7 +196,7 @@ class Parallel:
         self.pool.map(func, param)
 
 
-def run_once_per_role(func):
+def run_once_per_host(func):
     """
     Don't invoke `func` more than once for host and arguments.
     """
@@ -240,11 +236,17 @@ host_app_mapping = dict(
     ws='navitia-jormungandr'
 )
 
+@run_once_per_host
+@task
+def apt_get_update():
+    sudo('apt-get update')
+
+
 @task
 def get_version(host):
     app_name = host_app_mapping[host]
     with settings(host_string=env.roledefs[host][0]):
-        sudo('apt-get update')
+        execute(apt_get_update)
         lines = run('apt-cache policy %s' % app_name).split('\n')
         try:
             installed = lines[1].strip().split()[-1]

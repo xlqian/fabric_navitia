@@ -38,10 +38,9 @@ from fabric.contrib.files import exists
 
 from fabfile.component import tyr, db, jormungandr, kraken
 from fabfile.component.kraken import check_dead_instances
-from fabfile import utils
-from fabfile.utils import (get_bool_from_cli, show_version,
-                           show_dead_kraken_status, TimeCollector,
-                           show_time_deploy, host_app_mapping,
+from fabfile.utils import (get_bool_from_cli, show_version, get_host_addr,
+                           show_dead_kraken_status, TimeCollector, compute_instance_status,
+                           show_time_deploy, host_app_mapping, send_mail,
                            supervision_downtime, get_real_instance)
 from prod_tasks import (remove_kraken_vip, switch_to_first_phase,
                         switch_to_second_phase, enable_all_nodes)
@@ -149,7 +148,7 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
         # check first hosts set before upgrading the second one
         for server in env.roledefs['ws']:
             instance = random.choice(env.instances.values())
-            execute(jormungandr.test_jormungandr, utils.get_host_addr(server), instance=instance.name)
+            execute(jormungandr.test_jormungandr, get_host_addr(server), instance=instance.name)
 
         # Upgrade kraken/jormun on remaining hosts
         env.roledefs['eng'] = env.eng_hosts_2
@@ -175,7 +174,7 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
     # check deployment OK
     for server in env.roledefs['ws']:
         instance = random.choice(env.instances.values())
-        execute(jormungandr.test_jormungandr, utils.get_host_addr(server), instance=instance.name)
+        execute(jormungandr.test_jormungandr, get_host_addr(server), instance=instance.name)
 
     # start tyr_beat even if up_tyr is False
     execute(tyr.start_tyr_beat)
@@ -193,7 +192,7 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
 @task
 def broadcast_email(kind, status=None):
     if not hasattr(env, 'mail_class'):
-        env.mail_class = utils.send_mail()
+        env.mail_class = send_mail()
     if kind == 'start':
         env.mail_class.send_start(status)
     elif kind == 'end':
@@ -421,7 +420,7 @@ def update_all_configurations():
 
     # and we test the jormungandr
     for server in env.roledefs['ws']:
-        jormungandr.test_jormungandr(utils.get_host_addr(server))
+        jormungandr.test_jormungandr(get_host_addr(server))
 
 @task
 def update_instance(instance):
@@ -429,10 +428,10 @@ def update_instance(instance):
     param (instance) - update all configuration and restart all services
     does not deploy any packages
     """
-    instance = utils.get_real_instance(instance)  # since it might be a endpoint we might need to get the real instance
+    instance = get_real_instance(instance)  # since it might be a endpoint we might need to get the real instance
     print(blue('updating {}'.format(instance.name)))
     #first of all we compute the instance status, it will be helpfull later
-    execute(utils.compute_instance_status, instance)
+    execute(compute_instance_status, instance)
     execute(tyr.create_tyr_instance, instance)
     execute(db.postgis_initdb, instance.db_name)
     execute(tyr.update_ed_db, instance.name)

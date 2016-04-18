@@ -46,9 +46,9 @@ from fabric.operations import run, get
 from fabric.utils import abort
 from fabtools import require, service, files, python
 
-from fabfile import utils
 from fabfile.utils import (get_bool_from_cli, _install_packages, get_real_instance,
-                           _upload_template, start_or_stop_with_delay, get_host_addr)
+                           show_version, update_init, get_host_addr,
+                           _upload_template, start_or_stop_with_delay)
 
 
 @task
@@ -235,7 +235,7 @@ def check_dead_instances():
                   "There are {} dead instances.".format(dead)))
         exit(1)
 
-    installed_kraken, candidate_kraken = utils.show_version(action='get')
+    installed_kraken, candidate_kraken = show_version(action='get')
     if installed_kraken != candidate_kraken:
         # if update of packages did not work
         print(red("Installed kraken version ({}) is different "
@@ -459,7 +459,7 @@ def update_eng_instance_conf(instance):
                                  mode='755'
                 )
             # TODO check this, make it consistent with env.use_systemd
-            utils.update_init(host='eng')
+            update_init(host='eng')
 
 
 @task
