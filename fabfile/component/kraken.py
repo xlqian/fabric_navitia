@@ -276,7 +276,7 @@ def restart_kraken(instance, test=True, wait=True):
 
 @task
 def require_kraken_started(instance):
-    """Stop a kraken instance on all servers
+    """start a kraken instance on all servers if it is not already started
     """
     instance = get_real_instance(instance)
     kraken = 'kraken_' + instance.name
