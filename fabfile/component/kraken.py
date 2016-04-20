@@ -37,7 +37,7 @@ from retrying import Retrying
 import simplejson as json
 import requests
 
-from fabric.api import task, env, sudo
+from fabric.api import task, env, sudo, execute
 from fabric.colors import blue, red, green, yellow
 from fabric.context_managers import settings
 from fabric.contrib.files import exists, sed, is_link
@@ -141,16 +141,27 @@ def enable_rabbitmq_standalone():
                 "port = %s" % env.KRAKEN_RABBITMQ_OK_PORT)
         restart_kraken(instance, test=False)
 
+@task
+@roles('eng')
+def require_monitor_kraken_started():
+    start_or_stop_with_delay('apache2', env.APACHE_START_DELAY * 1000, 500, only_once=env.APACHE_START_ONLY_ONCE)
+
 
 @task
 def restart_all_krakens(wait=True):
     """restart and test all kraken instances"""
     wait = get_bool_from_cli(wait)
-    for host in env.roledefs['eng']:
-        with settings(host_string=host):
-            start_or_stop_with_delay('apache2', env.APACHE_START_DELAY * 1000, 500, only_once=env.APACHE_START_ONLY_ONCE)
+    execute(require_monitor_kraken_started)
     for instance in env.instances.values():
         restart_kraken(instance, wait=wait)
+
+
+@task
+def require_all_krakens_started():
+    """start each kraken instance if it is not already started"""
+    execute(require_monitor_kraken_started)
+    for instance in env.instances.itervalues():
+        require_kraken_started(instance)
 
 
 @task
@@ -261,6 +272,17 @@ def restart_kraken(instance, test=True, wait=True):
             test_kraken(instance, fail_if_error=False, wait=wait)
     else:
         print(yellow("{} has no data, not testing it".format(instance.name)))
+
+
+@task
+def require_kraken_started(instance):
+    """Stop a kraken instance on all servers
+    """
+    instance = get_real_instance(instance)
+    kraken = 'kraken_' + instance.name
+    for host in instance.kraken_engines:
+        with settings(host_string=host):
+            start_or_stop_with_delay(kraken, 4000, 500, only_once=True)
 
 
 @task
