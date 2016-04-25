@@ -450,9 +450,10 @@ def update_monitor_configuration():
 
 
 @task
-def update_eng_instance_conf(instance):
+def update_eng_instance_conf(instance, host=None):
     instance = get_real_instance(instance)
-    for host in instance.kraken_engines:
+    hosts = [host] if host else instance.kraken_engines
+    for host in hosts:
         with settings(host_string=host):
             _upload_template("kraken/kraken.ini.jinja", "%s/%s/kraken.ini" %
                              (env.kraken_basedir, instance.name),
@@ -503,7 +504,7 @@ def create_eng_instance(instance):
             require.files.directory(env.kraken_log_basedir,
                                     owner=env.KRAKEN_USER, group=env.KRAKEN_USER, use_sudo=True)
 
-            update_eng_instance_conf(instance)
+            update_eng_instance_conf(instance, host)
 
             # kraken.ini, pid and binary symlink
             kraken_bin = "{}/{}/kraken".format(env.kraken_basedir, instance.name)
