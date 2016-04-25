@@ -224,7 +224,7 @@ def test_jormungandr(server, instance=None, fail_if_error=True):
         response = requests.get(request_str, headers=headers, auth=HTTPBasicAuth(env.token, ''))
     except (ConnectionError, HTTPError) as e:
         if fail_if_error:
-            print(red("HTTP Error %s: %s" % (e.code, e.readlines()[0])))
+            print(red("Connection or HTTP Error %s" % e))
             exit(1)
         else:
             print(yellow("WARNING: {instance} is running but "
@@ -243,8 +243,6 @@ def test_jormungandr(server, instance=None, fail_if_error=True):
 
     # if result contain just a message, this indicate a problem
     if 'message' in result:
-        print(fail_if_error)
-        print(type(fail_if_error))
         if fail_if_error is True:
             print(red("CRITICAL: Problem on result: '{}'".format(result)))
             exit(1)
@@ -252,14 +250,8 @@ def test_jormungandr(server, instance=None, fail_if_error=True):
         return False
 
     if instance:
-        print("%s" % result['status'])
-        kraken_version = result['status']['kraken_version']
-        if kraken_version != env.version:
-            #TODO change this version number handling, it should be automatic and not manually set in env.version
-            print(yellow("WARNING: Version of kraken (%s) is not the expected %s" %
-                 (kraken_version, env.version)))
-        else:
-            print(green("OK: Version is %s" % kraken_version))
+        print(result['status'])
+        print(green("Kraken Version is %s" % result['status']['kraken_version']))
     # just check that there is one instance running
     else:
         regions = result['regions']
