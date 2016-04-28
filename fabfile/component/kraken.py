@@ -450,7 +450,7 @@ def create_eng_instance(instance):
             # test it !
             # execute(test_kraken, get_host_addr(env.host_string), instance, fail_if_error=False)
             with settings(warn_only=True):
-                run("pgrep --list-name --full {}".format(instance.name))
+                run("pgrep --list-name --full /srv/kraken/{}/kraken".format(instance.name))
             print(blue("INFO: kraken {instance} instance is running on {server}".
                        format(instance=instance.name, server=get_host_addr(env.host_string))))
 
