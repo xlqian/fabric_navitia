@@ -104,3 +104,7 @@ AUTOCOMPLETE = {
     }
 }
 {% endif %}
+
+{% if env.jormungandr_bss_provider %}
+BSS_PROVIDER = {{env.jormungandr_bss_provider}}
+{% endif %}
