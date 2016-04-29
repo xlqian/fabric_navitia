@@ -483,12 +483,11 @@ def remove_kraken_instance(instance, purge_logs=False, apply_on='engines'):
             host_string=host,
             warn_only=True
         ):
-            sudo("service kraken_{} stop; sleep 3".format(instance.name))
+            sudo("service kraken_{} stop && sleep 3".format(instance.name))
 
             if not env.use_systemd:
                 run("update-rc.d -f kraken_{} remove".format(instance.name))
-            sudo("rm --force {}/kraken_{}".format(env.service_path(), instance.name))
-            sudo("rm --recursive --force {}/{}/".format(env.kraken_basedir, instance.name))
+            sudo("rm -f {}/kraken_{}".format(env.service_path(), instance.name))
+            sudo("rm -rf {}/{}/".format(env.kraken_basedir, instance.name))
             if purge_logs:
-                # ex.: /var/log/kraken/navitia-bretagne.log
-                sudo("rm --force {}-{}.log".format(env.kraken_log_name, instance.name))
+                sudo("rm -f {}/{}.log".format(env.kraken_log_basedir, instance.name))
