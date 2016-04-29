@@ -68,7 +68,7 @@ def update_jormungandr_conf():
                          'env': env
                      })
     _upload_template('jormungandr/settings.py.jinja', env.jormungandr_settings_file,
-                     context={'env': env})
+                     context={'env': env, 'json': json})
 
 
 @task

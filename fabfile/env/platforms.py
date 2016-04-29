@@ -265,6 +265,7 @@ env.jormungandr_syslog_facility = 'local7'
 env.jormungandr_pool_size = None
 
 env.jormungandr_timeo_cache_timeout = 60
+env.jormungandr_bss_provider = None
 
 ##############################
 # kraken
