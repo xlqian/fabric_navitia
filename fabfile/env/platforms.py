@@ -275,7 +275,6 @@ env.kraken_basedir = '/srv/kraken'
 
 # log dir for all kraken instances, no need to change this
 env.kraken_log_basedir = '/var/log/kraken'
-env.kraken_log_name = '{}/navitia'.format(env.kraken_log_basedir)
 
 # kraken rabbitmq connections parameters
 # used in the kraken/kraken.ini.jinja template
