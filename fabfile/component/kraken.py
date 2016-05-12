@@ -295,7 +295,7 @@ def test_kraken(instance, fail_if_error=True, wait=False, loaded_is_ok=None, hos
     instance = get_real_instance(instance)
     wait = get_bool_from_cli(wait)
 
-    hosts = list(hosts or instance.kraken_engines_url)
+    hosts = [e.split('@')[1] for e in hosts or instance.kraken_engines]
     will_return = len(hosts) == 1
     for host in hosts:
         request = 'http://{}:{}/{}/?instance={}'.format(host,

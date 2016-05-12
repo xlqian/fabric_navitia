@@ -91,7 +91,7 @@ class Instance:
 
     @property
     def kraken_engines_url(self):
-        return (e.split('@')[1] for e in self.kraken_engines)
+        return [e.split('@')[1] for e in self.kraken_engines]
 
     @property
     def target_lz4_file(self):
