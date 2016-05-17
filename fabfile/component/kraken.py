@@ -29,9 +29,6 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 
-import StringIO
-import ConfigParser
-from io import BytesIO
 import os.path
 from retrying import Retrying
 import simplejson as json
@@ -40,15 +37,15 @@ import requests
 from fabric.api import task, env, sudo, execute
 from fabric.colors import blue, red, green, yellow
 from fabric.context_managers import settings
-from fabric.contrib.files import exists, sed, is_link
-from fabric.decorators import roles, serial
-from fabric.operations import run, get
+from fabric.contrib.files import exists, is_link
+from fabric.decorators import roles
+from fabric.operations import run
 from fabric.utils import abort
 from fabtools import require, service, files, python
 
 from fabfile.utils import (get_bool_from_cli, _install_packages, get_real_instance,
                            show_version, update_init, get_host_addr,
-                           _upload_template, start_or_stop_with_delay)
+                           _upload_template, start_or_stop_with_delay, idempotent_symlink)
 
 
 @task
@@ -67,6 +64,7 @@ def setup_kraken():
             sudo('a2enconf monitor-kraken.conf')
             sudo("service apache2 reload")
     require.service.started('apache2')
+
 
 @task
 @roles('eng')
@@ -433,7 +431,7 @@ def create_eng_instance(instance):
             # kraken.ini, pid and binary symlink
             kraken_bin = "{}/{}/kraken".format(env.kraken_basedir, instance.name)
             if not is_link(kraken_bin):
-                files.symlink("/usr/bin/kraken", kraken_bin, use_sudo=True)
+                idempotent_symlink("/usr/bin/kraken", kraken_bin, use_sudo=True)
                 sudo('chown -h {user} {bin}'.format(user=env.KRAKEN_USER, bin=kraken_bin))
 
             #run("chmod 755 /etc/init.d/kraken_{}".format(instance))
