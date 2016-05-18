@@ -35,6 +35,7 @@ import functools
 from multiprocessing.dummy import Pool as ThreadPool
 from fabric.context_managers import settings
 import os
+from pipes import quote
 import random
 from retrying import Retrying, RetryError
 import string
@@ -47,13 +48,15 @@ import re
 import requests
 from requests.auth import HTTPBasicAuth
 
+from fabric.api import env, task, roles, run, put, sudo, warn_only, execute
 from fabric.colors import green, yellow, red
 from fabric.context_managers import cd
-from fabric.api import env, task, roles, run, put, sudo, warn_only, execute
 from fabric.contrib.files import exists
+from fabric.decorators import roles
 from fabtools.files import upload_template
 from fabtools import require
 from fabtools.require.files import temporary_directory
+from fabtools.utils import run_as_root
 
 
 # thanks
@@ -210,6 +213,56 @@ def run_once_per_host(func):
     return decorated
 
 
+def execute_flat(task, *args, **kwargs):
+    """ Replacement function for fabric.api.execute() that allows to avoid the squared (or cubed or more)
+        execution sequence of decorated tasks.
+        For example, if you have these definitions:
+        @task
+        @hosts('host1', 'host2')
+        def task1()
+            ...task steps...
+
+        @task
+        @hosts('host1', 'host2')
+        def task2()
+            ...task steps...
+            execute(task1)
+
+        @task
+        @hosts('host1', 'host2')
+        def task3()
+            ...task steps...
+            execute_flat(task1)
+
+        If you run 'fab task2', you will have the execution sequence (squared):
+          task2 on host1
+            task1 on host1
+            task1 on host2
+          task2 on host2
+            task1 on host1
+            task1 on host2
+        If you run 'fab task3', you will have the execution sequence (flattened):
+          task3 on host1
+            task1 on host1
+          task3 on host2
+            task1 on host2
+
+        Parameters and return value are identical to execute()
+    """
+    if env.get('host_string', None):
+        return task(*args, **kwargs)
+    else:
+        return execute(task, *args, **kwargs)
+
+
+def idempotent_symlink(source, destination, use_sudo=False):
+    """
+    Create a symbolic link to a file or directory, even if it already exists
+    """
+    func = use_sudo and run_as_root or run
+    func('/bin/ln -sf {} {}'.format(quote(source), quote(destination)))
+
+
 @contextmanager
 def time_that(message):
     """
@@ -236,8 +289,8 @@ host_app_mapping = dict(
     ws='navitia-jormungandr'
 )
 
-@run_once_per_host
 @task
+@run_once_per_host
 def apt_get_update():
     sudo('apt-get update')
 

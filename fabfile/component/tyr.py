@@ -48,7 +48,8 @@ from fabfile.component import db
 from fabfile.component.kraken import get_no_data_instances
 from fabfile.utils import (_install_packages, _upload_template, update_init, Parallel,
                            start_or_stop_with_delay, supervision_downtime, time_that,
-                           get_real_instance, require_directories, require_directory)
+                           get_real_instance, require_directories, require_directory,
+                           run_once_per_host, execute_flat, idempotent_symlink)
 
 
 @task
@@ -76,6 +77,7 @@ def update_tyr_config_file():
                      context={
                          'tyr_settings_file': env.tyr_settings_file
                      })
+
 
 @task
 @roles('tyr')
@@ -126,13 +128,13 @@ def setup_tyr():
     update_init(host='tyr')
 
     if not files.is_dir(env.tyr_migration_dir):
-        files.symlink('/usr/share/tyr/migrations/', env.tyr_migration_dir, use_sudo=True)
+        idempotent_symlink('/usr/share/tyr/migrations/', env.tyr_migration_dir, use_sudo=True)
         sudo("chown www-data:www-data {}".format(env.tyr_migration_dir))
 
     # we create a symlink for tyr manage_py
     tyr_symlink = os.path.join(env.tyr_basedir, 'manage.py')
     if not files.is_file(tyr_symlink):
-        files.symlink('/usr/bin/manage_tyr.py', tyr_symlink, use_sudo=True)
+        idempotent_symlink('/usr/bin/manage_tyr.py', tyr_symlink, use_sudo=True)
 
 
 @task
@@ -170,6 +172,7 @@ def upgrade_tyr_packages():
 
 @task
 @roles('tyr_master')
+@run_once_per_host
 def upgrade_db_tyr(pilot_tyr_beat=True):
     with cd(env.tyr_basedir), shell_env(TYR_CONFIG_FILE=env.tyr_settings_file), settings(user=env.KRAKEN_USER):
         run('python manage.py db upgrade')
@@ -180,6 +183,7 @@ def upgrade_db_tyr(pilot_tyr_beat=True):
 
 @task
 @roles('tyr_master')
+@run_once_per_host
 def upgrade_cities_db():
     if env.use_cities:
         with cd(env.tyr_basedir):
@@ -188,6 +192,7 @@ def upgrade_cities_db():
 
 @task
 @roles('tyr_master')
+@run_once_per_host
 def setup_tyr_master():
     require_directory(env.ed_basedir, owner='www-data', group='www-data', use_sudo=True)
     if env.use_systemd:
@@ -197,6 +202,7 @@ def setup_tyr_master():
         _upload_template('tyr/tyr_beat.jinja',env.service_name('tyr_beat'),
                          user='root', mode='755', context={'env': env})
     update_init(host='tyr')
+
 
 @task
 @roles('tyr')
@@ -214,6 +220,7 @@ def upgrade_ed_packages():
 
 @task
 @roles('tyr_master')
+@run_once_per_host
 def update_ed_db(instance):
     """ upgrade the instance database schema
         "cd" command is executed manually (not in a context manager)
@@ -245,15 +252,18 @@ def update_ed_db(instance):
 def stop_tyr_beat():
     start_or_stop_with_delay('tyr_beat', 4000, 500, start=False, exc_raise=True)
 
+
 @task
 @roles('tyr_master')
 def start_tyr_beat():
     start_or_stop_with_delay('tyr_beat', 4000, 500, exc_raise=True, only_once=env.TYR_START_ONLY_ONCE)
 
+
 @task
 @roles('tyr_master')
 def tyr_beat_status():
     sudo("service tyr_beat status")
+
 
 @task
 @roles('tyr')
@@ -278,6 +288,7 @@ def stop_tyr_worker():
                 print red("Aborting")
                 exit(1)
 
+
 @task
 @roles('tyr')
 def start_tyr_worker():
@@ -286,11 +297,13 @@ def start_tyr_worker():
         print(red('Service tyr refuses to start!'))
         exit(1)
 
+
 @task
 @roles('tyr')
 def restart_tyr_worker():
     stop_tyr_worker()
     start_tyr_worker()
+
 
 @task
 @roles('tyr_master')
@@ -298,12 +311,14 @@ def restart_tyr_beat():
     stop_tyr_beat()
     start_tyr_beat()
 
+
 @task
 @roles('tyr')
 def start_services():
     require.postgres.server()
     require.service.started('rabbitmq-server')
     require.service.started('redis-server')
+
 
 @task
 @roles('tyr')
@@ -332,6 +347,7 @@ def backup_datanav(instance):
         print(yellow("WARNING: %s doesn't have a data.nav.lz4, add it to the auto-exclusion list for binarization" % instance))
         env.excluded_instances.append(instance)
 
+
 @task
 @roles('tyr')
 def rollback_datanav(instance):
@@ -358,6 +374,7 @@ def rollback_datanav(instance):
     else:
         print(red("ERROR: %s_%s does not exist" % (kraken_db, instance)))
 
+
 @task
 @roles('tyr')
 def get_tyr_config(instance):
@@ -381,8 +398,10 @@ def get_tyr_config(instance):
     else:
         return None
 
+
 @task
 @roles('tyr_master')
+@run_once_per_host
 def launch_rebinarization_upgrade(pilot_tyr_beat=True):
     """launch binarization on all instances for the upgrade"""
     supervision_downtime(step='tyr_beat')
@@ -424,6 +443,7 @@ def launch_rebinarization_upgrade(pilot_tyr_beat=True):
 
 @task
 @roles('tyr_master')
+@run_once_per_host
 def launch_rebinarization(instance, use_temp=False):
     """ Re-launch binarization of previously processed input data
         During upgrade, we need to regenerate data.nav.lz4 file because of
@@ -440,6 +460,7 @@ def launch_rebinarization(instance, use_temp=False):
         except:
             print(red("ERROR: failed binarization on {}".format(instance)))
 
+
 @task
 @roles('db')
 def get_instance_id(instance):
@@ -455,6 +476,7 @@ def get_instance_id(instance):
     run("rm -f /var/lib/postgresql/postgres_{}.sql".format(instance))
     return instance_id
 
+
 @task
 @roles('db')
 def get_tyr_last_done_job_id(instance_id):
@@ -468,6 +490,7 @@ def get_tyr_last_done_job_id(instance_id):
             .format(env.jormungandr_postgresql_database, instance_id))
     run("rm -f /var/lib/postgresql/postgres_{}.sql".format(instance_id))
     return job_id
+
 
 @task
 @roles('db')
@@ -519,14 +542,15 @@ def test_tyr_backup_file_presence():
 
 @task
 def update_tyr_confs():
-    execute(update_tyr_config_file)
-    execute(update_cities_conf)
+    execute_flat(update_tyr_config_file)
     for instance in env.instances.values():
-        execute(update_tyr_instance_conf, instance)
+        execute_flat(update_tyr_instance_conf, instance)
+    execute(update_cities_conf)
 
 
 @task
 @roles('tyr_master')
+@run_once_per_host
 def update_cities_conf():
     if env.use_cities:
         _upload_template("tyr/cities_alembic.ini.jinja",
@@ -628,6 +652,7 @@ def remove_at_instance(instance):
     """
     # ex.: /var/log/connectors-rt/at_fr-bou
     run("rm -f %s/at_%s" % (env.AT_BASE_LOGDIR, instance))
+
 
 @task
 @roles('tyr')
