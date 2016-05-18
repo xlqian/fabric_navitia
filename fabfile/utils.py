@@ -214,6 +214,41 @@ def run_once_per_host(func):
 
 
 def execute_flat(task, *args, **kwargs):
+    """ Replacement function for fabric.api.execute() that allows to avoid the squared (or cubed or more)
+        execution sequence of decorated tasks.
+        For example, if you have these definitions:
+        @task
+        @hosts('host1', 'host2')
+        def task1()
+            ...task steps...
+
+        @task
+        @hosts('host1', 'host2')
+        def task2()
+            ...task steps...
+            execute(task1)
+
+        @task
+        @hosts('host1', 'host2')
+        def task3()
+            ...task steps...
+            execute_flat(task1)
+
+        If you run 'fab task2', you will have the execution sequence (squared):
+          task2 on host1
+            task1 on host1
+            task1 on host2
+          task2 on host2
+            task1 on host1
+            task1 on host2
+        If you run 'fab task3', you will have the execution sequence (flattened):
+          task3 on host1
+            task1 on host1
+          task3 on host2
+            task1 on host2
+
+        Parameters and return value are identical to execute()
+    """
     if env.get('host_string', None):
         return task(*args, **kwargs)
     else:
