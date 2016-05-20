@@ -600,8 +600,9 @@ def create_tyr_instance(instance):
         * create /srv/ed/<instance> + target-file basedir
     """
     # postgresql user + dedicated database
-    # we create a user and a db if they does not exists
+    # we create a user and a db if they do not exists
     # TODO: this is potentially executed multiple times !
+    instance = get_real_instance(instance)
     execute(db.create_instance_db, instance)
 
     # /srv/ed/destination/$instance & /srv/ed/backup/$instance
@@ -627,7 +628,7 @@ def create_tyr_instance(instance):
 
 
 @task
-@roles('tyr_master')
+@roles('tyr')
 def remove_tyr_instance(instance, purge_logs=False):
     """Remove a tyr instance entirely
         * Remove ini file
@@ -636,8 +637,8 @@ def remove_tyr_instance(instance, purge_logs=False):
     """
     # ex.: /etc/tyr.d/fr-bou.ini
     run("rm --force %s/%s.ini" % (env.tyr_base_instances_dir, instance))
-    execute(restart_tyr_worker)
-    restart_tyr_beat()
+    restart_tyr_worker()
+    execute(restart_tyr_beat)
     if purge_logs:
         # ex.: /var/log/tyr/northwest.log
         run("rm --force %s/%s.log" % (env.tyr_base_logdir, instance))
