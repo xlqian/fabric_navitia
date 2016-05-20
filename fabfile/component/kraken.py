@@ -234,15 +234,21 @@ def restart_kraken(instance, test=True, wait=True):
     instance = get_real_instance(instance)
     wait = get_bool_from_cli(wait)
     if instance.name not in env.excluded_instances:
-        for host in instance.kraken_engines:
-            with settings(host_string=host):
-                kraken = 'kraken_' + instance.name
-                start_or_stop_with_delay(kraken, 4000, 500, start=False, only_once=True)
-                start_or_stop_with_delay(kraken, 4000, 500, only_once=env.KRAKEN_START_ONLY_ONCE)
+        for host in set(instance.kraken_engines).intersection(env.roledefs['eng']):
+            restart_kraken_on_host(instance, host)
         if test:
             test_kraken(instance, fail_if_error=False, wait=wait)
     else:
         print(yellow("{} has no data, not testing it".format(instance.name)))
+
+
+@task
+def restart_kraken_on_host(instance, host):
+    instance = get_real_instance(instance)
+    with settings(host_string=host):
+        kraken = 'kraken_' + instance.name
+        start_or_stop_with_delay(kraken, 4000, 500, start=False, only_once=True)
+        start_or_stop_with_delay(kraken, 4000, 500, only_once=env.KRAKEN_START_ONLY_ONCE)
 
 
 @task
