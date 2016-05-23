@@ -179,6 +179,7 @@ env.stat_broker_exchange = 'stat_persistor_exchange'
 # redis host used by tyr and jormungandr
 env.redis_host = 'localhost'
 env.redis_port = 6379
+env.redis_socket_timeout = 0.1
 
 # ed/tyr base dir
 env.ed_basedir = '/srv/ed'
