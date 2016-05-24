@@ -422,6 +422,7 @@ def launch_rebinarization_upgrade(pilot_tyr_beat=True):
     # instances
     try:
         execute(get_no_data_instances)
+        instances2process = set(env.instances)
 
         def binarize_instance(i_name):
             with time_that(blue("data loaded for " + i_name + " in {elapsed}")):
@@ -432,6 +433,11 @@ def launch_rebinarization_upgrade(pilot_tyr_beat=True):
                     print(blue("NOTICE: i_name {} has been excluded, skiping it".format(i_name)))
                 else:
                     launch_rebinarization(i_name, True)
+            instances2process.remove(i_name)
+            # print instances not yet binarized, this allows to easily resume the binarization
+            # process in case of crash or freeze (use include:y,y,z,....)
+            # see http://jira.canaltp.fr/browse/DEVOP-408
+            print(blue("Instances left: {}".format(','.join(instances2process))))
 
             # we run the bina in parallele (if you want sequenciel run, set env.nb_thread_for_bina = 1)
         with Parallel(env.nb_thread_for_bina) as pool:
