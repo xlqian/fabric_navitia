@@ -627,6 +627,7 @@ def create_tyr_instance(instance):
         pass
 
 
+# remove apply to whole tyr, not only tyr_master
 @task
 @roles('tyr')
 def remove_tyr_instance(instance, purge_logs=False):
@@ -637,7 +638,10 @@ def remove_tyr_instance(instance, purge_logs=False):
     """
     # ex.: /etc/tyr.d/fr-bou.ini
     run("rm --force %s/%s.ini" % (env.tyr_base_instances_dir, instance))
+    # execute(restart_tyr_worker) would restart tyr_worker len(env.roledefs['tyr']) times on each machine
     restart_tyr_worker()
+    # restart_tyr_beat() would trigger 'service not found' on
+    # set(env.roledefs['tyr']).difference(env.roledefs['tyr_master'])
     execute(restart_tyr_beat)
     if purge_logs:
         # ex.: /var/log/tyr/northwest.log
