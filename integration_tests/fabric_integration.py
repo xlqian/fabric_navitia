@@ -66,7 +66,19 @@ class ProcessProxy(object):
         return self
 
     def run(self, task, *args, **kwargs):
-        sys.stdout, sys.stderr = StringIO(), StringIO()
+        class Redirect(object):
+            def __init__(self, name):
+                self.fd = 1 if name == 'stdout' else 2
+                self.stringio = StringIO()
+            def write(self, data):
+                os.write(self.fd, data)
+                self.stringio.write(data)
+            def flush(self):
+                pass
+            def getvalue(self):
+                return self.stringio.getvalue()
+
+        sys.stdout, sys.stderr = Redirect('stdout'), Redirect('stdin')
         try:
             return task(*args, **kwargs), None, sys.stdout.getvalue(), sys.stderr.getvalue(), dict(self.data)
         except BaseException as e:
@@ -137,7 +149,10 @@ class FabricManager(object):
                 reference = reference[1:]
                 call = False
             obj = self.get_object(reference)
-            old_wrapped = obj.wrapped
+            try:
+                old_wrapped = obj.wrapped
+            except AttributeError:
+                raise ValueError("You can't set a call tracker on <{}>: it must be a fabric task".format(reference))
             self._call_tracker_objects.append((obj, old_wrapped))
             obj.wrapped = self._call_tracker(old_wrapped, call)
             for k, v in vars(old_wrapped).iteritems():

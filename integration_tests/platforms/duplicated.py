@@ -11,6 +11,11 @@ def duplicated(host1, host2):
     env.name = 'duplicated'
     env.eng_hosts_1 = env.roledefs['eng'][:1]
     env.eng_hosts_2 = env.roledefs['eng'][1:]
+    env.eng_hosts = env.eng_hosts_1 + env.eng_hosts_2
+
+    env.ws_hosts_1 = env.roledefs['ws'][:1]
+    env.ws_hosts_2 = env.roledefs['ws'][1:]
+    env.ws_hosts = env.ws_hosts_1 + env.ws_hosts_2
 
     env.postgresql_database_host = 'localhost'
     env.use_zmq_socket_file = False

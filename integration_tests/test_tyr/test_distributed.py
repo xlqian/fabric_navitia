@@ -14,6 +14,8 @@ def test_create_remove_tyr_instance(distributed):
     time.sleep(15)
 
     value, exception, stdout, stderr = fabric.execute_forked('create_tyr_instance', 'toto')
+    assert exception is None
+    assert stderr == ''
     assert stdout.count("Executing task 'create_tyr_instance'") == 2
     assert stdout.count("Executing task 'create_instance_db'") == 2
     assert platform.path_exists('/srv/ed/data/toto')
@@ -28,6 +30,9 @@ def test_create_remove_tyr_instance(distributed):
     with fabric.set_call_tracker('component.tyr.restart_tyr_worker',
                                  'component.tyr.restart_tyr_beat') as data:
         value, exception, stdout, stderr = fabric.execute_forked('remove_tyr_instance', 'toto', purge_logs=True)
+
+    assert exception is None
+    assert stderr == ''
     assert stdout.count("Executing task 'remove_tyr_instance'") == 2
     assert platform.path_exists('/etc/tyr.d/toto.ini', negate=True)
     assert platform.path_exists('/var/log/tyr/toto.log', negate=True)

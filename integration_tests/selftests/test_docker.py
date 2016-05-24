@@ -1,89 +1,13 @@
 # encoding: utf-8
 
 import os.path
-import pytest
 
 from ..docker import PlatformManager, container_stop
 from ..docker import ROOTDIR as DOCKER_ROOTDIR
 from ..fabric_integration import FabricManager
-from ..utils import cd, extract_column, filter_column, command, Command
 from ..test_common import skipifdev
 
 ROOTDIR = os.path.dirname(os.path.abspath(__file__))
-
-
-def test_classes():
-    # Create a platform with associated fabric manager
-    platform = PlatformManager('navitia', {'h1': 'debian8', 'h2': 'debian8'},
-                               (('h1', '--param 0'),))
-    FabricManager(platform)
-
-    # Check that platform is initialized
-    assert platform.images_rootdir == DOCKER_ROOTDIR
-    assert platform.platform_name == 'navitia'
-    assert platform.images == {'h1': 'debian8', 'h2': 'debian8'}
-    assert platform.parameters == {'h1': '--param 0'}
-    assert platform.containers == {'h1': 'debian8-navitia-h1', 'h2': 'debian8-navitia-h2'}
-    assert set(platform.containers_names) == {'debian8-navitia-h1', 'debian8-navitia-h2'}
-    assert platform.images_names == {'debian8'}
-    assert set(platform.hosts_ips) == {'h1', 'h2'}
-
-    # check that fabric manager is initialized
-    assert platform.managers['fabric'].platform == platform
-
-
-def test_extract_column():
-    assert extract_column('', 0, 0) == []
-    text = """a1 a2 a3 a4
-       b1 b2 b3 b4
-       c1 c2 c3     c4
-       d1  d2 d3  d4
-    """
-    assert extract_column(text, 0, 0) == ['a1', 'b1', 'c1', 'd1']
-    assert extract_column(text, -1, 0) == ['a4', 'b4', 'c4', 'd4']
-    assert extract_column(text, 0, 1) == ['b1', 'c1', 'd1']
-    assert extract_column(text, 1, 1) == ['b2', 'c2', 'd2']
-
-
-def test_filter_column():
-    with pytest.raises(TypeError):
-        filter_column('', 0)
-    with pytest.raises(ValueError):
-        filter_column('', 0, toto='')
-    text = """toto titi bob
-       tototo xtitito blob
-       aaaa bbbb job
-    """
-    assert filter_column(text, 0, eq='toto') == ['toto titi bob']
-    assert filter_column(text, 0, startswith='toto') == ['toto titi bob', 'tototo xtitito blob']
-    assert filter_column(text, 1, contains='titi') == ['toto titi bob', 'tototo xtitito blob']
-    assert filter_column(text, 2, endswith='ob') == ['toto titi bob', 'tototo xtitito blob', 'aaaa bbbb job']
-
-
-@skipifdev
-def test_command(capsys):
-    # you can't retrieve stdout nor stdin
-    with cd(ROOTDIR):
-        assert command('pwd') == 0
-    assert command('fancycommand') > 0
-    out, err = capsys.readouterr()
-    assert (out, err) == ('', '')
-
-
-@skipifdev
-def test_Command(capsys):
-    with cd(ROOTDIR):
-        com = Command('pwd')
-    assert com.returncode == 0
-    assert com.stdout.strip() == ROOTDIR
-    assert com.stderr == ''
-    with cd(ROOTDIR):
-        com = Command('fancycommand')
-    assert com.returncode > 0
-    assert com.stdout == ''
-    assert com.stderr.strip() == '/bin/sh: 1: fancycommand: not found'
-    out, err = capsys.readouterr()
-    assert (out, err) == ('', '')
 
 
 @skipifdev
@@ -176,3 +100,24 @@ def test_put_get_data():
     platform.put_data('fluctuat nec mergitur', '/root/testdir/bob.txt')
     assert platform.get_data('/root/testdir/bob.txt') == {'host1': 'fluctuat nec mergitur', 'host2': 'fluctuat nec mergitur'}
     platform.docker_exec('rm -rf /root/testdir')
+
+
+def test_classes():
+    # Create a platform with associated fabric manager
+    platform = PlatformManager('navitia', {'h1': 'debian8', 'h2': 'debian8'},
+                               (('h1', '--param 0'),))
+    FabricManager(platform)
+
+    # Check that platform is initialized
+    assert platform.images_rootdir == DOCKER_ROOTDIR
+    assert platform.platform_name == 'navitia'
+    assert platform.images == {'h1': 'debian8', 'h2': 'debian8'}
+    assert platform.parameters == {'h1': '--param 0'}
+    assert platform.containers == {'h1': 'debian8-navitia-h1', 'h2': 'debian8-navitia-h2'}
+    assert set(platform.containers_names) == {'debian8-navitia-h1', 'debian8-navitia-h2'}
+    assert platform.images_names == {'debian8'}
+
+    # check that fabric manager is initialized
+    assert platform.managers['fabric'].platform == platform
+
+
