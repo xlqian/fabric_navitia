@@ -88,11 +88,14 @@ def test_upgrade_tyr_packages(distributed_undeployed):
     assert platform.path_exists('/etc/init.d/tyr_worker')
 
 
-@skipifdev
+# @skipifdev
 def test_setup_tyr_master(distributed_undeployed):
     platform, fabric = distributed_undeployed
     fabric.execute('setup_tyr_master')
+    assert platform.path_exists('/srv/ed/', 'host1')
+    assert platform.path_exists('/srv/ed/', 'host2', negate=True)
     assert platform.path_exists('/etc/init.d/tyr_beat', 'host1')
+    assert platform.path_exists('/etc/init.d/tyr_beat', 'host2', negate=True)
 
 
 @skipifdev

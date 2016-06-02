@@ -5,6 +5,19 @@ import time
 from ..test_common import skipifdev
 
 
+instances_names = {'us-wa', 'fr-nw', 'fr-npdc', 'fr-ne-amiens', 'fr-idf', 'fr-cen'}
+
+
+# @skipifdev
+def test_tyr_setup(distributed):
+    platform, fabric = distributed
+    assert platform.path_exists('/var/log/tyr')
+    assert platform.path_exists('/srv/ed/data')
+    assert platform.path_exists('/etc/tyr.d')
+    for krak in instances_names:
+        assert platform.path_exists('/srv/ed/{}'.format(krak))
+
+
 @skipifdev
 def test_create_remove_tyr_instance(distributed):
     platform, fabric = distributed

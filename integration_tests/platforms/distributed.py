@@ -7,6 +7,7 @@ from common import env_common
 
 def distributed(host1, host2):
     env.host1_ip, env.host2_ip = host1, host2
+    # tyr, ed, kraken, jormun
     env_common([host1, host2], [host1], [host1, host2], [host1])
     env.name = 'distributed'
     env.eng_hosts_1 = env.roledefs['eng'][:1]

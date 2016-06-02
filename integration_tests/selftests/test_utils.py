@@ -54,10 +54,29 @@ def test_Command(capsys):
     assert com.returncode == 0
     assert com.stdout.strip() == ROOTDIR
     assert com.stderr == ''
-    with cd(ROOTDIR):
-        com = Command('fancycommand')
+    out, err = capsys.readouterr()
+    assert (out, err) == ('', '')
+    com = Command('fancycommand')
     assert com.returncode > 0
     assert com.stdout == ''
     assert com.stderr.strip() == '/bin/sh: 1: fancycommand: not found'
     out, err = capsys.readouterr()
     assert (out, err) == ('', '')
+
+
+@skipifdev
+def test_Command_show(capsys):
+    prefix = 'TEST: '
+    with cd(ROOTDIR):
+        com = Command('pwd', show=prefix)
+    assert com.returncode == 0
+    assert com.stdout.strip() == ROOTDIR
+    assert com.stderr == ''
+    out, err = capsys.readouterr()
+    assert (out.strip(), err) == (prefix + ROOTDIR, '')
+    com = Command('fancycommand', show=prefix)
+    assert com.returncode > 0
+    assert com.stdout == ''
+    assert com.stderr.strip() == '/bin/sh: 1: fancycommand: not found'
+    out, err = capsys.readouterr()
+    assert (out, err.strip()) == ('', prefix + 'Error: /bin/sh: 1: fancycommand: not found')

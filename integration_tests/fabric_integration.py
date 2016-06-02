@@ -32,6 +32,13 @@ with utils.cd(fabric_navitia_path):
     fabric_tasks = utils.Command('fab no_such_task').stdout_column(0, 2)
 
 
+# LOG_PARAMIKO = 'paramiko.log'
+LOG_PARAMIKO = None
+if LOG_PARAMIKO:
+    import paramiko
+    paramiko.util.log_to_file(LOG_PARAMIKO)
+
+
 def get_fabric_task(task):
     fab_task = []
     for x in fabric_tasks:
