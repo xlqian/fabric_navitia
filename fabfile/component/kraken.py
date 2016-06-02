@@ -233,13 +233,15 @@ def restart_kraken(instance, test=True, wait=True):
     """
     instance = get_real_instance(instance)
     wait = get_bool_from_cli(wait)
-    if instance.name not in env.excluded_instances:
-        for host in set(instance.kraken_engines).intersection(env.roledefs['eng']):
-            restart_kraken_on_host(instance, host)
-        if test:
+    # restart krakens of this instance that are also in the eng role,
+    # this works with the "pool" switch mechanism used in upgrade_all()
+    for host in set(instance.kraken_engines).intersection(env.roledefs['eng']):
+        restart_kraken_on_host(instance, host)
+    if test:
+        if instance.name in env.excluded_instances:
+            print(yellow("{} has no data, not testing it".format(instance.name)))
+        else:
             test_kraken(instance, fail_if_error=False, wait=wait)
-    else:
-        print(yellow("{} has no data, not testing it".format(instance.name)))
 
 
 @task
