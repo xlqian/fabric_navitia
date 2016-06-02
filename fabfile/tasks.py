@@ -447,9 +447,8 @@ def update_instance(instance):
 
 @task
 def remove_instance(instance, admin=False):
-    """Completely remove all components for a given instance
-    Remove instance in jormungandr db manually
-    TODO: remove instance db automatically
+    """Completely remove all components for a given instance,
+    Remove instance in jormungandr db
     """
     execute(db.remove_instance_from_jormun_database, instance)
     execute(db.remove_postgresql_database, get_real_instance(instance).db_name)

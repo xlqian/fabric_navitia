@@ -311,11 +311,7 @@ def remove_jormungandr_instance(instance):
         * Reload apache
     """
     run("rm --force %s/%s.json" % (env.jormungandr_instances_dir, instance))
-
-    # TODO refactor this (seems NxN) !
-    for server in env.roledefs['ws']:
-        print("→ server: {}".format(server))
-        execute(reload_jormun_safe, server)
+    execute(reload_jormun_safe, env.host_string)
 
 
 @task
