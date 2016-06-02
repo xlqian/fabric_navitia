@@ -212,9 +212,9 @@ def remove_instance_from_jormun_database(instance):
     """
     url = 'http://{}/v0/instances/{}'.format(env.tyr_url, instance)
     try:
-        requests.get(url)
-        if requests.delete(url).status_code != 200:
-            abort("Delete request failed: {}".format(url))
+        status = requests.delete(url).status_code
+        if status != 200:
+            abort("Delete request failed: {}, status={}".format(url, status))
     except Exception as e:
         abort("Delete request failed: {} ({})".format(url, e))
 
