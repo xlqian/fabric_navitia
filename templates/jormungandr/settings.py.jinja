@@ -81,7 +81,7 @@ CACHE_CONFIGURATION = {
     'CACHE_REDIS_HOST': '{{env.redis_host}}',
     'CACHE_REDIS_PORT': '{{env.redis_port}}',
     'CACHE_REDIS_DB': '{{env.jormungandr_redis_db}}',
-    'CACHE_OPTIONS': {'socket_timeout': '{{env.redis_socket_timeout}}'},
+    'CACHE_OPTIONS': {'socket_timeout': {{env.redis_socket_timeout}}},
     {% if env.jormungandr_redis_password %}
     'CACHE_REDIS_PASSWORD': '{{env.jormungandr_redis_password}}',
     {% endif %}
