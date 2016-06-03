@@ -53,6 +53,7 @@ def get_adc_credentials():
         env.adc_password = getpass.getpass("%s password: " % env.ADC_HOSTNAME)
 
 
+@task
 def _adc_connection(check=False):
     if bigsuds_loaded is True:
         get_adc_credentials()
