@@ -377,6 +377,7 @@ def update_monitor_configuration():
             context={'env': env})
 
 
+
 @task
 def update_eng_instance_conf(instance, host=None):
     instance = get_real_instance(instance)
@@ -497,3 +498,45 @@ def remove_kraken_instance(instance, purge_logs=False, apply_on='engines'):
             sudo("rm -rf {}/{}/".format(env.kraken_basedir, instance.name))
             if purge_logs:
                 sudo("rm -f {}/{}.log".format(env.kraken_log_basedir, instance.name))
+
+
+@task
+def is_not_synchronized(instance, hosts=None):
+    """
+    test if an instance has unsynchronized kraken
+    to test that we consider 'publication_date' of the kraken's data
+
+    for the moment it's a manually called function
+    """
+    instance = get_real_instance(instance)
+    hosts = [e.split('@')[1] for e in hosts or instance.kraken_engines]
+    publication_dates = set()
+    for host in hosts:
+        request = 'http://{}:{}/{}/?instance={}'.format(host,
+            env.kraken_monitor_port, env.kraken_monitor_location_dir, instance.name)
+        result = _test_kraken(request, fail_if_error=False)
+        publication_dates.add(result.get('publication_date'))
+
+    print('publication date for {}, : {}'.format(instance, publication_dates))
+    if len(publication_dates) != 1:
+        print(red('all the {} krakens do not have the same data loaded, publication dates: {}'.format(
+            instance, publication_dates)))
+        return 1
+    return 0
+
+@task
+def check_kraken_data_synchronization():
+    """
+    check if there is some instance with not synchronized data
+    (eg: one engine has different data from the others)
+
+    for the moment it's a manually called function
+    """
+    res = 0
+    for instance in env.instances:
+        res += is_not_synchronized(instance)
+
+    if res:
+        print(red('{} krakens have not synchronized data'.format(res)))
+    else:
+        print(green('All krakens have synchronized data'))
