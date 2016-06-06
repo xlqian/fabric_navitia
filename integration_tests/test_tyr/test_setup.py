@@ -6,14 +6,15 @@ from ..test_common import skipifdev
 
 
 @skipifdev
-def test_update_tyr_config_file(distributed_undeployed, capsys):
+def test_update_tyr_config_file(distributed_undeployed):
     platform, fabric = distributed_undeployed
     # create empty directory for task under test
-    platform.docker_exec("mkdir -p /srv/tyr && rm -f /srv/tyr/*")
-    fabric.execute('update_tyr_config_file')
-    out, err = capsys.readouterr()
+    platform.docker_exec("mkdir -p /srv/tyr")
+    value, exception, stdout, stderr = fabric.execute_forked('update_tyr_config_file')
+    assert exception is None
+    assert stderr == ''
     # check fabric tasks execution count
-    assert out.count("Executing task 'update_tyr_config_file'") == 2
+    assert stdout.count("Executing task 'update_tyr_config_file'") == 2
     # check existence of directories and files created by the task under test
     assert platform.path_exists('/srv/tyr')
     assert platform.path_exists('/srv/tyr/settings.py')
@@ -21,21 +22,18 @@ def test_update_tyr_config_file(distributed_undeployed, capsys):
 
 
 @skipifdev
-def test_setup_tyr(distributed_undeployed, capsys):
+def test_setup_tyr(distributed_undeployed):
     platform, fabric = distributed_undeployed
-    # remove some objects that are created by task under test
-    platform.docker_exec('rm -rf /srv/ed /srv/tyr /var/log/tyr /etc/tyr.d /srv/tyr/migrations')
     # create some objects used (symlinked) by the task under test
     platform.docker_exec('mkdir -p /usr/share/tyr/migrations/')
     platform.docker_exec('touch /usr/bin/manage_tyr.py')
-    fabric.execute('setup_tyr')
-    out, err = capsys.readouterr()
+    value, exception, stdout, stderr = fabric.execute_forked('setup_tyr')
+    assert exception is None
     # check fabric tasks execution count
-    assert out.count("Executing task 'setup_tyr'") == 2
-    assert out.count("Executing task 'update_cities_conf'") == 2
-    assert out.count("Actually running update_cities_conf") == 1
-    assert out.count("Executing task 'update_tyr_config_file'") == 0
-    assert out.count("Executing task 'update_tyr_instance_conf'") == 0
+    assert stdout.count("Executing task 'setup_tyr'") == 2
+    assert stdout.count("Executing task 'update_cities_conf'") == 2
+    assert stdout.count("Executing task 'update_tyr_config_file'") == 0
+    assert stdout.count("Executing task 'update_tyr_instance_conf'") == 0
     # check that user www-data exists
     assert filter_column(platform.get_data('/etc/passwd', 'host1'), 0, startswith='www-data')
     assert filter_column(platform.get_data('/etc/passwd', 'host2'), 0, startswith='www-data')
@@ -53,17 +51,21 @@ def test_setup_tyr(distributed_undeployed, capsys):
     assert platform.path_exists('/etc/init.d/tyr_worker')
     assert platform.path_exists('/srv/tyr/migrations')
     assert platform.path_exists('/srv/tyr/manage.py')
+    assert platform.path_exists('/srv/tyr/cities_alembic.ini', 'host1')
 
 
 @skipifdev
-def test_update_tyr_confs(distributed_undeployed, capsys):
+def test_update_tyr_confs(distributed_undeployed):
     platform, fabric = distributed_undeployed
-    fabric.execute('update_tyr_confs')
-    out, err = capsys.readouterr()
+    # create empty directories for task under test
+    platform.docker_exec("mkdir -p /etc/tyr.d /srv/tyr")
+    value, exception, stdout, stderr = fabric.execute_forked('update_tyr_confs')
+    assert exception is None
+    assert stderr == ''
     # check fabric tasks execution count
-    assert out.count("Executing task 'update_cities_conf'") == 1
-    assert out.count("Executing task 'update_tyr_config_file'") == 2
-    assert out.count("Executing task 'update_tyr_instance_conf'") == 2 * len(fabric.env.instances)
+    assert stdout.count("Executing task 'update_tyr_config_file'") == 2
+    assert stdout.count("Executing task 'update_tyr_instance_conf'") == 2 * len(fabric.env.instances)
+    assert stdout.count("Executing task 'update_cities_conf'") == 1
 
 
 @skipifdev
@@ -88,7 +90,7 @@ def test_upgrade_tyr_packages(distributed_undeployed):
     assert platform.path_exists('/etc/init.d/tyr_worker')
 
 
-# @skipifdev
+@skipifdev
 def test_setup_tyr_master(distributed_undeployed):
     platform, fabric = distributed_undeployed
     fabric.execute('setup_tyr_master')
@@ -98,7 +100,7 @@ def test_setup_tyr_master(distributed_undeployed):
     assert platform.path_exists('/etc/init.d/tyr_beat', 'host2', negate=True)
 
 
-@skipifdev
+# @skipifdev
 def test_upgrade_ed_packages(distributed_undeployed):
     platform, fabric = distributed_undeployed
     fabric.execute('upgrade_ed_packages')
