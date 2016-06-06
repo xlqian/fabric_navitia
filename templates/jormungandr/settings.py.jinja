@@ -96,14 +96,12 @@ CACHE_CONFIGURATION = {
 }
 
 
-{% if env.mimir_url %}
+{% if env.bragi_url %}
 AUTOCOMPLETE = {
-    "class_path": "jormungandr.autocomplete.elastic_search.Elasticsearch",
+    "class_path": "jormungandr.autocomplete.elastic_search.GeocodeJson",
     'kwargs': {
-        "hosts": ["{{env.mimir_url}}"],
-        "user": "",
-        "password": "",
-        "use_ssl": False
+        "host": "{{env.bragi_url}}",
+        "timeout": {{env.bragi_timeout}},
     }
 }
 {% endif %}
