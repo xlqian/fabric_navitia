@@ -293,6 +293,8 @@ def upgrade_kraken(wait='serial', up_confs=True, supervision=False):
         supervision_downtime(step='kraken')
     execute(kraken.upgrade_engine_packages)
     execute(kraken.upgrade_monitor_kraken_packages)
+    for instance in env.instances.values():
+        execute(kraken.set_kraken_binary, instance)
     if up_confs:
         execute(kraken.update_monitor_configuration)
         for instance in env.instances.values():

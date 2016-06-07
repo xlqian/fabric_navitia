@@ -75,9 +75,32 @@ def upgrade_engine_packages():
     elif env.distrib == 'debian7':
         packages.append('libzmq-dev')
     require.deb.packages(packages, update=True)
+    # copy the old binary before installing the new one
+    if exists('/usr/bin/kraken'):
+        run("cp /usr/bin/kraken /usr/bin/kraken.old")
     package_filter_list = ['navitia-kraken*deb',
                            'navitia-kraken-dbg*deb']
     _install_packages(package_filter_list)
+
+
+@task
+def rollback_kraken(instance, test=True):
+    """ Use this only if something goes wrong during deployment of a kraken
+    """
+    test = get_bool_from_cli(test)
+    instance = get_real_instance(instance)
+    swap_data_nav(instance, force=True)
+    set_kraken_binary(instance, old=True)
+    restart_kraken(instance, test=test, wait=test)
+
+
+@task
+def set_kraken_binary(instance, old=False):
+    instance = get_real_instance(instance)
+    for host in instance.kraken_engines:
+        with settings(host_string=host):
+            kraken_bin = "{}/{}/kraken".format(env.kraken_basedir, instance.name)
+            idempotent_symlink('/usr/bin/kraken' + '.old' if old else '', kraken_bin, use_sudo=True)
 
 
 @task
