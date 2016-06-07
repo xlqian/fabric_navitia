@@ -7,7 +7,7 @@ from common import env_common
 
 def single(host):
     env.host_ip = host
-    env_common((host,), (host,), (host,), (host,))
+    env_common(tyr=(host,), ed=(host,), kraken=(host,), jormun=(host,))
     env.name = 'single'
 
     env.postgresql_database_host = 'localhost'

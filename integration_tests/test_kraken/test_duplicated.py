@@ -17,7 +17,7 @@ krakens_after_stop = {'host1': {'fr-nw', 'fr-npdc', 'fr-idf', 'fr-cen'},
                       'host2': {'fr-nw', 'fr-npdc', 'fr-idf', 'fr-cen'}}
 
 
-# @skipifdev
+@skipifdev
 def test_kraken_setup(duplicated):
     platform, fabric = duplicated
     for krak in fabric.env.instances:
@@ -28,7 +28,7 @@ def test_kraken_setup(duplicated):
         assert platform.path_exists('/var/log/kraken/{}.log'.format(krak))
 
 
-# @skipifdev
+@skipifdev
 def test_stop_restart_single_kraken(duplicated):
     _test_stop_restart_kraken(duplicated,
                              map_start=nominal_krakens,
@@ -38,7 +38,7 @@ def test_stop_restart_single_kraken(duplicated):
                              )
 
 
-# @skipifdev
+@skipifdev
 def test_restart_all_krakens(duplicated):
     _test_stop_restart_kraken(duplicated,
                              map_start=nominal_krakens,
@@ -48,7 +48,7 @@ def test_restart_all_krakens(duplicated):
                              )
 
 
-# @skipifdev
+@skipifdev
 def test_stop_require_start_kraken(duplicated):
     _test_stop_restart_kraken(duplicated,
                              map_start=nominal_krakens,
@@ -58,7 +58,7 @@ def test_stop_require_start_kraken(duplicated):
                              )
 
 
-# @skipifdev
+@skipifdev
 def test_require_all_krakens_started(duplicated):
     _test_stop_restart_kraken(duplicated,
                              map_start=nominal_krakens,
@@ -68,12 +68,12 @@ def test_require_all_krakens_started(duplicated):
                              )
 
 
-# @skipifdev
+@skipifdev
 def test_stop_start_apache(duplicated):
     _test_stop_start_apache(duplicated, ('host1', 'host2'))
 
 
-# @skipifdev
+@skipifdev
 def test_test_kraken_nowait_nofail(duplicated, capsys):
     # wait for krakens to be fully started
     time.sleep(15)
@@ -81,7 +81,7 @@ def test_test_kraken_nowait_nofail(duplicated, capsys):
                                     map={'host1': {'us-wa'}, 'host2': {'fr-ne-amiens'}}, ret_val=None)
 
 
-# @skipifdev
+@skipifdev
 def test_get_no_data_instances(duplicated, capsys):
     platform, fabric = duplicated
     fabric.execute('component.kraken.get_no_data_instances')
@@ -91,7 +91,7 @@ def test_get_no_data_instances(duplicated, capsys):
     assert set(fabric.env.excluded_instances) == set(fabric.env.instances)
 
 
-# @skipifdev
+@skipifdev
 def test_test_all_krakens_no_wait(duplicated):
     platform, fabric = duplicated
     time.sleep(15)
@@ -101,7 +101,7 @@ def test_test_all_krakens_no_wait(duplicated):
         assert stdout.count("WARNING: instance {} has no loaded data".format(instance)) == 2
 
 
-# @skipifdev
+@skipifdev
 def test_check_dead_instances(duplicated):
     platform, fabric = duplicated
     value, exception, stdout, stderr = fabric.execute_forked('component.kraken.check_dead_instances')
@@ -111,7 +111,7 @@ def test_check_dead_instances(duplicated):
            'Found 12 dead instances out of 6.' in stdout
 
 
-# @skipifdev
+@skipifdev
 def test_create_remove_eng_instance(duplicated):
     platform, fabric = duplicated
     fabric.get_object('instance.add_instance')('toto', 'passwd',
@@ -151,7 +151,7 @@ def test_create_remove_eng_instance(duplicated):
     assert set(get_running_krakens(platform, 'host2')) == nominal_krakens['host2']
 
 
-@skipifdev
+# @skipifdev
 def test_restart_all_krakens_alternate(duplicated):
     platform, fabric = duplicated
 
