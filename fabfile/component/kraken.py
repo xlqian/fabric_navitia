@@ -89,9 +89,9 @@ def rollback_kraken(instance, test=True):
     """
     test = get_bool_from_cli(test)
     instance = get_real_instance(instance)
-    swap_data_nav(instance, force=True)
-    set_kraken_binary(instance, old=True)
-    restart_kraken(instance, test=test, wait=test)
+    execute(swap_data_nav, instance, force=True)
+    execute(set_kraken_binary, instance, old=True)
+    execute(restart_kraken, instance, test=test, wait=test)
 
 
 @task
@@ -100,7 +100,7 @@ def set_kraken_binary(instance, old=False):
     for host in instance.kraken_engines:
         with settings(host_string=host):
             kraken_bin = "{}/{}/kraken".format(env.kraken_basedir, instance.name)
-            idempotent_symlink('/usr/bin/kraken' + '.old' if old else '', kraken_bin, use_sudo=True)
+            idempotent_symlink('/usr/bin/kraken' + ('.old' if old else ''), kraken_bin, use_sudo=True)
 
 
 @task
