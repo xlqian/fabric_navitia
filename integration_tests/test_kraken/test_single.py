@@ -73,28 +73,23 @@ def test_test_kraken_nowait_nofail(single, capsys):
 
 
 # @skipifdev
-# This test is temporarily removed because I don't know yet how to restart fabric connections
-# that are closed when an exception is raised below
-# def test_check_dead_instances(single, capsys):
-#     single, fabric = single
-#     # make sure that krakens are started
-#     fabric.execute('require_all_krakens_started')
-#     time.sleep(1)
-#
-#     with pytest.raises(SystemExit):
-#         fabric.execute('component.kraken.check_dead_instances')
-#     out, err = capsys.readouterr()
-#     assert 'http://{}:80/monitor-kraken/?instance=default'.format(single.get_hosts().values()[0]) in out
-#     assert 'The threshold of allowed dead instances is exceeded: Found 1 dead instances out of 1.' in out
+def test_check_dead_instances(single):
+    single, fabric = single
+    value, exception, stdout, stderr = fabric.execute_forked('component.kraken.check_dead_instances')
+
+    assert isinstance(exception, SystemExit)
+    assert 'http://{}:80/monitor-kraken/?instance=default'.format(single.get_hosts().values()[0]) in stdout
+    assert 'The threshold of allowed dead instances is exceeded: Found 1 dead instances out of 1.' in stdout
 
 
-# @skipifdev
-def test_create_remove_eng_instance(single, capsys):
+@skipifdev
+def test_create_remove_eng_instance(single):
     platform, fabric = single
     fabric.get_object('instance.add_instance')('toto', 'passwd')
-    fabric.execute('create_eng_instance', 'toto')
-    out, err = capsys.readouterr()
-    assert 'INFO: kraken toto instance is running on {}'.format(platform.get_hosts()['host']) in out
+    value, exception, stdout, stderr = fabric.execute_forked('create_eng_instance', 'toto')
+    assert exception is None
+    assert stderr == ''
+    assert 'INFO: kraken toto instance is running on {}'.format(platform.get_hosts()['host']) in stdout
     assert platform.path_exists('/srv/kraken/toto/kraken.ini', 'host')
     assert platform.path_exists('/etc/init.d//kraken_toto', 'host')
     assert platform.path_exists('/var/log/kraken/toto.log', 'host')

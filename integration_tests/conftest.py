@@ -6,6 +6,8 @@ import pytest
 from docker import PlatformManager, DeployedPlatformManager
 from fabric_integration import FabricManager
 
+DEFAULT_DEBIAN = 'debian8'
+
 
 def pytest_addoption(parser):
     parser.addoption('--dev', action='store_true',
@@ -13,8 +15,8 @@ def pytest_addoption(parser):
     parser.addoption('--reset', action='store_true',
                      help="force reset image, ie force a full navitia redeploy "
                           "(default: reuse existing image")
-    parser.addoption('--distri', action='store', default='debian8',
-                     help="select a linux distribution (default debian8)")
+    parser.addoption('--distri', action='store', default=DEFAULT_DEBIAN,
+                     help="select a linux distribution (default {})".format(DEFAULT_DEBIAN))
 
 
 # ===================     UNDEPLOYED PLATFORMS FIXTURES     =======================

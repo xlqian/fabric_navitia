@@ -31,7 +31,7 @@ def env_common(tyr, ed, kraken, jormun):
     env.kraken_monitor_listen_port = 85
     env.jormungandr_save_stats = False
     env.jormungandr_is_public = True
-    env.tyr_url = 'localhost:6000'
+    env.tyr_url = '{}/tyr'.format(env.hosts_tyr[0])
 
     env.tyr_backup_dir_template = '/srv/ed/data/{instance}/backup/'
     env.tyr_source_dir_template = '/srv/ed/data/{instance}'
