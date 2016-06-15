@@ -201,6 +201,9 @@ def broadcast_email(kind, status=None):
 
 @task
 def update_tyr_step(time_dict=None, only_bina=True, up_confs=True):
+    # TODO only_bina is highly error prone
+    """ deploy an upgrade of tyr
+    """
     if not time_dict:
         time_dict = TimeCollector()
     execute(tyr.stop_tyr_beat)
@@ -422,6 +425,7 @@ def update_all_configurations():
     for server in env.roledefs['ws']:
         jormungandr.test_jormungandr(get_host_addr(server))
 
+
 @task
 def update_instance(instance):
     """
@@ -439,6 +443,7 @@ def update_instance(instance):
     execute(kraken.create_eng_instance, instance)
     execute(tyr.deploy_default_synonyms, instance)
     execute(db.create_privileges_instance_db, instance)
+
 
 @task
 def remove_instance(instance, admin=False):
