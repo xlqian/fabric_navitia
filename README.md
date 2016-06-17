@@ -1,59 +1,126 @@
-Fabric
-======
+Fabric_Navitia
+==============
+A set of fabric tasks to deploy, upgrade and manage Navitia2 platforms.
 
-This file must be executed via python fabric, you can list all *tasks* by:
+
+Tasks
+-----
+You can list all available tasks by:
 
     fab --list
 
-Or see list of all available tasks [here](tasks.md).
+General fabric command format:
 
-The configuration is done by calling a first configuration task which set all the needed parameters in the fabric's ```env``` variable.
+    PYTHONPATH=<path_to_fabric_navitia>:<path_to_configuration> python -u -m fabric --keepalive=20 pseudo-task1:params pseudo-task2:params task1:params task2:params ... taskn:params
 
-If your configuration is outside of this repository (and it should!), you can add it in the python path and call the ```use``` task with the task you want to import.
+or
 
-ex:
-    ```PYTHONPATH=~/dev/navitia_deployment_conf/ fab use:dev.dev deploy_from_scratch```
+    PYTHONPATH=<path_to_fabric_navitia>:<path_to_configuration> fab --keepalive=20 pseudo-task1:params pseudo-task2:params task1:params task2:params ... taskn:params
 
-if you want to give extra parameters to the configuration task, add them after it's name:
+The keepalive specifies an SSH keepalive interval.
+See http://docs.fabfile.org/en/1.11/usage/fab.html for other parameters of fabric command line.
 
-    ```PYTHONPATH=~/dev/navitia_deployment_conf/ fab use:simple_one.simple_one,git@172.17.0.2 deploy_from_scratch```
+There are 3 tasks catagories:
 
-Features:
+ 1. Deploy & upgrade,
+ 2. Management,
+ 3. Pseudo-tasks (see below)
 
-* Setup a server from scratch:
+Pseudo-tasks are not really tasks as their perform no action on the target platform.
+Pseudo tasks are for configuration of real tasks.
+Examples of pseudo-tasks are: "use" to select the target platform, "include" to select the set of coverages.
 
-    ```fab <conf> deploy_from_scratch```
+Task parameters are joined to task name after a colon (:)
+1- Positional parameters = list of words separated by periods (no space).
 
-* Upgrade the version of navitia:
+    task:param1,param2,...,paramn
 
-    ```fab <conf> upgrade_all```
+2- Named parameters = list of "word=value"  separated by periods (no space).
 
-* Complete creation of an instance:
-     for that you just need to call the setup of all instances, the remaining instances will just have their configuration updated
+    task:param1=value1,param2=value2,...,paramn=valuen
 
-    ```fab <conf> update_all_instances```
+Mixing parameters types is possible as of python rules, i.e. positional parameters first, then named parameters.
 
-* Complete removal of an instance on all components:
+Pseudo-tasks
+------------
+**use**: Select a target platform.
+Will load and execute a configuration from a platform file in a configuration folder. Ex:
 
-    ```fab dev remove_instance:fr-idf```
+    PYTHONPATH=<path_to_fabric_navitia>:<path_to_configuration> fab use:prod
 
-* Do the upgrade on the dev environnment:
+Will load python module prod.py from "path_to_configuration" and run function prod().
 
-Note: Special case to use for prod, disable ws1 and eng1 before
+**include**: Select a set of coverages.
+Will reduce the set of active coverages to the list of given positional paramters. Ex:
 
-    fab dev prepare_upgrade
-    fab dev upgrade_tyr
-    fab dev launch_rebinarization_upgrade # long time to wait !
-    fab dev upgrade_kraken
-    fab dev upgrade_jormungandr
-    
-Note : you can use the variable env.nb_thread_for_bina in the definition of the environment to parallelize binarizations.
+    PYTHONPATH=<path_to_fabric_navitia>:<path_to_configuration> fab use:<platform> include:fr-idf,fr-lyon,us-ny,nz task
 
-prod only, use ws1 and eng1
+Will run the fabric task on this reduced set of coverages.
+Nota: specified coverages must be among the active coverages of the target platform.
 
-    fab prod use_upgraded_version
-    
-prod only, upgrade other ws and eng when prod validated
+**exclude**: Remove coverages from the active coverage set. Ex:
 
-    fab prod upgrade_prod2
+    PYTHONPATH=<path_to_fabric_navitia>:<path_to_configuration> fab use:<platform> exclude:fr-idf,fr-lyon,us-ny,nz task
 
+Will run the fabric task on the active set of coverages minus these specified coverages.
+Nota: specified coverages must be among the active coverages of the target platform.
+
+**set**: force an api.env attribute value.
+
+Deploy & Upgrade
+----------------
+
+**deploy_from_scratch**: (no params) deploy a fresh navitia2 on a new platform.
+
+**upgrade_all**: deploy an upgrade of navitia2.
+This is the most complex task of fabric_navitia. It completely automates the upgrade process, which consists of:
+
+ 1. upgrade all navitia packages,
+ 2. migrate databases,
+ 3. launch rebinarization of all coverages,
+ 4. restart krakens and jormungandr,
+ 5. redeploy configurations (tyr, kraken, jormungandr),
+ 6. optionally, send mail at start and end of process
+
+This task has 7 named parameters:
+
+| param |  Description |
+|---|
+| up_tyr (default=True) |  If false, will skip the upgrade of tyr package, as well as all binarizations |
+|---|
+| up_confs (default=True) |  If false, will skip the redeployment of configurations. Can save time if you know for sure that conf is not changed |
+|---|
+| kraken_wait (default=True) |  Wait when restarting krakens |
+|---|
+| check_version (default=True) |  Check packages version before upgrading |
+|---|
+| send_mail (default='no') |  Controls mail broadcast. Other values are 'start', 'end', 'all'|
+|---|
+| manual_lb (default=False) |  Switch load balancers control method (for prod only) |
+|---|
+| check_dead (default=True) | Controls wether dead_instances threshold is applied or not | 
+
+**update_tyr_step**: deploy an upgrade of tyr:
+
+ 1. upgrade tyr package,
+ 2. migrate databases,
+ 3. launch rebinarization of all coverages,
+
+**update_jormungandr_conf**: deploys jormungandr configuration. Needs a restart_jormungandr to activate the configuration (see below).
+
+**update_all_configurations**: redeploy all configurations (tyr, jormun, coverages) and restarts all services (tyr, kraken, jormun).
+
+**update_instance**:  deploy a new coverage or deploy it again. (param=coverage name).
+
+
+Management
+----------
+Some important management tasks:
+
+**restart_kraken**: restart all krakens on all servers. Seldom used.
+
+**restart_jormungandr**: restart jormungandr on all servers. Use to resynchronize jormun vs krakens or to activate new jormun configuration.
+
+**launch_rebinarization**: launch a binarization on a single coverage, based on last dataset. (param=coverage name).
+
+**launch_rebinarization_upgrade**: launch a migration (upgrade) of ed database and a binarization on all coverages, with a controlled level of parallelization.
