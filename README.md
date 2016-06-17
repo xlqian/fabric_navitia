@@ -2,6 +2,27 @@ Fabric_Navitia
 ==============
 A set of fabric tasks to deploy, upgrade and manage Navitia2 platforms.
 
+It is strongly tied to [navitia_deployment_conf](https://github.com/CanalTP/navitia_deployment_conf)
+to deploy on CanalTP platforms.
+Specific informations for deployment on CanalTP platforms are available on
+[confluence DEVOPS page](http://confluence.canaltp.fr/pages/viewpage.action?spaceKey=DEVOPS&title=Navitia2),
+you can also get some inspiration from `deploy_navitia_on_*` jobs on Jenkins platform.
+
+TL;DR:
+------
+The main functions availables are in fabfile/tasks.py
+Before any use a `pip install -r requirements.txt -U` is advised.
+
+Main feature examples:
+
+* Setup a server from scratch:
+
+    ```PYTHONPATH=.:../navitia_deployment_conf/ fab use:dev deploy_from_scratch```
+
+* Upgrade the version of navitia:
+
+    ```PYTHONPATH=.:../navitia_deployment_conf/ fab use:dev upgrade_all```
+
 
 Tasks
 -----
@@ -9,11 +30,11 @@ You can list all available tasks by:
 
     fab --list
 
-General fabric command format:
+General fabric command format (see below for pseudo-tasks):
 
     PYTHONPATH=<path_to_fabric_navitia>:<path_to_configuration> python -u -m fabric --keepalive=20 pseudo-task1:params pseudo-task2:params task1:params task2:params ... taskn:params
 
-or
+equivalent to
 
     PYTHONPATH=<path_to_fabric_navitia>:<path_to_configuration> fab --keepalive=20 pseudo-task1:params pseudo-task2:params task1:params task2:params ... taskn:params
 
@@ -24,7 +45,7 @@ There are 3 tasks catagories:
 
  1. Deploy & upgrade,
  2. Management,
- 3. Pseudo-tasks (see below)
+ 3. Pseudo-tasks
 
 Pseudo-tasks are not really tasks as their perform no action on the target platform.
 Pseudo tasks are for configuration of real tasks.
@@ -84,21 +105,15 @@ This is the most complex task of fabric_navitia. It completely automates the upg
 
 This task has 7 named parameters:
 
-| param |  Description |
-|---|
-| up_tyr (default=True) |  If false, will skip the upgrade of tyr package, as well as all binarizations |
-|---|
-| up_confs (default=True) |  If false, will skip the redeployment of configurations. Can save time if you know for sure that conf is not changed |
-|---|
-| kraken_wait (default=True) |  Wait when restarting krakens |
-|---|
+| param                        |  Description |
+|------------------------------|--------------|
+| up_tyr (default=True)        |  If false, will skip the upgrade of tyr package, as well as all binarizations |
+| up_confs (default=True)      |  If false, will skip the redeployment of configurations. Can save time if you know for sure that conf is not changed |
+| kraken_wait (default=True)   |  Wait when restarting krakens |
 | check_version (default=True) |  Check packages version before upgrading |
-|---|
-| send_mail (default='no') |  Controls mail broadcast. Other values are 'start', 'end', 'all'|
-|---|
-| manual_lb (default=False) |  Switch load balancers control method (for prod only) |
-|---|
-| check_dead (default=True) | Controls wether dead_instances threshold is applied or not | 
+| send_mail (default='no')     |  Controls mail broadcast. Other values are 'start', 'end', 'all'|
+| manual_lb (default=False)    |  Switch load balancers control method (for prod only) |
+| check_dead (default=True)    | Controls wether dead_instances threshold is applied or not |
 
 **update_tyr_step**: deploy an upgrade of tyr:
 
@@ -124,3 +139,5 @@ Some important management tasks:
 **launch_rebinarization**: launch a binarization on a single coverage, based on last dataset. (param=coverage name).
 
 **launch_rebinarization_upgrade**: launch a migration (upgrade) of ed database and a binarization on all coverages, with a controlled level of parallelization.
+
+Note : you can use the variable env.nb_thread_for_bina in the definition of the environment to parallelize binarizations.
