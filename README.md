@@ -17,12 +17,14 @@ or
 
     PYTHONPATH=<path_to_fabric_navitia>:<path_to_configuration> fab --keepalive=20 pseudo-task1:params pseudo-task2:params task1:params task2:params ... taskn:params
 
+The keepalive specifies an SSH keepalive interval.
+See http://docs.fabfile.org/en/1.11/usage/fab.html for other parameters of fabric command line.
 
 There are 3 tasks catagories:
 
  1. Deploy & upgrade,
  2. Management,
- 3. Pseudo-tasks
+ 3. Pseudo-tasks (see below)
 
 Pseudo-tasks are not really tasks as their perform no action on the target platform.
 Pseudo tasks are for configuration of real tasks.
