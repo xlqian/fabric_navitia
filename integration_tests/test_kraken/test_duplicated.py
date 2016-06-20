@@ -10,7 +10,6 @@ from ..test_common.test_kraken import (_test_stop_restart_kraken,
 from ..utils import get_running_krakens
 
 
-SHOW_CALL_TRACKER_DATA = False
 nominal_krakens = {'host1': {'us-wa', 'fr-nw', 'fr-npdc', 'fr-ne-amiens', 'fr-idf', 'fr-cen'},
                    'host2': {'us-wa', 'fr-nw', 'fr-npdc', 'fr-ne-amiens', 'fr-idf', 'fr-cen'}}
 krakens_after_stop = {'host1': {'fr-nw', 'fr-npdc', 'fr-idf', 'fr-cen'},
@@ -120,9 +119,6 @@ def test_create_remove_eng_instance(duplicated):
     with fabric.set_call_tracker('component.kraken.update_eng_instance_conf') as data:
         value, exception, stdout, stderr = fabric.execute_forked('create_eng_instance', 'toto')
 
-    if SHOW_CALL_TRACKER_DATA:
-        from pprint import pprint
-        pprint(dict(data()))
     # there is only one call to update_eng_instance_conf
     assert len(data()['update_eng_instance_conf']) == 2
     host1_string = 'root@{}'.format(platform.get_hosts()['host1'])
@@ -160,9 +156,6 @@ def test_restart_all_krakens_alternate(duplicated):
                                  'component.kraken.restart_kraken_on_host') as data:
         value, exception, stdout, stderr = fabric.execute_forked('component.kraken.restart_all_krakens', wait=False)
 
-    if SHOW_CALL_TRACKER_DATA:
-        from pprint import pprint
-        pprint(dict(data()))
     assert len(data()['require_monitor_kraken_started']) == 2
     # call to restart_kraken is not dependant on env.excluded_instances
     # every kraken must be restarted
@@ -196,8 +189,8 @@ def test_redeploy_kraken_swap(duplicated, capsys):
     #                              'component.kraken.remove_kraken_instance') as data:
     #     value, exception, stdout, stderr = fabric.execute_forked('redeploy_kraken', 'toto')
     fabric.execute('redeploy_kraken', 'toto')
-
     stdout, stderr = capsys.readouterr()
+
     assert 'INFO: kraken toto instance is starting on {}'.format(platform.get_hosts()['host2']) in stdout
     assert 'INFO: kraken toto instance is running on {}'.format(platform.get_hosts()['host2']) in stdout
     assert 'INFO: removing kraken instance toto from {}'.format(platform.get_hosts()['host1']) in stdout
@@ -229,8 +222,8 @@ def test_redeploy_kraken_reduce(duplicated, capsys):
     #                              'component.kraken.remove_kraken_instance') as data:
     #     value, exception, stdout, stderr = fabric.execute_forked('redeploy_kraken', 'toto')
     fabric.execute('redeploy_kraken', 'toto')
-
     stdout, stderr = capsys.readouterr()
+
     assert 'INFO: kraken toto instance is running on {}'.format(platform.get_hosts()['host2']) in stdout
     assert 'INFO: removing kraken instance toto from {}'.format(platform.get_hosts()['host1']) in stdout
     assert platform.path_exists('/srv/kraken/toto/kraken.ini', 'host2')
@@ -246,12 +239,11 @@ def test_redeploy_kraken_reduce(duplicated, capsys):
 
 
 @skipifdev
-def test_redeploy_all_krakens(duplicated, capsys):
+def test_redeploy_all_krakens(duplicated):
     platform, fabric = duplicated
 
-    fabric.execute('redeploy_all_krakens')
+    value, exception, stdout, stderr = fabric.execute_forked('redeploy_all_krakens')
 
-    stdout, stderr = capsys.readouterr()
     host1 = platform.get_hosts()['host1']
     host2 = platform.get_hosts()['host2']
     for instance in fabric.env.instances:

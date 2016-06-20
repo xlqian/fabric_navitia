@@ -15,18 +15,15 @@ import Queue
 import sys
 
 from fabric import api
+from fabric.state import _AttributeDict
+import pyjack
+
+import fabfile
 
 import utils
 
-fabric_navitia_path = None
-for x in sys.path:
-    if 'fabric_navitia' in x and 'fabric_navitia' == [y for y in x.split('/') if y][-1]:
-        fabric_navitia_path = x
-        break
-if not fabric_navitia_path:
-    raise RuntimeError("Could not find module 'fabric_navitia', please set PYTHONPATH accordingly")
-
 ROOT = os.path.basename(os.path.dirname(__file__))
+fabric_navitia_path = os.path.dirname(os.path.dirname(fabfile.__file__))
 
 with utils.cd(fabric_navitia_path):
     fabric_tasks = utils.Command('fab no_such_task').stdout_column(0, 2)
@@ -105,6 +102,7 @@ class FabricManager(object):
         self.env = api.env
         self.register_platform(platform)
         self._call_tracker_data = {}
+        self.show_call_tracker_data = False
 
     def register_platform(self, platform):
         self.platform = platform
@@ -157,11 +155,16 @@ class FabricManager(object):
             obj.wrapped = self._call_tracker(old_wrapped, call)
             for k, v in vars(old_wrapped).iteritems():
                 setattr(obj.wrapped, k, v)
+        self.fresh_data = True
         yield self.get_call_tracker_data
         for obj, wrapped in self._call_tracker_objects:
             obj.wrapped = wrapped
 
     def get_call_tracker_data(self):
+        if self.show_call_tracker_data and self.fresh_data:
+            self.fresh_data = False
+            from pprint import pprint
+            pprint(dict(self._call_tracker_data))
         return self._call_tracker_data
 
     def set_platform(self, **write):
@@ -175,8 +178,17 @@ class FabricManager(object):
         self.platform.user = getattr(self.env, 'default_ssh_user', 'root')
         for k, v in write.iteritems():
             setattr(self.env, k, v)
-        # wait sshd daemons running on host platform
+        # wait sshd daemon running on host platform
         self.platform.wait_process('/usr/sbin/sshd')
+        # save and replace all references to fabric.api.env
+        self.org_api_env = pyjack.replace_all_refs(api.env, _AttributeDict(api.env))
+        self.org_instances = pyjack.replace_all_refs(api.env.instances, dict(api.env.instances))
+        return self
+
+    def unset_platform(self):
+        # restore fabric.api.env
+        pyjack.replace_all_refs(api.env, self.org_api_env)
+        pyjack.replace_all_refs(api.env.instances, self.org_instances)
         return self
 
     def execute(self, task, *args, **kwargs):
@@ -187,6 +199,7 @@ class FabricManager(object):
     def execute_forked(self, task, *args, **kwargs):
         """ Execute fabric task in a forked process. This allows fabric to do anything
             it likes, including crashing and resetting the SSH channels to the platform.
+            Also, it prints stdout and stderr which is cool for debug.
         :return: a tuple (value returned by the fabric task or None,
                           exception raised or None,
                           stdout produced during the execution of the task,

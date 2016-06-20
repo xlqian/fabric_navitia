@@ -10,7 +10,6 @@ from ..utils import get_running_krakens
 
 ROOTDIR = os.path.dirname(os.path.abspath(__file__))
 
-SHOW_CALL_TRACKER_DATA = False
 instances_names = {'us-wa', 'fr-nw', 'fr-npdc', 'fr-ne-amiens', 'fr-idf', 'fr-cen'}
 
 
@@ -22,18 +21,21 @@ def test_upgrade_kraken(duplicated):
                                  '-component.kraken.upgrade_monitor_kraken_packages',
                                  'component.kraken.restart_kraken_on_host',
                                  'component.kraken.require_monitor_kraken_started') as data:
-        fabric.execute_forked(
+        value, exception, stdout, stderr = fabric.execute_forked(
             'tasks.upgrade_kraken', kraken_wait=False, up_confs=False, supervision=False)
 
-    if SHOW_CALL_TRACKER_DATA:
-        from pprint import pprint
-        pprint(dict(data()))
+    assert exception is None
+    assert stderr == ''
+    # upgrades apply on both machines
     assert len(data()['upgrade_engine_packages']) == 2
     assert len(data()['upgrade_monitor_kraken_packages']) == 2
     assert len(data()['require_monitor_kraken_started']) == 2
     assert len(data()['restart_kraken_on_host']) == 2 * len(fabric.env.instances)
     assert len(set((x[0][1] for x in data()['restart_kraken_on_host']))) == 2
     assert set((x[0][0].name for x in data()['restart_kraken_on_host'])) == instances_names
+    for instance in fabric.env.instances:
+        assert platform.docker_exec('readlink /srv/kraken/{}/kraken'.format(instance), 'host1') == '/usr/bin/kraken'
+        assert platform.docker_exec('readlink /srv/kraken/{}/kraken'.format(instance), 'host2') == '/usr/bin/kraken'
 
 
 @skipifdev
@@ -49,9 +51,6 @@ def test_upgrade_kraken_restricted(duplicated):
         fabric.execute_forked(
             'tasks.upgrade_kraken', kraken_wait=False, up_confs=False, supervision=False)
 
-    if SHOW_CALL_TRACKER_DATA:
-        from pprint import pprint
-        pprint(dict(data()))
     # upgrades apply only on restricted pool
     assert len(data()['upgrade_engine_packages']) == 1
     assert len(data()['upgrade_monitor_kraken_packages']) == 1
@@ -86,9 +85,6 @@ def test_upgrade_all_load_balancer(duplicated):
     assert stderr == ''
     assert stdout.count("Executing task 'stop_tyr_beat'") == 1
     assert stdout.count("Executing task 'start_tyr_beat'") == 1
-    if SHOW_CALL_TRACKER_DATA:
-        from pprint import pprint
-        pprint(dict(data()))
     # 1 call to component.load_balancer.disable_node by reload_jormun_safe()
     assert len(data()['disable_node']) == 1
     # 1 call to component.load_balancer.enable_node by reload_jormun_safe()
@@ -111,21 +107,12 @@ def test_upgrade_all_load_balancer(duplicated):
     assert len(data()['upgrade_tyr']) == 1
 
 
-# @skipifdev
+@skipifdev
 def test_remove_instance(duplicated):
     platform, fabric = duplicated
 
     # postgres is really long to warm up !
     time.sleep(15)
-
-    # update instance model and resource, load and execute migration (before merge of Navitia2 PR)
-    # platform.scp('/home/francois/CanalTP/navitia/source/navitiacommon/navitiacommon/models.py',
-    #              '/usr/lib/python2.7/dist-packages/navitiacommon/', 'host1')
-    # platform.scp('/home/francois/CanalTP/navitia/source/tyr/migrations/versions/d1d12707b76_add_discarded_instance.py',
-    #              '/usr/share/tyr/migrations/versions/', 'host1')
-    # platform.scp('/home/francois/CanalTP/navitia/source/tyr/tyr/resources.py',
-    #              '/usr/lib/python2.7/dist-packages/tyr/', 'host1')
-    # platform.docker_exec('/bin/sh -c "cd /srv/tyr && TYR_CONFIG_FILE=/srv/tyr/settings.py python manage.py db upgrade"', 'host1')
 
     # set up a server for tyr API on host1 and start it
     platform.scp(os.path.join(ROOTDIR, 'tyr-api.conf'), '/etc/apache2/conf-enabled/tyr-api.conf', 'host1')
@@ -147,3 +134,47 @@ def test_remove_instance(duplicated):
     assert platform.path_exists('/etc/init.d/kraken_us-wa', negate=True)
     assert platform.path_exists('/srv/kraken/us-wa', negate=True)
     assert platform.path_exists('/etc/jormungandr.d/us-wa.json', negate=True)
+
+
+@skipifdev
+def test_upgrade_engine_packages(duplicated):
+    platform, fabric = duplicated
+
+    value, exception, stdout, stderr = fabric.execute_forked('upgrade_engine_packages')
+    assert exception is None
+    assert stderr == ''
+
+    assert platform.path_exists('/usr/bin/kraken')
+    assert platform.path_exists('/usr/bin/kraken.old')
+
+
+@skipifdev
+def test_rollback_kraken(duplicated):
+    platform, fabric = duplicated
+
+    # prepare required folder and files before test
+    platform.docker_exec("mkdir -p /srv/ed/data/us-wa/temp")
+    plain_target = fabric.env.instances['us-wa'].target_lz4_file
+    temp_target = os.path.join(os.path.dirname(plain_target), 'temp', os.path.basename(plain_target))
+    # create temp target before plain target
+    platform.put_data('old', plain_target, 'host1')
+    time.sleep(1)
+    platform.put_data('new', temp_target, 'host1')
+
+    for instance in fabric.env.instances:
+        assert platform.docker_exec('readlink /srv/kraken/{}/kraken'.format(instance), 'host1') == '/usr/bin/kraken'
+        assert platform.docker_exec('readlink /srv/kraken/{}/kraken'.format(instance), 'host2') == '/usr/bin/kraken'
+
+    # we don't want to actually restart the kraken under test
+    with fabric.set_call_tracker('-component.kraken.restart_kraken') as data:
+        value, exception, stdout, stderr = fabric.execute_forked('rollback_kraken', 'us-wa', test=False)
+    assert exception is None
+    assert stderr == ''
+
+    assert len(data()['restart_kraken']) == 1
+    # link to executable has been changed to old binary
+    assert platform.docker_exec('readlink /srv/kraken/us-wa/kraken', 'host1') == '/usr/bin/kraken.old'
+    assert platform.docker_exec('readlink /srv/kraken/us-wa/kraken', 'host2') == '/usr/bin/kraken.old'
+    # data has been exchanged as expected
+    assert platform.get_data(temp_target, 'host1') == 'old'
+    assert platform.get_data(plain_target, 'host1') == 'new'

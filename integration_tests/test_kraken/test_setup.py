@@ -1,5 +1,8 @@
 # encoding: utf-8
 
+import os.path
+import time
+
 from ..docker import docker_exec
 from ..utils import filter_column, extract_column, python_requirements_compare
 from ..test_common import skipifdev
@@ -100,3 +103,34 @@ def test_update_eng_instance_conf_distributed(distributed_undeployed):
     assert platform.path_exists('/etc/init.d/kraken_fr-cen', 'host2')
     assert platform.path_exists('/srv/kraken/fr-cen/kraken.ini', 'host1', negate=True)
     assert platform.path_exists('/etc/init.d/kraken_fr-cen', 'host1', negate=True)
+
+
+@skipifdev
+def test_swap_data_nav(duplicated_undeployed):
+    platform, fabric = duplicated_undeployed
+
+    # prepare required folder and files before test
+    platform.docker_exec("mkdir -p /srv/ed/data/us-wa/temp")
+    plain_target = fabric.env.instances['us-wa'].target_lz4_file
+    temp_target = os.path.join(os.path.dirname(plain_target), 'temp', os.path.basename(plain_target))
+    # create temp target before plain target
+    platform.put_data('old', plain_target, 'host1')
+    time.sleep(1)
+    platform.put_data('new', temp_target, 'host1')
+
+    value, exception, stdout, stderr = fabric.execute_forked('swap_data_nav', 'us-wa')
+    assert exception is None
+    assert stderr == ''
+    # first time, data has been exchanged as expected
+    assert platform.get_data(temp_target, 'host1') == 'old'
+    assert platform.get_data(plain_target, 'host1') == 'new'
+
+    fabric.execute_forked('swap_data_nav', 'us-wa')
+    # second time, data has not been exchanged as expected
+    assert platform.get_data(temp_target, 'host1') == 'old'
+    assert platform.get_data(plain_target, 'host1') == 'new'
+
+    fabric.execute_forked('swap_data_nav', 'us-wa', force=True)
+    # when forced, data has been exchanged as expected
+    assert platform.get_data(temp_target, 'host1') == 'new'
+    assert platform.get_data(plain_target, 'host1') == 'old'
