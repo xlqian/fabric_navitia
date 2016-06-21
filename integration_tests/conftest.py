@@ -35,6 +35,7 @@ def single_undeployed():
     platform = PlatformManager('single', {'host': distri})
     platform, fabric = setup_platform(platform, distri)
     yield platform, fabric
+    fabric.unset_platform()
     platform.reset('rm_container')
 
 
@@ -44,6 +45,7 @@ def distributed_undeployed():
     platform = PlatformManager('distributed', {'host1': distri, 'host2': distri})
     platform, fabric = setup_platform(platform, distri)
     yield platform, fabric
+    fabric.unset_platform()
     platform.reset('rm_container')
 
 
@@ -53,6 +55,7 @@ def duplicated_undeployed():
     platform = PlatformManager('duplicated', {'host1': distri, 'host2': distri})
     platform, fabric = setup_platform(platform, distri)
     yield platform, fabric
+    fabric.unset_platform()
     platform.reset('rm_container')
 
 
@@ -73,6 +76,7 @@ def single():
     time.sleep(1)
     deployed_platform.start_services('tyr_worker', 'tyr_beat', 'default', wait='/srv/kraken')
     yield deployed_platform, fabric
+    fabric.unset_platform()
     deployed_platform.reset('rm_container')
 
 
@@ -89,6 +93,7 @@ def distributed():
         wait='/srv/kraken'
     )
     yield deployed_platform, fabric
+    fabric.unset_platform()
     deployed_platform.reset('rm_container')
 
 
@@ -105,4 +110,5 @@ def duplicated():
         wait='/srv/kraken'
     )
     yield deployed_platform, fabric
+    fabric.unset_platform()
     deployed_platform.reset('rm_container')

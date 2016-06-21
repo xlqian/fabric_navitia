@@ -5,7 +5,6 @@ import time
 from ..test_common import skipifdev
 
 
-SHOW_CALL_TRACKER_DATA = False
 instances_names = {'us-wa', 'fr-nw', 'fr-npdc', 'fr-ne-amiens', 'fr-idf', 'fr-cen'}
 
 
@@ -46,9 +45,6 @@ def test_create_remove_tyr_instance(distributed):
                                  'component.tyr.restart_tyr_beat') as data:
         value, exception, stdout, stderr = fabric.execute_forked('remove_tyr_instance', 'toto', purge_logs=True)
 
-    if SHOW_CALL_TRACKER_DATA:
-        from pprint import pprint
-        pprint(dict(data()))
     assert exception is None
     assert stderr == ''
     assert stdout.count("Executing task 'remove_tyr_instance'") == 2

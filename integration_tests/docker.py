@@ -283,7 +283,7 @@ class PlatformManager(object):
 
     def wait_process(self, proc, raises=True):
         for container in self.containers.itervalues():
-            if not wait_running_command(proc, container):
+            if not wait_running_command(proc, container, timeout=2):
                 if raises:
                     raise RuntimeError("Container {} has no running '{}'".format(container, proc))
                 return
