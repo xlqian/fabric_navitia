@@ -30,6 +30,10 @@ You can list all available tasks by:
 
     fab --list
 
+**WARNING:** When a task appears multiple times in that list, always use the namespaced ones.
+When you have `deploy`, `kraken.deploy` and `jormungandr.deploy`,
+there is no way to know for sure what `deploy` refers to.
+
 General fabric command format (see below for pseudo-tasks):
 
     PYTHONPATH=<path_to_fabric_navitia>:<path_to_configuration> python -u -m fabric --keepalive=20 pseudo-task1:params pseudo-task2:params task1:params task2:params ... taskn:params
