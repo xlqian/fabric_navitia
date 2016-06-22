@@ -34,8 +34,10 @@ from fabric.context_managers import settings, warn_only
 from fabric.decorators import task, roles
 from fabric.operations import run, sudo
 from fabric.tasks import execute
-from fabric.api import env
+from fabric.api import env, abort
 from fabtools import require
+import requests
+
 from fabfile.utils import  get_psql_version, _upload_template, get_real_instance
 
 
@@ -165,12 +167,13 @@ def create_postgresql_database(database, username=None):
     run('su - postgres --command="createdb {database} --owner={username} --encoding=UTF8"'
             .format(database=database, username=username))
 
+
 @task
 @roles('db')
 def remove_postgresql_database(database):
     """Remove a postgresql database"""
-    run('su - postgres --command="dropdb {database}"'
-            .format(database=database))
+    run('su - postgres --command="dropdb {}"'.format(database))
+
 
 @task
 @roles('db')
@@ -178,12 +181,14 @@ def remove_postgresql_user(username):
     """ Create a postgresql user"""
     run('su - postgres --command="dropuser {}"'.format(username))
 
+
 @roles('db')
 def is_postgresql_user_exist(username):
 #   select exists (SELECT * FROM pg_user WHERE usename=\'ed_uk\');
     dbuserexist = run('sudo -i -u postgres psql -A -t -c "select exists (SELECT * FROM pg_user WHERE usename=\'{}\');"'
                       .format(username))
     return dbuserexist == 't'
+
 
 @roles('db')
 def is_postgresql_database_exist(dbname):
@@ -200,20 +205,18 @@ def db_has_postgis(dbname):
 
 
 @task
-@roles('db')
 def remove_instance_from_jormun_database(instance):
     """Remove a given ed instance in jormungandr PostgreSQL db
         http://jira.canaltp.fr/browse/NAVITIAII-1098
+        update: http://jira.canaltp.fr/browse/DEVOP-455 (use tyr API)
     """
-    _upload_template("db/remove_instance.sql.jinja", \
-            "/var/lib/postgresql/postgres_{}.sql".format(instance),
-            context={
-                'instance': instance,
-            }
-    )
-    run('su - postgres --command="psql jormungandr < /var/lib/postgresql/postgres_{}.sql"'.format(instance))
-    run("rm -f /var/lib/postgresql/postgres_{}.sql".format(instance))
-
+    url = 'http://{}/v0/instances/{}'.format(env.tyr_url, instance)
+    try:
+        status = requests.delete(url).status_code
+        if status != 200:
+            abort("Delete request failed: {}, status={}".format(url, status))
+    except Exception as e:
+        abort("Delete request failed: {} ({})".format(url, e))
 
 
 @task

@@ -136,6 +136,9 @@ class Instance:
     def jormungandr_config_file(self):
         return os.path.join(env.jormungandr_instances_dir, self.name + '.json')
 
+    def __str__(self):
+        return self.name
+
 
 def add_instance(name, db_pwd, **kwargs):
     instance = env.instances[name] = Instance(name, db_pwd, **kwargs)

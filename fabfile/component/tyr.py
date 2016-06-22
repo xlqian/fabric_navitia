@@ -669,12 +669,10 @@ def remove_at_instance(instance):
 @roles('tyr')
 def remove_ed_instance(instance):
     """Remove a ed instance entirely"""
-    ed_dir = get_real_instance(instance).base_ed_dir
-    destination_dir = get_real_instance(instance).base_destination_dir
-    backup_dir = get_real_instance(instance).backup_dir
-    run("rm -rf %s" % ed_dir)
-    run("rm -rf %s" % destination_dir)
-    run("rm -rf %s" % backup_dir)
+    instance = get_real_instance(instance)
+    run("rm -rf %s" % instance.base_ed_dir)
+    run("rm -rf %s" % instance.base_destination_dir)
+    run("rm -rf %s" % instance.backup_dir)
 
 
 @roles('tyr')
