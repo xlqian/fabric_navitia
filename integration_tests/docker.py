@@ -405,8 +405,9 @@ class DeployedPlatformManager(PlatformManager):
     def __init__(self, platform, distri):
         self.platform = platform
         self.platform_name = platform.platform_name
-        self.user = platform.user
         self.parameters = platform.parameters
+        self.user = platform.user
+        self.timeout = platform.timeout
         self.distri = distri
         self.images = {k: '-'.join((v, self.platform_name, k)) for k, v in platform.images.iteritems()}
         self.containers = {k: '-'.join((v, 'deployed')) for k, v in self.images.iteritems()}
