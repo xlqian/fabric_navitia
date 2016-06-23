@@ -119,11 +119,10 @@ def require_monitor_kraken_started():
 
 
 @task
-def restart_all_krakens(wait=True):
+def restart_all_krakens(wait='serial'):
     """restart and test all kraken instances"""
-    wait = get_bool_from_cli(wait)
     execute(require_monitor_kraken_started)
-    for instance in env.instances.values():
+    for instance in env.instances.itervalues():
         restart_kraken(instance, wait=wait)
 
 
@@ -139,14 +138,14 @@ def require_all_krakens_started():
 def test_all_krakens(wait=False):
     """test all kraken instances"""
     wait = get_bool_from_cli(wait)
-    for instance in env.instances.values():
+    for instance in env.instances.itervalues():
         test_kraken(instance, fail_if_error=False, wait=wait, loaded_is_ok=True)
 
 
 @task
 @roles('tyr_master')
 def swap_all_data_nav(force=False):
-    for instance in env.instances.values():
+    for instance in env.instances.itervalues():
         swap_data_nav(instance, force)
 
 
@@ -227,25 +226,38 @@ def check_dead_instances():
 
 
 @task
-def restart_kraken(instance, test=True, wait=True):
-    """Restart a kraken instance on a given server
-        To let us not restart all kraken servers in the farm
+def restart_kraken(instance, wait='serial'):
+    """ Restart all krakens of an instance (using pool), serially or in parallel,
+        then test them. Testing serially assures that krakens are restarted serially.
+        :param wait: string.
+               Possible values=False or None: restart in parallel, no test
+               'serial': restart serially and test
+               'parallel': restart in parallel and test
+        The default value is 'serial' because it is the safest scenario
+        to restart the krakens of an instance in production.
     """
+    if wait:
+        wait = wait.lower()
+        if wait not in ('serial', 'parallel'):
+            wait = False
     instance = get_real_instance(instance)
-    wait = get_bool_from_cli(wait)
+    excluded = instance.name in env.excluded_instances
     # restart krakens of this instance that are also in the eng role,
     # this works with the "pool" switch mechanism used in upgrade_all()
     for host in set(instance.kraken_engines).intersection(env.roledefs['eng']):
         restart_kraken_on_host(instance, host)
-    if test:
-        if instance.name in env.excluded_instances:
-            print(yellow("{} has no data, not testing it".format(instance.name)))
-        else:
-            test_kraken(instance, fail_if_error=False, wait=wait)
+        if wait == 'serial' and not excluded:
+            test_kraken(instance, fail_if_error=False, wait=True, hosts=[host])
+    if wait == 'parallel' and not excluded:
+        test_kraken(instance, fail_if_error=False, wait=True)
+    if wait and excluded:
+        print(yellow("Coverage '{}' has no data, not testing it".format(instance.name)))
 
 
 @task
 def restart_kraken_on_host(instance, host):
+    """ Restart a kraken of an instance on a given server
+    """
     instance = get_real_instance(instance)
     with settings(host_string=host):
         kraken = 'kraken_' + instance.name

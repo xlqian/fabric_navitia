@@ -19,13 +19,14 @@ def test_upgrade_kraken(duplicated):
 
     with fabric.set_call_tracker('-component.kraken.upgrade_engine_packages',
                                  '-component.kraken.upgrade_monitor_kraken_packages',
+                                 '-component.kraken.test_kraken',
                                  'component.kraken.restart_kraken_on_host',
                                  'component.kraken.require_monitor_kraken_started') as data:
         value, exception, stdout, stderr = fabric.execute_forked(
-            'tasks.upgrade_kraken', kraken_wait=False, up_confs=False, supervision=False)
-
+            'tasks.upgrade_kraken', up_confs=False, supervision=False)
     assert exception is None
     assert stderr == ''
+
     # upgrades apply on both machines
     assert len(data()['upgrade_engine_packages']) == 2
     assert len(data()['upgrade_monitor_kraken_packages']) == 2
@@ -46,10 +47,13 @@ def test_upgrade_kraken_restricted(duplicated):
 
     with fabric.set_call_tracker('-component.kraken.upgrade_engine_packages',
                                  '-component.kraken.upgrade_monitor_kraken_packages',
+                                 '-component.kraken.test_kraken',
                                  'component.kraken.restart_kraken_on_host',
                                  'component.kraken.require_monitor_kraken_started') as data:
-        fabric.execute_forked(
-            'tasks.upgrade_kraken', kraken_wait=False, up_confs=False, supervision=False)
+        value, exception, stdout, stderr = fabric.execute_forked(
+            'tasks.upgrade_kraken', up_confs=False, supervision=False)
+    assert exception is None
+    assert stderr == ''
 
     # upgrades apply only on restricted pool
     assert len(data()['upgrade_engine_packages']) == 1
@@ -79,10 +83,10 @@ def test_upgrade_all_load_balancer(duplicated):
                                  '-component.load_balancer.disable_node',
                                  '-component.load_balancer.enable_node') as data:
         value, exception, stdout, stderr = fabric.execute_forked('tasks.upgrade_all',
-                       check_version=False, kraken_wait=False, check_dead=False)
-
+                       check_version=False, check_dead=False)
     assert exception is None
     assert stderr == ''
+
     assert stdout.count("Executing task 'stop_tyr_beat'") == 1
     assert stdout.count("Executing task 'start_tyr_beat'") == 1
     # 1 call to component.load_balancer.disable_node by reload_jormun_safe()
@@ -119,6 +123,9 @@ def test_remove_instance(duplicated):
     platform.docker_exec('service apache2 restart', 'host1')
 
     value, exception, stdout, stderr = fabric.execute_forked('tasks.remove_instance', 'us-wa')
+    assert exception is None
+    assert stderr == ''
+
     assert stdout.count("Executing task 'remove_postgresql_database'") == 1
     assert stdout.count("Executing task 'remove_ed_instance'") == 2
     assert stdout.count("Executing task 'remove_tyr_instance'") == 2
@@ -134,47 +141,3 @@ def test_remove_instance(duplicated):
     assert platform.path_exists('/etc/init.d/kraken_us-wa', negate=True)
     assert platform.path_exists('/srv/kraken/us-wa', negate=True)
     assert platform.path_exists('/etc/jormungandr.d/us-wa.json', negate=True)
-
-
-@skipifdev
-def test_upgrade_engine_packages(duplicated):
-    platform, fabric = duplicated
-
-    value, exception, stdout, stderr = fabric.execute_forked('upgrade_engine_packages')
-    assert exception is None
-    assert stderr == ''
-
-    assert platform.path_exists('/usr/bin/kraken')
-    assert platform.path_exists('/usr/bin/kraken.old')
-
-
-@skipifdev
-def test_rollback_kraken(duplicated):
-    platform, fabric = duplicated
-
-    # prepare required folder and files before test
-    platform.docker_exec("mkdir -p /srv/ed/data/us-wa/temp")
-    plain_target = fabric.env.instances['us-wa'].target_lz4_file
-    temp_target = os.path.join(os.path.dirname(plain_target), 'temp', os.path.basename(plain_target))
-    # create temp target before plain target
-    platform.put_data('old', plain_target, 'host1')
-    time.sleep(1)
-    platform.put_data('new', temp_target, 'host1')
-
-    for instance in fabric.env.instances:
-        assert platform.docker_exec('readlink /srv/kraken/{}/kraken'.format(instance), 'host1') == '/usr/bin/kraken'
-        assert platform.docker_exec('readlink /srv/kraken/{}/kraken'.format(instance), 'host2') == '/usr/bin/kraken'
-
-    # we don't want to actually restart the kraken under test
-    with fabric.set_call_tracker('-component.kraken.restart_kraken') as data:
-        value, exception, stdout, stderr = fabric.execute_forked('rollback_kraken', 'us-wa', test=False)
-    assert exception is None
-    assert stderr == ''
-
-    assert len(data()['restart_kraken']) == 1
-    # link to executable has been changed to old binary
-    assert platform.docker_exec('readlink /srv/kraken/us-wa/kraken', 'host1') == '/usr/bin/kraken.old'
-    assert platform.docker_exec('readlink /srv/kraken/us-wa/kraken', 'host2') == '/usr/bin/kraken.old'
-    # data has been exchanged as expected
-    assert platform.get_data(temp_target, 'host1') == 'old'
-    assert platform.get_data(plain_target, 'host1') == 'new'
