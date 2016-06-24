@@ -374,7 +374,7 @@ class PlatformManager(object):
         :param kwargs: key=host, value=sequence of services, or
                        key=service, value=sequence of hosts.
         """
-        wait = kwargs.pop('wait', None)
+        wait_process = kwargs.pop('wait_process', None)
         for service in args:
             self.docker_exec('service {} start'.format(service))
         hosts_keys = set(kwargs).issubset(set(self.images.keys()))
@@ -384,11 +384,11 @@ class PlatformManager(object):
                     self.docker_exec('service {} start'.format(x), k)
                 else:
                     self.docker_exec('service {} start'.format(k), x)
-        if wait:
-            if isinstance(wait, basestring):
-                self.wait_process(wait)
+        if wait_process:
+            if isinstance(wait_process, basestring):
+                self.wait_process(wait_process)
             else:
-                for w in wait:
+                for w in wait_process:
                     self.wait_process(w)
 
     def docker_diff(self):

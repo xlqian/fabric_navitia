@@ -83,7 +83,7 @@ def single():
     platform = PlatformManager('single', {'host': distri}, timeout=wait_timeout)
     deployed_platform, fabric = setup_platform_deployed(platform, distri)
     time.sleep(1)
-    deployed_platform.start_services('tyr_worker', 'tyr_beat', 'default', wait='/srv/kraken')
+    deployed_platform.start_services('tyr_worker', 'tyr_beat', 'default', wait_process='/srv/kraken')
     time.sleep(wait_timeout)
     yield deployed_platform, fabric
     fabric.unset_platform()
@@ -101,7 +101,7 @@ def distributed():
         'tyr_worker',
         host1=('tyr_beat', 'kraken_fr-nw', 'kraken_us-wa', 'kraken_fr-npdc'),
         host2=('kraken_fr-ne-amiens', 'kraken_fr-idf', 'kraken_fr-cen'),
-        wait='/srv/kraken'
+        wait_process='/srv/kraken'
     )
     time.sleep(wait_timeout)
     yield deployed_platform, fabric
@@ -120,7 +120,7 @@ def duplicated():
         'tyr_worker',
         'kraken_fr-nw', 'kraken_us-wa', 'kraken_fr-npdc', 'kraken_fr-ne-amiens', 'kraken_fr-idf', 'kraken_fr-cen',
         host1=('tyr_beat',),
-        wait='/srv/kraken'
+        wait_process='/srv/kraken'
     )
     time.sleep(wait_timeout)
     yield deployed_platform, fabric
