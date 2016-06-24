@@ -298,7 +298,7 @@ def test_redeploy_all_krakens(duplicated):
         assert 'INFO: kraken {} instance is running on {}'.format(instance, host2) in stdout
 
 
-@skipifdev
+# @skipifdev
 def test_upgrade_engine_packages(duplicated):
     platform, fabric = duplicated
 
