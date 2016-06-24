@@ -12,6 +12,8 @@ DEFAULT_DEBIAN = 'debian8'
 def pytest_addoption(parser):
     parser.addoption('--dev', action='store_true',
                      help="run only non decorated tests (default: run all tests")
+    parser.addoption('--wait', action='store', default=1,
+                     help="specify sleep time for processes start before testing (default: 0")
     parser.addoption('--reset', action='store_true',
                      help="force reset image, ie force a full navitia redeploy "
                           "(default: reuse existing image")
@@ -31,9 +33,11 @@ def setup_platform(platform, distri):
 
 @pytest.yield_fixture(scope='function')
 def single_undeployed():
+    wait_timeout = int(pytest.config.getoption('--wait'))
     distri = pytest.config.getoption('--distri')
-    platform = PlatformManager('single', {'host': distri})
+    platform = PlatformManager('single', {'host': distri}, timeout=wait_timeout)
     platform, fabric = setup_platform(platform, distri)
+    time.sleep(wait_timeout)
     yield platform, fabric
     fabric.unset_platform()
     platform.reset('rm_container')
@@ -41,9 +45,11 @@ def single_undeployed():
 
 @pytest.yield_fixture(scope='function')
 def distributed_undeployed():
+    wait_timeout = int(pytest.config.getoption('--wait'))
     distri = pytest.config.getoption('--distri')
-    platform = PlatformManager('distributed', {'host1': distri, 'host2': distri})
+    platform = PlatformManager('distributed', {'host1': distri, 'host2': distri}, timeout=wait_timeout)
     platform, fabric = setup_platform(platform, distri)
+    time.sleep(wait_timeout)
     yield platform, fabric
     fabric.unset_platform()
     platform.reset('rm_container')
@@ -51,9 +57,11 @@ def distributed_undeployed():
 
 @pytest.yield_fixture(scope='function')
 def duplicated_undeployed():
+    wait_timeout = int(pytest.config.getoption('--wait'))
     distri = pytest.config.getoption('--distri')
-    platform = PlatformManager('duplicated', {'host1': distri, 'host2': distri})
+    platform = PlatformManager('duplicated', {'host1': distri, 'host2': distri}, timeout=wait_timeout)
     platform, fabric = setup_platform(platform, distri)
+    time.sleep(wait_timeout)
     yield platform, fabric
     fabric.unset_platform()
     platform.reset('rm_container')
@@ -70,11 +78,13 @@ def setup_platform_deployed(platform, distri):
 
 @pytest.yield_fixture(scope='function')
 def single():
+    wait_timeout = int(pytest.config.getoption('--wait'))
     distri = pytest.config.getoption('--distri')
-    platform = PlatformManager('single', {'host': distri})
+    platform = PlatformManager('single', {'host': distri}, timeout=wait_timeout)
     deployed_platform, fabric = setup_platform_deployed(platform, distri)
     time.sleep(1)
-    deployed_platform.start_services('tyr_worker', 'tyr_beat', 'default', wait='/srv/kraken')
+    deployed_platform.start_services('tyr_worker', 'tyr_beat', 'default', wait_process='/srv/kraken')
+    time.sleep(wait_timeout)
     yield deployed_platform, fabric
     fabric.unset_platform()
     deployed_platform.reset('rm_container')
@@ -82,16 +92,18 @@ def single():
 
 @pytest.yield_fixture(scope='function')
 def distributed():
+    wait_timeout = int(pytest.config.getoption('--wait'))
     distri = pytest.config.getoption('--distri')
-    platform = PlatformManager('distributed', {'host1': distri, 'host2': distri})
+    platform = PlatformManager('distributed', {'host1': distri, 'host2': distri}, timeout=wait_timeout)
     deployed_platform, fabric = setup_platform_deployed(platform, distri)
     time.sleep(1)
     deployed_platform.start_services(
         'tyr_worker',
         host1=('tyr_beat', 'kraken_fr-nw', 'kraken_us-wa', 'kraken_fr-npdc'),
         host2=('kraken_fr-ne-amiens', 'kraken_fr-idf', 'kraken_fr-cen'),
-        wait='/srv/kraken'
+        wait_process='/srv/kraken'
     )
+    time.sleep(wait_timeout)
     yield deployed_platform, fabric
     fabric.unset_platform()
     deployed_platform.reset('rm_container')
@@ -99,16 +111,18 @@ def distributed():
 
 @pytest.yield_fixture(scope='function')
 def duplicated():
+    wait_timeout = int(pytest.config.getoption('--wait'))
     distri = pytest.config.getoption('--distri')
-    platform = PlatformManager('duplicated', {'host1': distri, 'host2': distri})
+    platform = PlatformManager('duplicated', {'host1': distri, 'host2': distri}, timeout=wait_timeout)
     deployed_platform, fabric = setup_platform_deployed(platform, distri)
     time.sleep(1)
     deployed_platform.start_services(
         'tyr_worker',
         'kraken_fr-nw', 'kraken_us-wa', 'kraken_fr-npdc', 'kraken_fr-ne-amiens', 'kraken_fr-idf', 'kraken_fr-cen',
         host1=('tyr_beat',),
-        wait='/srv/kraken'
+        wait_process='/srv/kraken'
     )
+    time.sleep(wait_timeout)
     yield deployed_platform, fabric
     fabric.unset_platform()
     deployed_platform.reset('rm_container')

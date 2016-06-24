@@ -156,7 +156,7 @@ class PlatformManager(object):
     Optionally, stops and commits the containers.
     """
 
-    def __init__(self, platform, images, parameters=(), user='root'):
+    def __init__(self, platform, images, parameters=(), user='root', timeout=1):
         """
         :param platform: string
         :param images: dictionary/pair iterable of container-name:image
@@ -165,9 +165,10 @@ class PlatformManager(object):
         self.images_rootdir = ROOTDIR
         self.platform_name = platform
         self.platform = self
-        self.user = user
         self.images = images if isinstance(images, Mapping) else dict(images)
         self.parameters = parameters if isinstance(parameters, Mapping) else dict(parameters)
+        self.user = user
+        self.timeout = timeout
         self.containers = {k: '-'.join((v, self.platform_name, k)) for k, v in self.images.iteritems()}
         self.images_names = set(self.images.values())
         self.containers_names = self.containers.values()
@@ -283,7 +284,7 @@ class PlatformManager(object):
 
     def wait_process(self, proc, raises=True):
         for container in self.containers.itervalues():
-            if not wait_running_command(proc, container, timeout=2):
+            if not wait_running_command(proc, container, timeout=self.timeout):
                 if raises:
                     raise RuntimeError("Container {} has no running '{}'".format(container, proc))
                 return
@@ -373,7 +374,7 @@ class PlatformManager(object):
         :param kwargs: key=host, value=sequence of services, or
                        key=service, value=sequence of hosts.
         """
-        wait = kwargs.pop('wait', None)
+        wait_process = kwargs.pop('wait_process', None)
         for service in args:
             self.docker_exec('service {} start'.format(service))
         hosts_keys = set(kwargs).issubset(set(self.images.keys()))
@@ -383,8 +384,12 @@ class PlatformManager(object):
                     self.docker_exec('service {} start'.format(x), k)
                 else:
                     self.docker_exec('service {} start'.format(k), x)
-        if wait:
-            self.wait_process(wait)
+        if wait_process:
+            if isinstance(wait_process, basestring):
+                self.wait_process(wait_process)
+            else:
+                for w in wait_process:
+                    self.wait_process(w)
 
     def docker_diff(self):
         # TODO this could only be useful if krakens were started in Dockerfile
@@ -400,8 +405,9 @@ class DeployedPlatformManager(PlatformManager):
     def __init__(self, platform, distri):
         self.platform = platform
         self.platform_name = platform.platform_name
-        self.user = platform.user
         self.parameters = platform.parameters
+        self.user = platform.user
+        self.timeout = platform.timeout
         self.distri = distri
         self.images = {k: '-'.join((v, self.platform_name, k)) for k, v in platform.images.iteritems()}
         self.containers = {k: '-'.join((v, 'deployed')) for k, v in self.images.iteritems()}
