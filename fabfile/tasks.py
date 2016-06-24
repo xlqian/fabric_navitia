@@ -57,13 +57,14 @@ import random
 
 
 @task
-def deploy_from_scratch():
+def deploy_from_scratch(kraken_wait=False):
     """
     deploy navitia on empty server
     This task can also be called on a already configured environment, it should only update all
+    :param kraken_wait: 'serial' or 'parallel'
     """
     execute(setup)
-    execute(update_all_instances, kraken_wait=False)
+    execute(update_all_instances, kraken_wait=kraken_wait)
     execute(upgrade_all)
 
 
