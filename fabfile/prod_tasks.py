@@ -31,7 +31,6 @@
 
 from fabric.colors import blue
 from fabric.tasks import execute
-from fabfile.component import jormungandr, load_balancer
 from fabric.api import env, task
 
 
@@ -46,6 +45,7 @@ def vip_name(instance):
 @task
 def remove_kraken_vip(name):
     """ Delete a given instance vip and associated pool """
+    from fabfile.component import load_balancer
 
     pool_name = vip_name(name)
     vs_name = pool_name
@@ -80,16 +80,19 @@ def remove_kraken_vip(name):
 
 @task
 def disable_nodes(nodes):
+    from fabfile.component import load_balancer
     for node in nodes:
         execute(load_balancer.disable_node, node)
 
 @task
 def enable_nodes(nodes):
+    from fabfile.component import load_balancer
     for node in nodes:
         execute(load_balancer.enable_node, node)
 
 @task
 def restart_jormungandr(nodes, safe=True):
+    from fabfile.component import jormungandr
     for node in nodes:
         execute(jormungandr.reload_jormun_safe, node, safe)
 

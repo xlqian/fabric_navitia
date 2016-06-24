@@ -35,7 +35,6 @@ from env.platforms import *
 from tasks import *
 from custom_tasks import *
 from prod_tasks import *
-del prod_tasks.jormungandr
 
 from component import *
 

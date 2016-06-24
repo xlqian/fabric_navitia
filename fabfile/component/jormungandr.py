@@ -322,7 +322,7 @@ def deploy_jormungandr_all_instances_conf():
         * Deploy all json configuration files
         * Reload apache
     """
-    for instance in env.instances.itervalues():
+    for instance in env.instances.values():
         execute(deploy_jormungandr_instance_conf, instance)
 
     reload_jormun_safe_all()

@@ -57,15 +57,16 @@ import random
 
 
 @task
-def deploy_from_scratch():
+def deploy_from_scratch(kraken_wait=False):
     """
     deploy navitia on empty server
     This task can also be called on a already configured environment, it should only update all
+    :param kraken_wait: 'serial' or 'parallel'
     """
-    #execute(retrieve_packages) # this is not working and i don't think it is the right way to do this
     execute(setup)
-    execute(update_all_instances, kraken_wait=False)
-    execute(upgrade_all, kraken_wait=False)
+    execute(update_all_instances, kraken_wait=kraken_wait)
+    execute(upgrade_all)
+
 
 @task
 def setup():
@@ -98,14 +99,14 @@ def upgrade_all_packages():
     execute(tyr.upgrade_ed_packages)
     execute(jormungandr.upgrade_ws_packages)
 
+
 @task
-def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True,
-                send_mail='no', manual_lb=False, check_dead=True):
+def upgrade_all(up_tyr=True, up_confs=True, check_version=True, send_mail='no',
+                manual_lb=False, check_dead=True):
     """Upgrade all navitia packages, databases and launch rebinarisation of all instances """
     check_version = get_bool_from_cli(check_version)
     up_tyr = get_bool_from_cli(up_tyr)
     up_confs = get_bool_from_cli(up_confs)
-    kraken_wait = get_bool_from_cli(kraken_wait)
 
     if check_version:
         execute(compare_version_candidate_installed, host_name='tyr')
@@ -141,7 +142,7 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
         else:
             execute(switch_to_first_phase, env.eng_hosts_1, env.ws_hosts_1, env.ws_hosts_2)
         time_dict.register_start('kraken')
-        execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs, supervision=True)
+        execute(upgrade_kraken, wait=env.KRAKEN_RESTART_SCHEME, up_confs=up_confs, supervision=True)
         if check_dead:
             execute(check_dead_instances)
         execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
@@ -159,7 +160,7 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
         else:
             execute(switch_to_second_phase, env.eng_hosts_1, env.eng_hosts_2,
                     env.ws_hosts_1,  env.ws_hosts_2)
-        execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs)
+        execute(upgrade_kraken, wait=env.KRAKEN_RESTART_SCHEME, up_confs=up_confs)
         time_dict.register_end('kraken')
         execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
         if not manual_lb:
@@ -168,7 +169,7 @@ def upgrade_all(up_tyr=True, up_confs=True, kraken_wait=True, check_version=True
         env.roledefs['ws'] = env.ws_hosts
     else:
         time_dict.register_start('kraken')
-        execute(upgrade_kraken, kraken_wait=kraken_wait, up_confs=up_confs, supervision=True)
+        execute(upgrade_kraken, wait=env.KRAKEN_RESTART_SCHEME, up_confs=up_confs, supervision=True)
         time_dict.register_end('kraken')
         execute(upgrade_jormungandr, up_confs=up_confs)
 
@@ -270,6 +271,7 @@ def restart_all():
     restart_kraken()
     restart_jormungandr()
 
+
 @task
 def upgrade_version():
     """
@@ -283,19 +285,19 @@ def upgrade_version():
     for instance in env.instances.values():
         execute(tyr.update_ed_db, instance.name)
 
+
 @task
-def upgrade_kraken(kraken_wait=True, up_confs=True, supervision=False):
+def upgrade_kraken(wait='serial', up_confs=True, supervision=False):
     """Upgrade and restart all kraken instances"""
     if supervision:
         supervision_downtime(step='kraken')
-    kraken_wait = get_bool_from_cli(kraken_wait)
     execute(kraken.upgrade_engine_packages)
     execute(kraken.upgrade_monitor_kraken_packages)
     if up_confs:
         execute(kraken.update_monitor_configuration)
         for instance in env.instances.values():
             execute(kraken.update_eng_instance_conf, instance)
-    execute(kraken.restart_all_krakens, wait=kraken_wait)
+    execute(kraken.restart_all_krakens, wait=wait)
 
 
 @task
@@ -309,10 +311,12 @@ def upgrade_jormungandr(reload=True, up_confs=True):
     if reload:
         execute(jormungandr.reload_jormun_safe_all)
 
+
 @task
 @roles("tyr_master")
 def isset_dataset(filename=None):
     return exists(filename)
+
 
 @task
 @roles("db")
@@ -390,17 +394,17 @@ def check_last_dataset():
 #############################################
 
 @task
-def update_all_instances(kraken_wait=True):
+def update_all_instances(kraken_wait='serial'):
     """
     update all the instances
     if the instance does not exists, deploy it
     TODO: we could detect the deleted instances to remove them
     """
-    kraken_wait = get_bool_from_cli(kraken_wait)
     print(blue('creating all instances'))
     for instance in env.instances.values():
         execute(update_instance, instance)
     execute(kraken.restart_all_krakens, wait=kraken_wait)
+
 
 @task
 def update_all_configurations():
@@ -408,6 +412,7 @@ def update_all_configurations():
     update all configuration and restart all services
     does not deploy any packages
     """
+    # TODO refactor this to follow a good orchestration for production
     execute(kraken.get_no_data_instances)
     execute(jormungandr.update_jormungandr_conf)
     execute(kraken.update_monitor_configuration)
