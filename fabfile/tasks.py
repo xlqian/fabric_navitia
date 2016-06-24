@@ -106,7 +106,6 @@ def upgrade_all(up_tyr=True, up_confs=True, check_version=True, send_mail='no',
     check_version = get_bool_from_cli(check_version)
     up_tyr = get_bool_from_cli(up_tyr)
     up_confs = get_bool_from_cli(up_confs)
-    wait = 'parallel'
 
     if check_version:
         execute(compare_version_candidate_installed, host_name='tyr')
@@ -142,7 +141,7 @@ def upgrade_all(up_tyr=True, up_confs=True, check_version=True, send_mail='no',
         else:
             execute(switch_to_first_phase, env.eng_hosts_1, env.ws_hosts_1, env.ws_hosts_2)
         time_dict.register_start('kraken')
-        execute(upgrade_kraken, wait=wait, up_confs=up_confs, supervision=True)
+        execute(upgrade_kraken, wait=env.KRAKEN_RESTART_SCHEME, up_confs=up_confs, supervision=True)
         if check_dead:
             execute(check_dead_instances)
         execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
@@ -160,7 +159,7 @@ def upgrade_all(up_tyr=True, up_confs=True, check_version=True, send_mail='no',
         else:
             execute(switch_to_second_phase, env.eng_hosts_1, env.eng_hosts_2,
                     env.ws_hosts_1,  env.ws_hosts_2)
-        execute(upgrade_kraken, wait=wait, up_confs=up_confs)
+        execute(upgrade_kraken, wait=env.KRAKEN_RESTART_SCHEME, up_confs=up_confs)
         time_dict.register_end('kraken')
         execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
         if not manual_lb:
@@ -169,7 +168,7 @@ def upgrade_all(up_tyr=True, up_confs=True, check_version=True, send_mail='no',
         env.roledefs['ws'] = env.ws_hosts
     else:
         time_dict.register_start('kraken')
-        execute(upgrade_kraken, wait=wait, up_confs=up_confs, supervision=True)
+        execute(upgrade_kraken, wait=env.KRAKEN_RESTART_SCHEME, up_confs=up_confs, supervision=True)
         time_dict.register_end('kraken')
         execute(upgrade_jormungandr, up_confs=up_confs)
 
