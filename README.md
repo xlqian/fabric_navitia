@@ -151,3 +151,5 @@ Some important management tasks:
 **launch_rebinarization_upgrade**: launch a migration (upgrade) of ed database and a binarization on all coverages, with a controlled level of parallelization.
 
 Note : you can use the variable env.nb_thread_for_bina in the definition of the environment to parallelize binarizations.
+
+**clean_instances**: Show and clean tyr instances still in DB but removed from conf.

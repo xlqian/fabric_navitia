@@ -31,6 +31,7 @@
 
 import datetime
 import os
+import requests
 
 from fabric.api import run, env, task, execute, roles, abort
 from fabric.colors import blue, red, yellow, green
@@ -459,3 +460,22 @@ def remove_instance(instance, admin=False):
     execute(jormungandr.remove_jormungandr_instance, instance)
     if admin and env.use_load_balancer:
         execute(remove_kraken_vip, instance)
+
+
+@task
+def clean_instances(clean=False):
+    """ Show and clean tyr instances still in DB but removed from conf
+    """
+    tyr_instances = [instance['name'] for instance in requests.get("http://{}/v0/instances".format(env.tyr_url)).json()]
+    print("instances count, jormun: {}, conf: {}".format(len(tyr_instances), len(env.instances)))
+    instances_to_clean = set(tyr_instances).difference(env.instances)
+    print("Instances in jormun DB not in conf: {}".format(instances_to_clean))
+    print("Instances in conf not in jormun DB: {}".format(set(env.instances).difference(tyr_instances)))
+    if instances_to_clean:
+        if clean:
+            print("Removing instances: {}".format(instances_to_clean))
+            for instance in instances_to_clean:
+                execute(db.remove_instance_from_jormun_database, instance)
+            print("Done.")
+        else:
+            print("You can specify parameter 'clean=True' to clean jormun DB.")
