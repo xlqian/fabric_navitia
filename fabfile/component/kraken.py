@@ -84,9 +84,10 @@ def upgrade_engine_packages():
 
 
 @task
-def rollback_kraken(instance, test=True):
+def rollback_instance(instance, test=True):
     """ Use this only if something goes wrong during deployment of a kraken
     """
+    # TODO refactor this to the new restart_kraken
     test = get_bool_from_cli(test)
     instance = get_real_instance(instance)
     execute(swap_data_nav, instance, force=True)

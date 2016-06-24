@@ -1,5 +1,6 @@
 # encoding: utf-8
 
+import os.path
 import time
 
 from ..test_common import skipifdev
@@ -200,8 +201,8 @@ def test_create_remove_eng_instance(duplicated):
     assert set(get_running_krakens(platform, 'host2')) == nominal_krakens['host2']
 
 
-# @skipifdev
-def test_restart_all_krakens_excluded(duplicated):
+@skipifdev
+def test_restart_all_krakens_alternate(duplicated):
     platform, fabric = duplicated
 
     fabric.env.excluded_instances = ['us-wa', 'fr-nw']
@@ -295,3 +296,47 @@ def test_redeploy_all_krakens(duplicated):
     for instance in fabric.env.instances:
         assert 'INFO: kraken {} instance is running on {}'.format(instance, host1) in stdout
         assert 'INFO: kraken {} instance is running on {}'.format(instance, host2) in stdout
+
+
+@skipifdev
+def test_upgrade_engine_packages(duplicated):
+    platform, fabric = duplicated
+
+    value, exception, stdout, stderr = fabric.execute_forked('upgrade_engine_packages')
+    assert exception is None
+    assert stderr == ''
+
+    assert platform.path_exists('/usr/bin/kraken')
+    assert platform.path_exists('/usr/bin/kraken.old')
+
+
+# @skipifdev
+def test_rollback_instance(duplicated):
+    platform, fabric = duplicated
+
+    # prepare required folder and files before test
+    platform.docker_exec("mkdir -p /srv/ed/data/us-wa/temp")
+    plain_target = fabric.env.instances['us-wa'].target_lz4_file
+    temp_target = os.path.join(os.path.dirname(plain_target), 'temp', os.path.basename(plain_target))
+    # create temp target before plain target
+    platform.put_data('old', plain_target, 'host1')
+    time.sleep(1)
+    platform.put_data('new', temp_target, 'host1')
+
+    for instance in fabric.env.instances:
+        assert platform.docker_exec('readlink /srv/kraken/{}/kraken'.format(instance), 'host1') == '/usr/bin/kraken'
+        assert platform.docker_exec('readlink /srv/kraken/{}/kraken'.format(instance), 'host2') == '/usr/bin/kraken'
+
+    # we don't want to actually restart the kraken under test
+    with fabric.set_call_tracker('-component.kraken.restart_kraken') as data:
+        value, exception, stdout, stderr = fabric.execute_forked('rollback_instance', 'us-wa')
+    assert exception is None
+    assert stderr == ''
+
+    assert len(data()['restart_kraken']) == 1
+    # link to executable has been changed to old binary
+    assert platform.docker_exec('readlink /srv/kraken/us-wa/kraken', 'host1') == '/usr/bin/kraken.old'
+    assert platform.docker_exec('readlink /srv/kraken/us-wa/kraken', 'host2') == '/usr/bin/kraken.old'
+    # data has been exchanged as expected
+    assert platform.get_data(temp_target, 'host1') == 'old'
+    assert platform.get_data(plain_target, 'host1') == 'new'
