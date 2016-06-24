@@ -239,7 +239,7 @@ def restart_kraken(instance, wait='serial'):
     if wait:
         wait = wait.lower()
         if wait not in ('serial', 'parallel'):
-            wait = False
+            wait = None
     instance = get_real_instance(instance)
     excluded = instance.name in env.excluded_instances
     # restart krakens of this instance that are also in the eng role,
