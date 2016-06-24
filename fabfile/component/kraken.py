@@ -122,7 +122,7 @@ def require_monitor_kraken_started():
 def restart_all_krakens(wait='serial'):
     """restart and test all kraken instances"""
     execute(require_monitor_kraken_started)
-    for instance in env.instances.itervalues():
+    for instance in env.instances.values():
         restart_kraken(instance, wait=wait)
 
 
@@ -130,7 +130,7 @@ def restart_all_krakens(wait='serial'):
 def require_all_krakens_started():
     """start each kraken instance if it is not already started"""
     execute(require_monitor_kraken_started)
-    for instance in env.instances.itervalues():
+    for instance in env.instances.values():
         require_kraken_started(instance)
 
 
@@ -138,14 +138,14 @@ def require_all_krakens_started():
 def test_all_krakens(wait=False):
     """test all kraken instances"""
     wait = get_bool_from_cli(wait)
-    for instance in env.instances.itervalues():
+    for instance in env.instances.values():
         test_kraken(instance, fail_if_error=False, wait=wait, loaded_is_ok=True)
 
 
 @task
 @roles('tyr_master')
 def swap_all_data_nav(force=False):
-    for instance in env.instances.itervalues():
+    for instance in env.instances.values():
         swap_data_nav(instance, force)
 
 
