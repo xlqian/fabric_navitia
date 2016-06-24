@@ -125,11 +125,17 @@ This task has 7 named parameters:
  2. migrate databases,
  3. launch rebinarization of all coverages,
 
-**update_jormungandr_conf**: deploys jormungandr configuration. Needs a restart_jormungandr to activate the configuration (see below).
-
 **update_all_configurations**: redeploy all configurations (tyr, jormun, coverages) and restarts all services (tyr, kraken, jormun).
 
-**update_instance**:  deploy a new coverage or deploy it again. (param=coverage name).
+**update_instance**: (param=coverage name) deploy a new coverage or deploy it again.
+
+**update_jormungandr_conf**: deploy jormungandr configuration. Needs a restart_jormungandr to activate (see below).
+
+**deploy_jormungandr_instance_conf**: (param=coverage name) deploy a jormungandr coverage. Needs a restart_jormungandr to activate.
+
+**remove_jormungandr_instance**: (param=coverage name) remove a jormungandr coverage.
+
+**deploy_jormungandr_all_instances_conf**: deploy all jormungandr coverages.
 
 
 Management
@@ -140,7 +146,7 @@ Some important management tasks:
 
 **restart_jormungandr**: restart jormungandr on all servers. Use to resynchronize jormun vs krakens or to activate new jormun configuration.
 
-**launch_rebinarization**: launch a binarization on a single coverage, based on last dataset. (param=coverage name).
+**launch_rebinarization**: (param=coverage name) launch a binarization on a single coverage, based on last dataset.
 
 **launch_rebinarization_upgrade**: launch a migration (upgrade) of ed database and a binarization on all coverages, with a controlled level of parallelization.
 

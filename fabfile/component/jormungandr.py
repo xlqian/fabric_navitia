@@ -286,10 +286,14 @@ def test_jormungandr(server, instance=None, fail_if_error=True):
 @task
 @roles('ws')
 def deploy_jormungandr_instance_conf(instance):
+    """ Deploy or redeploy one jormungander coverage:
+        * Deploy the json configuration file
+        * Do not reload apache
+    """
     instance = get_real_instance(instance)
-    config = {'key': instance.name, 'zmq_socket': instance.jormungandr_zmq_socket_for_instance}
-    config['realtime_proxies'] = instance.realtime_proxies
-
+    config = {'key': instance.name,
+              'zmq_socket': instance.jormungandr_zmq_socket_for_instance,
+              'realtime_proxies': instance.realtime_proxies}
     _upload_template("jormungandr/instance.json.jinja",
                      instance.jormungandr_config_file,
                      context={
@@ -298,23 +302,27 @@ def deploy_jormungandr_instance_conf(instance):
                      use_sudo=True
     )
 
-    # the old configuration file were .ini, now it's json, we need to clean up
-    if fabtools.files.is_file(instance.jormungandr_old_ini_config_file):
-        fabtools.files.remove(instance.jormungandr_old_ini_config_file)
-
 
 @task
 @roles('ws')
 def remove_jormungandr_instance(instance):
-    """Remove a jormungandr instance entirely
+    """ Remove a jormungandr instance entirely
         * Remove json file which declare the instance
         * Reload apache
     """
-    run("rm --force %s/%s.json" % (env.jormungandr_instances_dir, instance))
-    execute(reload_jormun_safe, env.host_string)
+    instance = get_real_instance(instance)
+    run("rm --force %s" % (instance.jormungandr_config_file))
+
+    reload_jormun_safe_all()
 
 
 @task
 def deploy_jormungandr_all_instances_conf():
+    """ Deploy all jormungander coverages:
+        * Deploy all json configuration files
+        * Reload apache
+    """
     for instance in env.instances.itervalues():
         execute(deploy_jormungandr_instance_conf, instance)
+
+    reload_jormun_safe_all()
