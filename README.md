@@ -137,6 +137,8 @@ This task has 7 named parameters:
 
 **deploy_jormungandr_all_instances_conf**: deploy all jormungandr coverages.
 
+**rollback_instance**: (param=coverage name) Use this only if something goes wrong during deployment of an instance.
+
 
 Management
 ----------
