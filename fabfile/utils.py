@@ -557,6 +557,25 @@ class NagiosSupervisionHandler(SupervisionHandler):
         pass
 
 
+@task
+def login_nagios(self):
+        run("curl --cookie-jar /tmp/thruk.cookie -H 'Cookie: thruk_theme=Thruk; thruk_backends={}={}={}={}; "
+        "thruk_conf=; thruk_auth=; thruk_message=; thruk_test=%2A%2A%2A%2A; _ga={}' '{}' "
+        "--data 'referer=&login={}&password={}&submit=login'"
+        .format(self.thruk_backends[0], self.thruk_backends[1], self.thruk_backends[2], self.thruk_backends[3],
+                self.ga, self.url + 'login.cgi', self.user, self.pwd))
+
+
+@task
+def stop_supervision(self, message, data, start_str, end_str, ctp_host, service):
+            run("curl --cookie /tmp/thruk.cookie '{}'  --data 'referer={}&token={}&cmd_typ={}&cmd_mod={}&host={}"
+                "&service={}&com_data={}&trigger={}&start_time={}&end_time={}&fixed={}&hours={}&minutes={}&backend={}"
+                "&backend.orig={}&btnSubmit={}'"
+                .format(self.url + 'cmd.cgi', message, self.token, data['cmd_typ'], data['cmd_mod'], ctp_host, service,
+                        message, data['trigger'], start_str, end_str, data['fixed'], data['hours'], data['minutes'],
+                        self.backend, self.backend, data['btnSubmit']))
+
+
 class ThrukSupervisionHandler(SupervisionHandler):
 
     def __init__(self, thruk_backends, ga, url, user, pwd, backend, host_support, token):
@@ -579,18 +598,13 @@ class ThrukSupervisionHandler(SupervisionHandler):
         TODO
         Use Requests library
         """
-        run("curl --cookie-jar /tmp/thruk.cookie -H 'Cookie: thruk_theme=Thruk; thruk_backends={}={}={}={}; "
-            "thruk_conf=; thruk_auth=; thruk_message=; thruk_test=%2A%2A%2A%2A; _ga={}' '{}' "
-            "--data 'referer=&login={}&password={}&submit=login'"
-            .format(self.thruk_backends[0], self.thruk_backends[1], self.thruk_backends[2], self.thruk_backends[3],
-                    self.ga, self.url + 'login.cgi', self.user, self.pwd))
-
-    datas = {'cmd_typ': 56, 'cmd_mod': 2, 'trigger': 0, 'fixed': 1, 'hours': 2, 'minutes': 0, 'btnSubmit': 'Commit'}
+        login_nagios(self)
 
     def stop_supervision(self, host, service, duration):
         if not duration:
             raise ValueError("'duration' attribute must be defined and positive.")
 
+        data = {'cmd_typ': 56, 'cmd_mod': 2, 'trigger': 0, 'fixed': 1, 'hours': 2, 'minutes': 0, 'btnSubmit': 'Commit'}
         start_dt = datetime.datetime.now()
         start_str = start_dt.strftime('%Y-%m-%d+%H:%M:%S')
 
@@ -603,12 +617,7 @@ class ThrukSupervisionHandler(SupervisionHandler):
         with settings(host_string=self.host_support):
             # need to keep login in cookie before to deactivation the supervision
             env.supervision_handler.authentification()
-            run("curl --cookie /tmp/thruk.cookie '{}'  --data 'referer={}&token={}&cmd_typ={}&cmd_mod={}&host={}"
-                "&service={}&com_data={}&trigger={}&start_time={}&end_time={}&fixed={}&hours={}&minutes={}&backend={}"
-                "&backend.orig={}&btnSubmit={}'"
-                .format(self.url + 'cmd.cgi', message, self.token, datas['cmd_typ'], datas['cmd_mod'], ctp_host, service,
-                        message, datas['trigger'], start_str, end_str, datas['fixed'], datas['hours'], datas['minutes'],
-                        self.backend, self.backend, datas['btnSubmit']))
+            stop_supervision(self, message, data, start_str, end_str, ctp_host, service)
 
     def start_supervision(self, host, service):
         """
@@ -618,6 +627,7 @@ class ThrukSupervisionHandler(SupervisionHandler):
         pass
 
 
+@task
 def supervision_downtime(step):
     """
     during the deployment, the supervision is stopping for specific services
