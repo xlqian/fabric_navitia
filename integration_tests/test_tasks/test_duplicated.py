@@ -79,6 +79,7 @@ def test_upgrade_all_load_balancer(duplicated):
                                  '-tasks.upgrade_jormungandr',
                                  '-prod_tasks.disable_nodes',
                                  '-prod_tasks.enable_nodes',
+                                 'prod_tasks.restart_jormungandr',
                                  '-component.load_balancer._adc_connection',
                                  '-component.load_balancer.disable_node',
                                  '-component.load_balancer.enable_node') as data:
@@ -101,6 +102,8 @@ def test_upgrade_all_load_balancer(duplicated):
     assert len(data()['enable_nodes']) == 4
     for i, x in enumerate((fabric.env.eng_hosts_1, fabric.env.ws_hosts_1, fabric.env.ws_hosts_2, fabric.env.eng_hosts)):
         assert data()['enable_nodes'][i][0][0] == x
+    # 5 calls to restart_jormungandr
+    assert len(data()['restart_jormungandr']) == 5
     # 1 call in first phase with supervision, 1 call in second phase without supervision
     assert len(data()['upgrade_kraken']) == 2
     assert data()['upgrade_kraken'][0][1].get('supervision') is True
