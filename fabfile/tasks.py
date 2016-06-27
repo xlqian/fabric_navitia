@@ -444,7 +444,8 @@ def update_instance(instance, reload_jormun=True):
     param (instance) - update all configuration and restart all services
     does not deploy any packages
     """
-    instance = get_real_instance(instance)  # since it might be a endpoint we might need to get the real instance
+    instance = get_real_instance(instance)
+    reload_jormun = get_bool_from_cli(reload_jormun)
     print(blue('updating {}'.format(instance.name)))
     #first of all we compute the instance status, it will be helpfull later
     execute(compute_instance_status, instance)
@@ -464,6 +465,7 @@ def remove_instance(instance, admin=False):
     """Completely remove all components for a given instance,
     Remove instance in jormungandr db
     """
+    instance = get_real_instance(instance)
     execute(db.remove_instance_from_jormun_database, instance)
     execute(db.remove_postgresql_database, get_real_instance(instance).db_name)
     execute(db.remove_postgresql_user, get_real_instance(instance).db_user)
