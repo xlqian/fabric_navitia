@@ -557,6 +557,77 @@ class NagiosSupervisionHandler(SupervisionHandler):
         pass
 
 
+@task
+def login_nagios(self):
+        run("curl --cookie-jar /tmp/thruk.cookie -H 'Cookie: thruk_theme=Thruk; thruk_backends={}={}={}={}; "
+        "thruk_conf=; thruk_auth=; thruk_message=; thruk_test=%2A%2A%2A%2A; _ga={}' '{}' "
+        "--data 'referer=&login={}&password={}&submit=login'"
+        .format(self.thruk_backends[0], self.thruk_backends[1], self.thruk_backends[2], self.thruk_backends[3],
+                self.ga, self.url + 'login.cgi', self.user, self.pwd))
+
+
+@task
+def stop_supervision(self, message, data, start_str, end_str, ctp_host, service):
+            run("curl --cookie /tmp/thruk.cookie '{}'  --data 'referer={}&token={}&cmd_typ={}&cmd_mod={}&host={}"
+                "&service={}&com_data={}&trigger={}&start_time={}&end_time={}&fixed={}&hours={}&minutes={}&backend={}"
+                "&backend.orig={}&btnSubmit={}'"
+                .format(self.url + 'cmd.cgi', message, self.token, data['cmd_typ'], data['cmd_mod'], ctp_host, service,
+                        message, data['trigger'], start_str, end_str, data['fixed'], data['hours'], data['minutes'],
+                        self.backend, self.backend, data['btnSubmit']))
+
+
+class ThrukSupervisionHandler(SupervisionHandler):
+
+    def __init__(self, thruk_backends, ga, url, user, pwd, backend, host_support, token):
+        self.thruk_backends = thruk_backends
+        self.ga = ga
+        self.url = url
+        self.user = user
+        self.pwd = pwd
+        self.backend = backend
+        self.host_support = host_support
+        self.token = token
+
+    def format_host(self, host):
+        """the Thruk supervisor only wants a short host name"""
+        move_host = re.compile(r'@(.*?)\.')
+        return move_host.search(host).group(1)
+
+    def authentification(self):
+        """
+        TODO
+        Use Requests library
+        """
+        login_nagios(self)
+
+    def stop_supervision(self, host, service, duration):
+        if not duration:
+            raise ValueError("'duration' attribute must be defined and positive.")
+
+        data = {'cmd_typ': 56, 'cmd_mod': 2, 'trigger': 0, 'fixed': 1, 'hours': 2, 'minutes': 0, 'btnSubmit': 'Commit'}
+        start_dt = datetime.datetime.now()
+        start_str = start_dt.strftime('%Y-%m-%d+%H:%M:%S')
+
+        end_dt = start_dt + datetime.timedelta(minutes=duration)
+        end_str = end_dt.strftime('%Y-%m-%d+%H:%M:%S')
+
+        ctp_host = self.format_host(host)
+        message = 'Deployment'
+
+        with settings(host_string=self.host_support):
+            # need to keep login in cookie before to deactivation the supervision
+            env.supervision_handler.authentification()
+            stop_supervision(self, message, data, start_str, end_str, ctp_host, service)
+
+    def start_supervision(self, host, service):
+        """
+        for the moment we don't know how to put back the supervision
+        TODO
+        """
+        pass
+
+
+@task
 def supervision_downtime(step):
     """
     during the deployment, the supervision is stopping for specific services
