@@ -138,7 +138,7 @@ def upgrade_all(up_tyr=True, up_confs=True, check_version=True, send_mail='no',
         env.roledefs['eng'] = env.eng_hosts_1
         env.roledefs['ws'] = env.ws_hosts_1
         if manual_lb:
-            raw_input(yellow("Please disable ENG1/WS1,5,6 and enable ENG2-4/WS2-4"))
+            raw_input(yellow("Please disable ENG1,3/WS1,5,6 and enable ENG2,4/WS2-4"))
         else:
             execute(switch_to_first_phase, env.eng_hosts_1, env.ws_hosts_1, env.ws_hosts_2)
         time_dict.register_start('kraken')
@@ -156,7 +156,7 @@ def upgrade_all(up_tyr=True, up_confs=True, check_version=True, send_mail='no',
         env.roledefs['eng'] = env.eng_hosts_2
         env.roledefs['ws'] = env.ws_hosts_2
         if manual_lb:
-            raw_input(yellow("Please enable ENG1/WS1,5,6 and disable ENG2-4/WS2-4"))
+            raw_input(yellow("Please enable ENG1,3/WS1,5,6 and disable ENG2,4/WS2-4"))
         else:
             execute(switch_to_second_phase, env.eng_hosts_1, env.eng_hosts_2,
                     env.ws_hosts_1,  env.ws_hosts_2)
