@@ -84,11 +84,13 @@ def disable_nodes(nodes):
     for node in nodes:
         execute(load_balancer.disable_node, node)
 
+
 @task
 def enable_nodes(nodes):
     from fabfile.component import load_balancer
     for node in nodes:
         execute(load_balancer.enable_node, node)
+
 
 @task
 def restart_jormungandr(nodes, safe=True):
@@ -96,11 +98,13 @@ def restart_jormungandr(nodes, safe=True):
     for node in nodes:
         execute(jormungandr.reload_jormun_safe, node, safe)
 
+
 @task
 def switch_to_first_phase(eng_hosts_1, ws_hosts_1, ws_hosts_2):
     execute(disable_nodes, eng_hosts_1)
     execute(restart_jormungandr, ws_hosts_2)
     execute(disable_nodes, ws_hosts_1)
+
 
 @task
 def switch_to_second_phase(eng_hosts_1, eng_hosts_2, ws_hosts_1,  ws_hosts_2):
@@ -111,6 +115,13 @@ def switch_to_second_phase(eng_hosts_1, eng_hosts_2, ws_hosts_1,  ws_hosts_2):
     execute(restart_jormungandr, ws_hosts_1, safe=False)
     execute(enable_nodes, ws_hosts_1)
     execute(disable_nodes, ws_hosts_2)
+
+
+@task
+def switch_to_third_phase(ws_hosts_2):
+    execute(restart_jormungandr, ws_hosts_2, safe=False)
+    execute(enable_nodes, ws_hosts_2)
+
 
 @task
 def enable_all_nodes(eng_hosts, ws_hosts_1,  ws_hosts_2):

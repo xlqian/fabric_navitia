@@ -44,7 +44,7 @@ from fabfile.utils import (get_bool_from_cli, show_version, get_host_addr,
                            show_time_deploy, host_app_mapping, send_mail,
                            supervision_downtime, get_real_instance)
 from prod_tasks import (remove_kraken_vip, switch_to_first_phase,
-                        switch_to_second_phase, enable_all_nodes)
+                        switch_to_second_phase, switch_to_third_phase, enable_all_nodes)
 from fabfile.component.load_balancer import _adc_connection
 import random
 
@@ -138,7 +138,7 @@ def upgrade_all(up_tyr=True, up_confs=True, check_version=True, send_mail='no',
         env.roledefs['eng'] = env.eng_hosts_1
         env.roledefs['ws'] = env.ws_hosts_1
         if manual_lb:
-            raw_input(yellow("Please disable ENG1/WS1 and enable ENG2-4/WS2-4"))
+            raw_input(yellow("Please disable ENG1/WS1,5,6 and enable ENG2-4/WS2-4"))
         else:
             execute(switch_to_first_phase, env.eng_hosts_1, env.ws_hosts_1, env.ws_hosts_2)
         time_dict.register_start('kraken')
@@ -156,17 +156,21 @@ def upgrade_all(up_tyr=True, up_confs=True, check_version=True, send_mail='no',
         env.roledefs['eng'] = env.eng_hosts_2
         env.roledefs['ws'] = env.ws_hosts_2
         if manual_lb:
-            raw_input(yellow("Please enable ENG1/WS1 and disable ENG2-4/WS2-4"))
+            raw_input(yellow("Please enable ENG1/WS1,5,6 and disable ENG2-4/WS2-4"))
         else:
             execute(switch_to_second_phase, env.eng_hosts_1, env.eng_hosts_2,
                     env.ws_hosts_1,  env.ws_hosts_2)
+        execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
+        if manual_lb:
+            raw_input(yellow("Please enable WS1-6"))
+        else:
+            execute(switch_to_third_phase, env.ws_hosts_2)
+        env.roledefs['ws'] = env.ws_hosts
         execute(upgrade_kraken, wait=env.KRAKEN_RESTART_SCHEME, up_confs=up_confs)
         time_dict.register_end('kraken')
-        execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
         if not manual_lb:
             execute(enable_all_nodes, env.eng_hosts, env.ws_hosts_1,  env.ws_hosts_2)
         env.roledefs['eng'] = env.eng_hosts
-        env.roledefs['ws'] = env.ws_hosts
     else:
         time_dict.register_start('kraken')
         execute(upgrade_kraken, wait=env.KRAKEN_RESTART_SCHEME, up_confs=up_confs, supervision=True)
