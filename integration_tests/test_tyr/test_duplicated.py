@@ -8,9 +8,9 @@ from ..test_common import skipifdev
 instances_names = {'us-wa', 'fr-nw', 'fr-npdc', 'fr-ne-amiens', 'fr-idf', 'fr-cen'}
 
 
-# @skipifdev
-def test_tyr_setup(distributed):
-    platform, fabric = distributed
+@skipifdev
+def test_tyr_setup(duplicated):
+    platform, fabric = duplicated
     assert platform.path_exists('/var/log/tyr')
     assert platform.path_exists('/srv/ed/data')
     assert platform.path_exists('/etc/tyr.d')
@@ -18,17 +18,23 @@ def test_tyr_setup(distributed):
         assert platform.path_exists('/srv/ed/{}'.format(krak))
 
 
-@skipifdev
-def test_create_remove_tyr_instance(distributed):
-    platform, fabric = distributed
+# @skipifdev
+def test_create_remove_tyr_instance(duplicated):
+    platform, fabric = duplicated
     fabric.get_object('instance.add_instance')('toto', 'passwd',
                        zmq_socket_port=30004, zmq_server=fabric.env.host1_ip)
     # postgres is really long to warm up !
     time.sleep(15)
 
-    value, exception, stdout, stderr = fabric.execute_forked('create_tyr_instance', 'toto')
+    with fabric.set_call_tracker('component.db.create_instance_db') as data:
+        value, exception, stdout, stderr = fabric.execute_forked('create_tyr_instance', 'toto')
     assert exception is None
     assert stderr == ''
+
+    fabric.show_call_tracker_data = True
+    # create_instance_db should be called only once
+    assert len(data()['create_instance_db']) == 2
+    assert stdout.count('Really run create_instance_db') == 1
     # tyr and db instances are created on both machines
     assert stdout.count("Executing task 'create_tyr_instance'") == 2
     assert stdout.count("Executing task 'create_instance_db'") == 2
@@ -42,7 +48,8 @@ def test_create_remove_tyr_instance(distributed):
 
     time.sleep(2)
     with fabric.set_call_tracker('component.tyr.restart_tyr_worker',
-                                 'component.tyr.restart_tyr_beat') as data:
+                                 'component.tyr.restart_tyr_beat',
+                                 'component.db.create_instance_db') as data:
         value, exception, stdout, stderr = fabric.execute_forked('remove_tyr_instance', 'toto', purge_logs=True)
 
     assert exception is None

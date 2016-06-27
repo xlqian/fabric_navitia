@@ -38,7 +38,7 @@ from fabric.api import env, abort
 from fabtools import require
 import requests
 
-from fabfile.utils import  get_psql_version, _upload_template, get_real_instance
+from fabfile.utils import get_psql_version, _upload_template, get_real_instance, run_once_per_host
 
 
 @task
@@ -226,6 +226,7 @@ def call_tyr_http_authorization(uid, instance_id):
                      '--data "api_id=1&instance_id={}"'.format(env.tyr_url, uid, instance_id)
     run(tyrhttpcommand)
 
+
 @task
 @roles('db')
 def set_instance_authorization(instance):
@@ -243,15 +244,19 @@ def set_instance_authorization(instance):
     else:
         print(yellow("WARNING: Le token d'administration n'a pas été appliqué sur l'instance!!!"))
 
+
 @task
 @roles('db')
+@run_once_per_host
 def create_instance_db(instance):
-    
+    print("Really run create_instance_db")
+
     postgresql_user = instance.db_user
     postgresql_database = instance.db_name
 
     require.postgres.user(postgresql_user, instance.db_password)
     require.postgres.database(postgresql_database, postgresql_user)
+
 
 @task
 @roles('db')
