@@ -18,7 +18,7 @@ def test_tyr_setup(duplicated):
         assert platform.path_exists('/srv/ed/{}'.format(krak))
 
 
-# @skipifdev
+@skipifdev
 def test_create_remove_tyr_instance(duplicated):
     platform, fabric = duplicated
     fabric.get_object('instance.add_instance')('toto', 'passwd',
@@ -31,7 +31,6 @@ def test_create_remove_tyr_instance(duplicated):
     assert exception is None
     assert stderr == ''
 
-    fabric.show_call_tracker_data = True
     # create_instance_db should be called only once
     assert len(data()['create_instance_db']) == 2
     assert stdout.count('Really run create_instance_db') == 1
@@ -48,8 +47,7 @@ def test_create_remove_tyr_instance(duplicated):
 
     time.sleep(2)
     with fabric.set_call_tracker('component.tyr.restart_tyr_worker',
-                                 'component.tyr.restart_tyr_beat',
-                                 'component.db.create_instance_db') as data:
+                                 'component.tyr.restart_tyr_beat') as data:
         value, exception, stdout, stderr = fabric.execute_forked('remove_tyr_instance', 'toto', purge_logs=True)
 
     assert exception is None
