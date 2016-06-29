@@ -467,8 +467,8 @@ def remove_instance(instance, admin=False):
     """
     instance = get_real_instance(instance)
     execute(db.remove_instance_from_jormun_database, instance)
-    execute(db.remove_postgresql_database, get_real_instance(instance).db_name)
-    execute(db.remove_postgresql_user, get_real_instance(instance).db_user)
+    execute(db.remove_postgresql_database, instance.db_name)
+    execute(db.remove_postgresql_user, instance.db_user)
     execute(tyr.remove_ed_instance, instance)
     execute(tyr.remove_tyr_instance, instance)
     execute(kraken.remove_kraken_instance, instance)
