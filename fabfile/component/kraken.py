@@ -234,7 +234,7 @@ def check_dead_instances():
             result = _test_kraken(request, fail_if_error=False)
             if not result or result['status'] == 'timeout' or result['loaded'] is False:
                 dead += 1
-    if dead >= int(threshold):
+    if dead > int(threshold):
         print(red("The threshold of allowed dead instances is exceeded: "
                   "Found {} dead instances out of {}.".format(dead, len(env.instances))))
         exit(1)
