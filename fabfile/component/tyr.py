@@ -605,9 +605,6 @@ def create_tyr_instance(instance):
         * /etc/tyr.d/instance.ini
         * create /srv/ed/<instance> + target-file basedir
     """
-    # postgresql user + dedicated database
-    # we create a user and a db if they do not exists
-    # TODO: this is potentially executed multiple times !
     instance = get_real_instance(instance)
     execute(db.create_instance_db, instance)
 
