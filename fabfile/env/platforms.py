@@ -168,6 +168,8 @@ env.use_nfs4 = False
 # brokker == brokk == rabbitmq
 # used by tyr, kraken, ...
 # only overwritten on exploit and prod
+env.rabbitmq_user = 'user'
+env.rabbitmq_pass = 'pwd'
 env.rabbitmq_host = 'localhost'
 env.rabbitmq_port = 5672
 
