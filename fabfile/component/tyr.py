@@ -461,7 +461,7 @@ def launch_rebinarization(instance, use_temp=False):
     with shell_env(TYR_CONFIG_FILE=env.tyr_settings_file), settings(user=env.KRAKEN_USER):
         print(blue("NOTICE: launching binarization on {} @{}".format(instance, time.strftime('%H:%M:%S'))))
         try:
-            run("cd " + env.tyr_basedir + " && python manage.py import_last_dataset {}{}".
+            run("cd " + env.tyr_basedir + " && python manage.py import_last_dataset --background {}{}".
                 format(instance, ' --custom_output_dir temp' if use_temp else ''))
         except:
             print(red("ERROR: failed binarization on {}".format(instance)))
