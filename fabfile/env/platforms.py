@@ -172,6 +172,8 @@ env.rabbitmq_user = 'user'
 env.rabbitmq_pass = 'pwd'
 env.rabbitmq_host = 'localhost'
 env.rabbitmq_port = 5672
+env.rabbitmq_host_api = 'localhost'
+env.rabbitmq_port_api = 15672
 
 env.stat_broker_exchange = 'stat_persistor_exchange'
 
