@@ -614,7 +614,7 @@ class ThrukSupervisionHandler(SupervisionHandler):
         ctp_host = self.format_host(host)
         message = 'Deployment'
 
-        with settings(host_string=self.host_support):
+        with settings(host_string=env.default_ssh_user + '@' + self.host_support):
             # need to keep login in cookie before to deactivation the supervision
             env.supervision_handler.authentification()
             stop_supervision(self, message, data, start_str, end_str, ctp_host, service)
