@@ -430,12 +430,14 @@ def launch_rebinarization_upgrade(pilot_tyr_beat=True):
                 update_ed_db(i_name)
 
                 if i_name in env.excluded_instances:
-                    print(blue("NOTICE: i_name {} has been excluded, skiping it".format(i_name)))
+                    print(blue("NOTICE: i_name {} has been excluded, skipping it".format(i_name)))
+                    instances2process.remove(i_name)
                 else:
-                    launch_rebinarization(i_name, True)
-            instances2process.remove(i_name)
+                    if launch_rebinarization(i_name, True):
+                        # do not remove if bina failed
+                        instances2process.remove(i_name)
             # print instances not yet binarized, this allows to easily resume the binarization
-            # process in case of crash or freeze (use include:y,y,z,....)
+            # process in case of crash or freeze (use include:x,y,z,....)
             # see http://jira.canaltp.fr/browse/DEVOP-408
             print(blue("Instances left: {}".format(','.join(instances2process))))
 
@@ -463,6 +465,7 @@ def launch_rebinarization(instance, use_temp=False):
         try:
             run("cd " + env.tyr_basedir + " && python manage.py import_last_dataset --background {}{}".
                 format(instance, ' --custom_output_dir temp' if use_temp else ''))
+            return True
         except:
             print(red("ERROR: failed binarization on {}".format(instance)))
 
