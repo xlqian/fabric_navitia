@@ -402,10 +402,11 @@ def get_tyr_config(instance):
 @task
 @roles('tyr_master')
 @run_once_per_host
-def launch_rebinarization_upgrade(pilot_tyr_beat=True):
+def launch_rebinarization_upgrade(pilot_supervision=True, pilot_tyr_beat=True, instances=None):
     """launch binarization on all instances for the upgrade"""
-    supervision_downtime(step='tyr_beat')
-    supervision_downtime(step='bina')
+    if pilot_supervision:
+        supervision_downtime(step='tyr_beat')
+        supervision_downtime(step='bina')
     # avoid any other normal binarization during upgrade
     if pilot_tyr_beat:
         stop_tyr_beat()
@@ -421,8 +422,11 @@ def launch_rebinarization_upgrade(pilot_tyr_beat=True):
     # - only continue to next instance if instance is ok, to avoid breaking all
     # instances
     try:
-        execute(get_no_data_instances)
-        instances2process = set(env.instances)
+        if instances is None:
+            execute(get_no_data_instances)
+            instances2process = set(env.instances)
+        else:
+            instances2process = set(instances)
 
         def binarize_instance(i_name):
             with time_that(blue("data loaded for " + i_name + " in {elapsed}")):
@@ -441,9 +445,10 @@ def launch_rebinarization_upgrade(pilot_tyr_beat=True):
             # see http://jira.canaltp.fr/browse/DEVOP-408
             print(blue("Instances left: {}".format(','.join(instances2process))))
 
-            # we run the bina in parallele (if you want sequenciel run, set env.nb_thread_for_bina = 1)
+        # run the bina in parallel (if you want sequential, set env.nb_thread_for_bina = 1)
         with Parallel(env.nb_thread_for_bina) as pool:
-            pool.map(binarize_instance, env.instances.keys())
+            pool.map(binarize_instance, instances2process)
+        return tuple(instances2process)
     finally:
         if pilot_tyr_beat:
             start_tyr_beat()

@@ -381,6 +381,7 @@ env.dry_run = False
 
 #number of parallele binarization
 env.nb_thread_for_bina = 1
+env.acceptable_bina_fail_rate = 0.08
 
 #instances configurations
 env.instances = {}
