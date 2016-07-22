@@ -102,11 +102,13 @@ def upgrade_all_packages():
 
 @task
 def upgrade_all(up_tyr=True, up_confs=True, check_version=True, send_mail='no',
-                manual_lb=False, check_dead=True):
+                manual_lb=False, check_dead=True, check_bina=True):
     """Upgrade all navitia packages, databases and launch rebinarisation of all instances """
-    check_version = get_bool_from_cli(check_version)
     up_tyr = get_bool_from_cli(up_tyr)
     up_confs = get_bool_from_cli(up_confs)
+    check_version = get_bool_from_cli(check_version)
+    check_dead = get_bool_from_cli(check_dead)
+    check_bina = get_bool_from_cli(check_bina)
 
     if check_version:
         execute(compare_version_candidate_installed, host_name='tyr')
@@ -127,7 +129,7 @@ def upgrade_all(up_tyr=True, up_confs=True, check_version=True, send_mail='no',
     time_dict.register_start('total_deploy')
 
     if up_tyr:
-        execute(update_tyr_step, time_dict, only_bina=False)
+        execute(update_tyr_step, time_dict, only_bina=False, check_bina=check_bina)
 
     if check_version:
         execute(compare_version_candidate_installed)
@@ -206,7 +208,7 @@ def broadcast_email(kind, status=None):
 
 
 @task
-def update_tyr_step(time_dict=None, only_bina=True, up_confs=True):
+def update_tyr_step(time_dict=None, only_bina=True, up_confs=True, check_bina=False):
     # TODO only_bina is highly error prone
     """ deploy an upgrade of tyr
     """
@@ -215,11 +217,23 @@ def update_tyr_step(time_dict=None, only_bina=True, up_confs=True):
     execute(tyr.stop_tyr_beat)
     execute(upgrade_tyr, up_confs=up_confs, pilot_tyr_beat=False)
     time_dict.register_start('bina')
-    execute(tyr.launch_rebinarization_upgrade, pilot_tyr_beat=False)
+    instances_failed = execute(tyr.launch_rebinarization_upgrade, pilot_tyr_beat=False).values()[0]
+    if check_bina and instances_failed:
+        if float(len(instances_failed)) / len(env.instances) <= env.acceptable_bina_fail_rate:
+            print(yellow("  WARNING: {} binarisation(s) have failed, process again".format(len(instances_failed))))
+            instances_failed = execute(tyr.launch_rebinarization_upgrade,
+                                       pilot_supervision=False,
+                                       pilot_tyr_beat=False,
+                                       instances=instances_failed).values()[0]
+        else:
+            print(yellow("  WARNING: Too many ({}) binarisations have failed, do not process again".
+                         format(len(instances_failed))))
     time_dict.register_end('bina')
     if only_bina:
         print show_time_deploy(time_dict)
         return
+    if check_bina and instances_failed:
+        abort(red("\n  ERROR: {} binarisation(s) have failed.".format(len(instances_failed))))
     return time_dict
 
 
