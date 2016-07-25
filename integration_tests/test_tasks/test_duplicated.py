@@ -65,7 +65,7 @@ def test_upgrade_kraken_restricted(duplicated):
     assert set((x[0][0].name for x in data()['restart_kraken_on_host'])) == instances_names
 
 
-# @skipifdev
+@skipifdev
 def test_upgrade_all_load_balancer(duplicated):
     platform, fabric = duplicated
     fabric.env.use_load_balancer = True
@@ -124,6 +124,8 @@ def test_remove_instance(duplicated):
     platform.scp(os.path.join(ROOTDIR, 'tyr-api.conf'), '/etc/apache2/conf-enabled/tyr-api.conf', 'host1')
     platform.docker_exec('service apache2 restart', 'host1')
     assert requests.get('http://{}/v0/instances/us-wa'.format(fabric.env.tyr_url)).json()
+    assert len(requests.get('http://{}/navitia/v1/status'.format(fabric.env.host1_ip)).json()['regions']) == \
+           len(instances_names)
 
     value, exception, stdout, stderr = fabric.execute_forked('tasks.remove_instance', 'us-wa')
     assert exception is None
@@ -134,6 +136,8 @@ def test_remove_instance(duplicated):
     assert stdout.count("Executing task 'remove_tyr_instance'") == 2
     assert stdout.count("Executing task 'remove_jormungandr_instance'") == 1
 
+    assert len(requests.get('http://{}/navitia/v1/status'.format(fabric.env.host1_ip)).json()['regions']) == \
+           len(instances_names) - 1
     assert requests.get('http://{}/v0/instances/us-wa'.format(fabric.env.tyr_url)).json() == []
     assert set(get_running_krakens(platform, 'host1')) == instances_names.difference(['us-wa'])
     assert set(get_running_krakens(platform, 'host2')) == instances_names.difference(['us-wa'])
@@ -152,9 +156,8 @@ def test_update_instance(duplicated):
     # postgres is really long to warm up !
     time.sleep(15)
 
-    # set up a server for tyr API on host1 and start it
-    platform.scp(os.path.join(ROOTDIR, 'tyr-api.conf'), '/etc/apache2/conf-enabled/tyr-api.conf', 'host1')
-    platform.docker_exec('service apache2 restart', 'host1')
+    assert len(requests.get('http://{}/navitia/v1/status'.format(fabric.env.host1_ip)).json()['regions']) == \
+           len(instances_names)
 
     # create a new instance
     add_instance = fabric.get_object('instance.add_instance')
@@ -165,12 +168,11 @@ def test_update_instance(duplicated):
         value, exception, stdout, stderr = fabric.execute_forked('tasks.update_instance', 'toto')
     assert exception is None
 
-    max_sleep, step = 30, 5
-    while max_sleep:
-        max_sleep -= step
-        time.sleep(step)
-        if requests.get('http://{}/v0/instances/toto'.format(fabric.env.tyr_url)).json():
-            break
-    assert requests.get('http://{}/v0/instances/toto'.format(fabric.env.tyr_url)).json()[0]['name'] == 'toto'
+    time.sleep(10)
+    assert len(requests.get('http://{}/navitia/v1/status'.format(fabric.env.host1_ip)).json()['regions']) == \
+           len(instances_names) + 1
+    assert requests.get('http://{}/monitor-kraken/?instance=toto'.format(fabric.env.host1_ip)).json()
+    assert requests.get('http://{}/navitia/v1/coverage/toto/status'.format(fabric.env.host1_ip)).json()
+
     assert len(data()['create_eng_instance']) == 1
     assert len(data()['deploy_jormungandr_instance_conf']) == 1

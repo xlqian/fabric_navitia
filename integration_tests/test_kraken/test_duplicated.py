@@ -128,8 +128,6 @@ def test_stop_start_apache(duplicated):
 
 @skipifdev
 def test_test_kraken_nowait_nofail(duplicated, capsys):
-    # wait for krakens to be fully started
-    time.sleep(15)
     _test_test_kraken_nowait_nofail(duplicated, capsys,
                                     map={'host1': {'us-wa'}, 'host2': {'fr-ne-amiens'}}, ret_val=None)
 
@@ -147,7 +145,6 @@ def test_get_no_data_instances(duplicated, capsys):
 @skipifdev
 def test_test_all_krakens_no_wait(duplicated):
     platform, fabric = duplicated
-    time.sleep(15)
     value, exception, stdout, stderr = fabric.execute_forked('test_all_krakens')
     assert stdout.count('WARNING: ') == 2 * len(fabric.env.instances)
     for instance in fabric.env.instances:
@@ -253,7 +250,7 @@ def test_redeploy_kraken_swap(duplicated, capsys):
     assert set(get_running_krakens(platform, 'host2')) == {'toto'} | nominal_krakens['host2']
 
 
-# @skipifdev
+@skipifdev
 def test_redeploy_kraken_reduce(duplicated, capsys):
     platform, fabric = duplicated
     add_instance = fabric.get_object('instance.add_instance')

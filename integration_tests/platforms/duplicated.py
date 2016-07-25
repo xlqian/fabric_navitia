@@ -20,7 +20,7 @@ def duplicated(host1, host2):
     env.postgresql_database_host = 'localhost'
     env.use_zmq_socket_file = False
     env.zmq_server = 'localhost'
-    env.rabbitmq_host = host1
+    env.rabbitmq_host = 'localhost'
 
     add_instance("fr-nw", "passwd", zmq_socket_port=30006, is_free=True, zmq_server=(host1, host2))
     add_instance("fr-ne-amiens", "passwd*", zmq_socket_port=30019, zmq_server=(host1, host2))
