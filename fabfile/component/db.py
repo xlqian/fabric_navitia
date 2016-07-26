@@ -46,6 +46,7 @@ from fabfile.utils import get_psql_version, _upload_template, get_real_instance,
 def start_services():
     require.postgres.server()
 
+
 @task
 @roles('db')
 def setup_db():
@@ -100,6 +101,7 @@ def postgis_initdb(instance_db):
     else:
         raise EnvironmentError("Bad version of postgres")
 
+
 @task
 @roles('db')
 def set_tyr_is_free(instance, is_free=True):
@@ -115,6 +117,7 @@ def set_tyr_is_free(instance, is_free=True):
     run('su - postgres --command="psql {} < /var/lib/postgresql/postgres_{}.sql"'
             .format(env.jormungandr_postgresql_database, instance))
     run("rm -f /var/lib/postgresql/postgres_{}.sql".format(instance))
+
 
 @task
 @roles('db')
@@ -133,6 +136,7 @@ def check_is_postgresql_user_exist(username):
         return True
     else:
         return False
+
 
 @task
 @roles('db')
@@ -154,6 +158,7 @@ def create_postgresql_user(username, password):
     # test the user access
     run('PGPASSWORD="{}" psql --tuples-only --host localhost --username {} '
         'postgres --command="SELECT * FROM pg_catalog.pg_database;"'.format(password, username))
+
 
 @task
 @roles('db')

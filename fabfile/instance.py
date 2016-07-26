@@ -87,8 +87,6 @@ class Instance:
         self.realtime_proxies = realtime_proxies
         self.cache_raptor = cache_raptor
 
-    #we might want to overload all those properties
-
     @property
     def kraken_engines_url(self):
         return [e.split('@')[1] for e in self.kraken_engines]

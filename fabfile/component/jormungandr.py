@@ -85,6 +85,7 @@ def setup_jormungandr():
 
     execute(start_jormungandr_all)
 
+
 @task
 @roles('ws')
 #@runs_once
@@ -134,6 +135,7 @@ def reload_jormun_safe(server, safe=True):
         if env.use_load_balancer and safe:
             load_balancer.enable_node(server)
 
+
 @task
 def reload_jormun_safe_all(safe=True, reverse=False):
     """ Reload jormungandr on all servers,
@@ -143,6 +145,7 @@ def reload_jormun_safe_all(safe=True, reverse=False):
     for server in (env.roledefs['ws'][::-1] if reverse else env.roledefs['ws']):
         execute(reload_jormun_safe, server, safe)
 
+
 @task
 def start_jormungandr_all():
     """ Start jormungadr on all servers """
@@ -150,10 +153,12 @@ def start_jormungandr_all():
     for server in env.roledefs['ws']:
         execute(reload_jormun_safe, server, False)
 
+
 @task
 @roles('ws')
 def start_services():
     start_or_stop_with_delay('apache2', env.APACHE_START_DELAY * 1000, 500, only_once=env.APACHE_START_ONLY_ONCE)
+
 
 @task
 def check_kraken_jormun_after_deploy(show=False):

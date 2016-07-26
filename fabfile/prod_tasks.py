@@ -42,6 +42,7 @@ def vip_name(instance):
             .format(instance=instance.upper(),
                     env=env.name.upper().replace('PROD', 'PRD'))
 
+
 @task
 def remove_kraken_vip(name):
     """ Delete a given instance vip and associated pool """
