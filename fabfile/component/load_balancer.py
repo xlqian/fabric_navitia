@@ -73,6 +73,7 @@ def _adc_connection(check=False):
         print(red("CRITICAL: Can't manage F5 load balancer as 'import bigsuds' fails"))
         exit(1)
 
+
 @task
 def disable_node(server):
     """ Disable F5 ADC node """

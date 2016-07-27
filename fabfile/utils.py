@@ -52,7 +52,6 @@ from fabric.api import env, task, roles, run, put, sudo, warn_only, execute
 from fabric.colors import green, yellow, red
 from fabric.context_managers import cd
 from fabric.contrib.files import exists
-from fabric.decorators import roles
 from fabtools.files import upload_template
 from fabtools import require
 from fabtools.require.files import temporary_directory
@@ -289,6 +288,7 @@ host_app_mapping = dict(
     ws='navitia-jormungandr'
 )
 
+
 @task
 @run_once_per_host
 def apt_get_update():
@@ -307,6 +307,7 @@ def get_version(host):
         except IndexError:
             installed, candidate = None, None
         return installed, candidate
+
 
 @task
 def show_version(action='show', host='eng'):

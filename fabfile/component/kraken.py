@@ -412,7 +412,6 @@ def update_monitor_configuration():
             context={'env': env})
 
 
-
 @task
 def update_eng_instance_conf(instance, host=None):
     instance = get_real_instance(instance)
@@ -573,6 +572,7 @@ def delete_all_kraken_queues_to_rabbitmq():
     """
     for instance in env.instances.values():
         execute(delete_kraken_queue_to_rabbitmq, instance.name)
+
 
 @task
 def is_not_synchronized(instance, hosts=None):

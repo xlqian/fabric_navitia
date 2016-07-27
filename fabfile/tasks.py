@@ -270,15 +270,18 @@ def restart_tyr(tyr_beat=True):
     if tyr_beat:
         execute(tyr.restart_tyr_beat)
 
+
 @task
 def restart_kraken():
     execute(kraken.restart_all_krakens)
+
 
 @task
 def restart_jormungandr():
     """ This task is now SAFE on PROD
     """
     execute(jormungandr.reload_jormun_safe_all)
+
 
 @task
 def restart_all():
@@ -406,6 +409,7 @@ def check_last_dataset():
 
     if nb_ko > 0:
         exit(1)
+
 
 #############################################
 #                                           #
