@@ -38,6 +38,8 @@ from fabric.api import env, abort
 from fabtools import require
 import requests
 
+# WARNING: the way fabric_navitia imports are done as a strong influence
+#          on the resulting naming of tasks, wich can break integration tests
 from fabfile.utils import get_psql_version, _upload_template, get_real_instance, run_once_per_host
 
 

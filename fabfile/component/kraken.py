@@ -43,6 +43,8 @@ from fabric.operations import run
 from fabric.utils import abort
 from fabtools import require, service, files, python
 
+# WARNING: the way fabric_navitia imports are done as a strong influence
+#          on the resulting naming of tasks, wich can break integration tests
 from fabfile.utils import (get_bool_from_cli, _install_packages, get_real_instance,
                            show_version, update_init, get_host_addr,
                            _upload_template, start_or_stop_with_delay, idempotent_symlink)

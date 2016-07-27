@@ -43,6 +43,8 @@ try:
 except ImportError:
     print(yellow("WARNING: can't load bigsuds to manage F5 load balancers"))
 
+# WARNING: the way fabric_navitia imports are done as a strong influence
+#          on the resulting naming of tasks, wich can break integration tests
 from fabfile.utils import get_host_addr
 
 

@@ -29,14 +29,11 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 
-#import all env for fabric to find them
+# WARNING: the way fabric_navitia imports are done as a strong influence
+#          on the resulting naming of tasks, wich can break integration tests
 from env.platforms import *
-
 from tasks import *
 from custom_tasks import *
-from prod_tasks import *
-
-from component import *
 
 # If we want to narrow the list of public task, we can do it with the __all__
 #__all__ = ['upgrade_all', 'env']
