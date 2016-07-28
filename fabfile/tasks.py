@@ -247,6 +247,7 @@ def compare_version_candidate_installed(host_name='eng'):
             .format(host_app_mapping[host_name], candidate_version, installed_version)
         abort(message)
 
+
 @task
 def upgrade_tyr(up_confs=False, pilot_tyr_beat=True):
     """Upgrade all ed instances db, launch bina"""
