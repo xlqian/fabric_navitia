@@ -34,15 +34,19 @@ This file contains some specific tasks not to be run everytime
 """
 import os
 from datetime import datetime
+
+from fabric.api import env, local
 from fabric.colors import red
 from fabric.context_managers import cd, warn_only
 from fabric.contrib.files import exists
 from fabric.decorators import task, roles
 from fabric.operations import run, put, sudo
 from fabric.tasks import execute
-from fabfile.utils import _upload_template, _random_generator, apt_get_update
-from fabfile.component import db, tyr
-from fabric.api import env, local
+
+# WARNING: the way fabric_navitia imports are done as a strong influence
+#          on the resulting naming of tasks, wich can break integration tests
+import component
+from utils import _upload_template, _random_generator, apt_get_update
 
 
 @task
@@ -80,11 +84,11 @@ def cities_integration():
     postgresql_user = 'cities'
     postgresql_database = postgresql_user
     password = _random_generator()
-    execute(db.create_postgresql_user, "cities", password)
-    execute(db.create_postgresql_database, "cities")
+    execute(component.db.create_postgresql_user, "cities", password)
+    execute(component.db.create_postgresql_database, "cities")
 
     # init_db.sh
-    execute(db.postgis_initdb, "cities")
+    execute(component.db.postgis_initdb, "cities")
 
     _upload_template("tyr/cities_alembic.ini.jinja",
                      "{}/cities_alembic.ini".format(env.tyr_basedir),
@@ -108,7 +112,7 @@ def cities_integration():
         if exists("/srv/ed/france-latest.osm.pbf"):
             run("TYR_CONFIG_FILE=/srv/tyr/settings.py ./manage.py {} "
                 "/srv/ed/france-latest.osm.pbf".format(postgresql_database))
-    execute(tyr.restart_tyr_worker)
+    execute(component.tyr.restart_tyr_worker)
 
 
 @task

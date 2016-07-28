@@ -49,9 +49,11 @@ from fabric.operations import run, get
 from fabric.api import execute, task, env, sudo
 from fabtools import require, python
 
+# WARNING: the way fabric_navitia imports are done as a strong influence
+#          on the resulting naming of tasks, wich can break integration tests
 from fabfile.component import load_balancer
 from fabfile.utils import (_install_packages, _upload_template, get_real_instance,
-                           start_or_stop_with_delay, get_bool_from_cli, get_host_addr, show_version)
+                           start_or_stop_with_delay, get_bool_from_cli, show_version)
 
 
 @task

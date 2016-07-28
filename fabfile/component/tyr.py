@@ -44,8 +44,10 @@ from fabric.decorators import roles
 from fabric.operations import run, get, sudo, put
 from fabtools import require, python, files
 
+# WARNING: the way fabric_navitia imports are done as a strong influence
+#          on the resulting naming of tasks, wich can break integration tests
+import fabfile.component as component
 from fabfile.component import db
-from fabfile.component.kraken import get_no_data_instances
 from fabfile.utils import (_install_packages, _upload_template, update_init, Parallel,
                            start_or_stop_with_delay, supervision_downtime, time_that,
                            get_real_instance, require_directories, require_directory,
@@ -423,7 +425,7 @@ def launch_rebinarization_upgrade(pilot_supervision=True, pilot_tyr_beat=True, i
     # instances
     try:
         if instances is None:
-            execute(get_no_data_instances)
+            execute(component.kraken.get_no_data_instances)
             instances2process = set(env.instances)
         else:
             instances2process = set(instances)

@@ -37,15 +37,15 @@ from fabric.api import run, env, task, execute, roles, abort
 from fabric.colors import blue, red, yellow, green
 from fabric.contrib.files import exists
 
-from fabfile.component import tyr, db, jormungandr, kraken
-from fabfile.component.kraken import check_dead_instances
-from fabfile.utils import (get_bool_from_cli, show_version, get_host_addr,
-                           show_dead_kraken_status, TimeCollector, compute_instance_status,
-                           show_time_deploy, host_app_mapping, send_mail,
-                           supervision_downtime, get_real_instance)
+import component
+from component import tyr, jormungandr, kraken
+from component.load_balancer import _adc_connection
+from utils import (get_bool_from_cli, show_version, get_host_addr,
+                   show_dead_kraken_status, TimeCollector, compute_instance_status,
+                   show_time_deploy, host_app_mapping, send_mail,
+                   supervision_downtime, get_real_instance)
 from prod_tasks import (remove_kraken_vip, switch_to_first_phase,
                         switch_to_second_phase, switch_to_third_phase, enable_all_nodes)
-from fabfile.component.load_balancer import _adc_connection
 import random
 
 
@@ -75,7 +75,7 @@ def setup():
     install all requirements, deploy the needed configuration
     """
     execute(upgrade_all_packages)
-    execute(db.setup_db)
+    execute(component.db.setup_db)
     execute(tyr.setup_tyr_master)
     execute(tyr.setup_tyr)
     execute(kraken.setup_kraken)
@@ -146,7 +146,7 @@ def upgrade_all(up_tyr=True, up_confs=True, check_version=True, send_mail='no',
         time_dict.register_start('kraken')
         execute(upgrade_kraken, wait=env.KRAKEN_RESTART_SCHEME, up_confs=up_confs, supervision=True)
         if check_dead:
-            execute(check_dead_instances)
+            execute(kraken.check_dead_instances)
         execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
 
         # check first hosts set before upgrading the second one
@@ -285,7 +285,7 @@ def restart_jormungandr():
 
 @task
 def restart_all():
-    execute(db.start_services)
+    execute(component.db.start_services)
     execute(tyr.start_services)
     execute(jormungandr.start_services)
     restart_tyr()
@@ -468,12 +468,12 @@ def update_instance(instance, reload_jormun=True):
     #first of all we compute the instance status, it will be helpfull later
     execute(compute_instance_status, instance)
     execute(tyr.create_tyr_instance, instance)
-    execute(db.postgis_initdb, instance.db_name)
+    execute(component.db.postgis_initdb, instance.db_name)
     execute(tyr.update_ed_db, instance.name)
     execute(jormungandr.deploy_jormungandr_instance_conf, instance)
     execute(kraken.create_eng_instance, instance)
     execute(tyr.deploy_default_synonyms, instance)
-    execute(db.create_privileges_instance_db, instance)
+    execute(component.db.create_privileges_instance_db, instance)
     if reload_jormun:
         execute(jormungandr.reload_jormun_safe_all)
 
@@ -484,9 +484,9 @@ def remove_instance(instance, admin=False):
     Remove instance in jormungandr db
     """
     instance = get_real_instance(instance)
-    execute(db.remove_instance_from_jormun_database, instance)
-    execute(db.remove_postgresql_database, instance.db_name)
-    execute(db.remove_postgresql_user, instance.db_user)
+    execute(component.db.remove_instance_from_jormun_database, instance)
+    execute(component.db.remove_postgresql_database, instance.db_name)
+    execute(component.db.remove_postgresql_user, instance.db_user)
     execute(tyr.remove_ed_instance, instance)
     execute(tyr.remove_tyr_instance, instance)
     execute(kraken.remove_kraken_instance, instance)
@@ -508,7 +508,7 @@ def clean_instances(clean=False):
         if clean:
             print("Removing instances: {}".format(instances_to_clean))
             for instance in instances_to_clean:
-                execute(db.remove_instance_from_jormun_database, instance)
+                execute(component.db.remove_instance_from_jormun_database, instance)
             print("Done.")
         else:
             print("You can specify parameter 'clean=True' to clean jormun DB.")
