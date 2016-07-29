@@ -4,6 +4,7 @@ import os.path
 import time
 
 from ..test_common import skipifdev
+from ..utils import get_path_attribute
 
 ROOTDIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -87,3 +88,19 @@ def test_launch_rebinarization(duplicated):
     assert stderr == ''
     time.sleep(15)
     assert platform.path_exists('/srv/ed/data/us-wa/temp/data.nav.lz4', 'host1')
+
+
+# @skipifdev
+def test_normalize_data_files(duplicated):
+    platform, fabric = duplicated
+    for instance in instances_names:
+        platform.docker_exec('touch /srv/ed/data/{}/data.nav.lz4'.format(instance), 'host1')
+
+    value, exception, stdout, stderr = fabric.execute_forked('component.tyr.normalize_data_files')
+    assert exception is None
+    assert stderr == ''
+
+    for instance in instances_names:
+        path = '/srv/ed/data/{}/data.nav.lz4'.format(instance)
+        assert get_path_attribute(platform, path, 'user', 'host1')[0] == 'www-data'
+        assert get_path_attribute(platform, path, 'rights', 'host1')[0] == '-rw-r--r--'

@@ -177,6 +177,12 @@ def get_processes(platform, host):
     return extract_column(platform.docker_exec('ps -A', host), -1, 1)
 
 
+attributes = dict(rights=0, user=2, group=3, size=4)
+def get_path_attribute(platform, path, attribute, host):
+    attribute = attributes[attribute]
+    return extract_column(platform.docker_exec('ls -al {}'.format(path), host), attribute)
+
+
 pattern = re.compile('/srv/kraken/(.+?)/kraken')
 def get_running_krakens(platform, host):
     cols = extract_column(platform.docker_exec('ps ax | grep kraken | grep -v grep', host=host), -1)
