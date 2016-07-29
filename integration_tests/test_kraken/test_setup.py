@@ -4,7 +4,7 @@ import os.path
 import time
 
 from ..docker import docker_exec
-from ..utils import filter_column, extract_column, python_requirements_compare
+from ..utils import filter_column, extract_column, python_requirements_compare, get_processes
 from ..test_common import skipifdev
 
 
@@ -41,8 +41,8 @@ def test_setup_kraken(distributed_undeployed):
     else:
         assert platform.path_exists('/etc/apache2/conf-available/monitor-kraken.conf')
     # check that apache is started
-    assert 'apache2' in extract_column(platform.docker_exec('ps -A', 'host1'), -1, 1)
-    assert 'apache2' in extract_column(platform.docker_exec('ps -A', 'host2'), -1, 1)
+    assert 'apache2' in get_processes(platform, 'host1')
+    assert 'apache2' in get_processes(platform, 'host2')
 
 
 @skipifdev

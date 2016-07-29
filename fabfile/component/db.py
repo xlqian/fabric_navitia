@@ -52,6 +52,8 @@ def start_services():
 @task
 @roles('db')
 def setup_db():
+    """Set the main databases and users
+    """
     require.postgres.server()
     require.deb.package("postgis")
     with warn_only():
@@ -61,26 +63,24 @@ def setup_db():
             require.deb.package(package.replace(',', ''))
 
     # tyr db creation
-    require.postgres.user(env.tyr_postgresql_user, env.tyr_postgresql_password)
-    require.postgres.database(env.tyr_postgresql_database, owner=env.tyr_postgresql_user, locale='en_US.UTF-8')
+    create_postgresql_user(env.tyr_postgresql_user, env.tyr_postgresql_password)
+    create_postgresql_database(env.tyr_postgresql_database, env.tyr_postgresql_user)
     postgis_initdb(env.tyr_postgresql_database)
 
-    #cities db creation
+    # cities db creation
     if env.use_cities:
-        require.postgres.user(env.cities_db_user, env.cities_db_password)
-        require.postgres.database(env.cities_db_name, owner=env.cities_db_user, locale='en_US.UTF-8')
+        create_postgresql_user(env.cities_db_user, env.cities_db_password)
+        create_postgresql_database(env.cities_db_name, env.cities_db_user)
         postgis_initdb(env.cities_db_name)
 
     # read_only user db creation
-    require.postgres.user(env.postgres_read_only_user, env.postgres_read_only_password)
+    create_postgresql_user(env.postgres_read_only_user, env.postgres_read_only_password)
 
 
 @task
 @roles('db')
 def postgis_initdb(instance_db):
-    """Populate the a database with postgis
-        The script init_db.sh is on tyr, but need to create a postgis extension
-        on db, so load the sql scripts directly from db server
+    """Set a database with postgis extension
     """
     if db_has_postgis(instance_db):
         #postgis 2.0 with old postgres version does not seems to be idempotent, so we do the postgis init only once
@@ -109,7 +109,7 @@ def postgis_initdb(instance_db):
 def set_tyr_is_free(instance, is_free=True):
     """Set is_free flag in jormungandr database for a given instance"""
 
-    _upload_template("db/is-free.sql.jinja", \
+    _upload_template("db/is-free.sql.jinja",
             "/var/lib/postgresql/postgres_{}.sql".format(instance),
             context={
                 'instance': instance,
@@ -124,42 +124,19 @@ def set_tyr_is_free(instance, is_free=True):
 @task
 @roles('db')
 def check_is_postgresql_user_exist(username):
-    """Check if a given postgresql user exist"""
-    _upload_template("db/check_is_postgresql_user_exist.sql.jinja",
-            "/var/lib/postgresql/postgres_{}.sql".format(username),
-            context={
-                'username': username,
-            }
-    )
-    user = run('su - postgres --command="psql --tuples-only postgres < /var/lib/postgresql/postgres_{}.sql"'
-               .format(username))
-    run("rm -f /var/lib/postgresql/postgres_{}.sql".format(username))
-    if username == user:
-        return True
-    else:
-        return False
+    """Check if a given postgresql user exist
+    """
+    sql_cmd = "select exists (SELECT * FROM pg_user WHERE usename='{}');".format(username)
+    post_cmd = 'sudo -i -u postgres psql -A -t -c "{}"'.format(sql_cmd)
+    return run(post_cmd) == 't'
 
 
 @task
 @roles('db')
 def create_postgresql_user(username, password):
-    """ Create a postgresql user"""
-    run('su - postgres --command="createuser {} --no-createdb --no-createrole --no-superuser"'.format(username))
-
-    # set the password
-    _upload_template("db/set_user_password.sql.jinja",
-            "/var/lib/postgresql/postgres_{}.sql".format(username),
-            context={
-                'username': username,
-                'password': password,
-            }
-    )
-    run('su - postgres --command="psql postgres < /var/lib/postgresql/postgres_{}.sql"'.format(username))
-    run("rm -f /var/lib/postgresql/postgres_{}.sql".format(username))
-
-    # test the user access
-    run('PGPASSWORD="{}" psql --tuples-only --host localhost --username {} '
-        'postgres --command="SELECT * FROM pg_catalog.pg_database;"'.format(password, username))
+    """ Create a postgresql user
+    """
+    require.postgres.user(username, password)
 
 
 @task
@@ -171,8 +148,7 @@ def create_postgresql_database(database, username=None):
     if not username:
         username = database
 
-    run('su - postgres --command="createdb {database} --owner={username} --encoding=UTF8"'
-            .format(database=database, username=username))
+    require.postgres.database(database, owner=username, locale='en_US.UTF-8')
 
 
 @task
@@ -189,14 +165,7 @@ def remove_postgresql_user(username):
     run('su - postgres --command="dropuser {}"'.format(username))
 
 
-@roles('db')
-def is_postgresql_user_exist(username):
-#   select exists (SELECT * FROM pg_user WHERE usename=\'ed_uk\');
-    dbuserexist = run('sudo -i -u postgres psql -A -t -c "select exists (SELECT * FROM pg_user WHERE usename=\'{}\');"'
-                      .format(username))
-    return dbuserexist == 't'
-
-
+@task
 @roles('db')
 def is_postgresql_database_exist(dbname):
     dbnameexist = run('sudo -i -u postgres psql -A -t -c "select exists (SELECT * FROM pg_database '
@@ -204,6 +173,7 @@ def is_postgresql_database_exist(dbname):
     return dbnameexist == 't'
 
 
+@task
 @roles('db')
 def db_has_postgis(dbname):
     res = run('sudo -i -u postgres psql -A -t -c '
@@ -259,10 +229,8 @@ def create_instance_db(instance):
     print("Really run create_instance_db")
 
     postgresql_user = instance.db_user
-    postgresql_database = instance.db_name
-
-    require.postgres.user(postgresql_user, instance.db_password)
-    require.postgres.database(postgresql_database, postgresql_user)
+    create_postgresql_user(postgresql_user, instance.db_password)
+    create_postgresql_database(instance.db_name, postgresql_user)
 
 
 @task
@@ -274,4 +242,3 @@ def create_privileges_instance_db(instance):
     for schema in env.postgres_schemas:
         run('{} -c "GRANT SELECT ON ALL TABLES IN SCHEMA {} TO {};"'
             .format(postgres_connection_user, schema, env.postgres_read_only_user))
-

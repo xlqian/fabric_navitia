@@ -172,9 +172,12 @@ def scp(source, dest, host, user):
 
 # =================== REMOTE HOSTS RELATED UTILITIES =======================
 
+
+def get_processes(platform, host):
+    return extract_column(platform.docker_exec('ps -A', host), -1, 1)
+
+
 pattern = re.compile('/srv/kraken/(.+?)/kraken')
-
-
 def get_running_krakens(platform, host):
     cols = extract_column(platform.docker_exec('ps ax | grep kraken | grep -v grep', host=host), -1)
     return [pattern.findall(col)[0] for col in cols]
@@ -196,3 +199,13 @@ def python_requirements_compare(freeze, requirements):
         if '==' in req and req not in fre_lines:
             missing.append(req)
     return missing
+
+
+def check_postgres_user(platform, user):
+    sql_cmd = "select exists (SELECT * FROM pg_user WHERE usename='{}');".format(user)
+    post_cmd = 'sudo -i -u postgres psql -A -t -c "{}"'.format(sql_cmd)
+    return platform.docker_exec(post_cmd, 'host1') == 't'
+
+
+def get_databases(platform, host):
+    return extract_column(platform.docker_exec('sudo -i -u postgres psql -l', host), 0, 3)

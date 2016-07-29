@@ -49,6 +49,8 @@ fab_list = [
  'component.db.create_postgresql_database',
  'component.db.create_postgresql_user',
  'component.db.create_privileges_instance_db',
+ 'component.db.db_has_postgis',
+ 'component.db.is_postgresql_database_exist',
  'component.db.postgis_initdb',
  'component.db.remove_instance_from_jormun_database',
  'component.db.remove_postgresql_database',
