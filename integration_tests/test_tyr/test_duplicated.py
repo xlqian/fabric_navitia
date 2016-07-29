@@ -1,9 +1,11 @@
 # encoding: utf-8
 
+import os.path
 import time
 
 from ..test_common import skipifdev
 
+ROOTDIR = os.path.dirname(os.path.abspath(__file__))
 
 instances_names = {'us-wa', 'fr-nw', 'fr-npdc', 'fr-ne-amiens', 'fr-idf', 'fr-cen'}
 
@@ -61,3 +63,27 @@ def test_create_remove_tyr_instance(duplicated):
     # restart_tyr_beat is called twice on tyr_master (not so good)
     assert len(data()['restart_tyr_beat']) == 2
     assert set((x[2] for x in data()['restart_tyr_beat'])) == set(fabric.env.roledefs['tyr_master'])
+
+
+@skipifdev
+def test_launch_rebinarization(duplicated):
+    platform, fabric = duplicated
+    platform.scp(os.path.join(ROOTDIR, 'data.zip'), '/srv/ed/data/us-wa/', 'host1')
+    # wait first binarization by tyr (automatic)
+    time.sleep(30)
+    assert platform.path_exists('/srv/ed/data/us-wa/data.zip', 'host1', negate=True)
+    assert platform.path_exists('/srv/ed/data/us-wa/data.nav.lz4', 'host1')
+    platform.docker_exec('rm -f /srv/ed/data/us-wa/data.nav.lz4', 'host1')
+
+    value, exception, stdout, stderr = fabric.execute_forked('component.tyr.launch_rebinarization', 'us-wa')
+    assert exception is None
+    assert stderr == ''
+    time.sleep(15)
+    assert platform.path_exists('/srv/ed/data/us-wa/data.nav.lz4', 'host1')
+
+    value, exception, stdout, stderr = fabric.execute_forked('component.tyr.launch_rebinarization',
+                                                             'us-wa', use_temp=True)
+    assert exception is None
+    assert stderr == ''
+    time.sleep(15)
+    assert platform.path_exists('/srv/ed/data/us-wa/temp/data.nav.lz4', 'host1')
