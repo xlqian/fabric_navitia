@@ -12,6 +12,8 @@ DEFAULT_DEBIAN = 'debian8'
 def pytest_addoption(parser):
     parser.addoption('--dev', action='store_true',
                      help="run only non decorated tests (default: run all tests")
+    parser.addoption('--keep', action='store_true',
+                     help="run in debug mode (and keep the containers up)")
     parser.addoption('--wait', action='store', default=1,
                      help="specify sleep time for processes start before testing (default: 0")
     parser.addoption('--reset', action='store_true',
@@ -33,6 +35,7 @@ def setup_platform(platform, distri):
 
 @pytest.yield_fixture(scope='function')
 def single_undeployed():
+    debug = pytest.config.getoption('--keep')
     wait_timeout = int(pytest.config.getoption('--wait'))
     distri = pytest.config.getoption('--distri')
     platform = PlatformManager('single', {'host': distri}, timeout=wait_timeout)
@@ -40,11 +43,13 @@ def single_undeployed():
     time.sleep(wait_timeout)
     yield platform, fabric
     fabric.unset_platform()
-    platform.reset('rm_container')
+    if not debug:
+        platform.reset('rm_container')
 
 
 @pytest.yield_fixture(scope='function')
 def distributed_undeployed():
+    debug = pytest.config.getoption('--keep')
     wait_timeout = int(pytest.config.getoption('--wait'))
     distri = pytest.config.getoption('--distri')
     platform = PlatformManager('distributed', {'host1': distri, 'host2': distri}, timeout=wait_timeout)
@@ -52,11 +57,13 @@ def distributed_undeployed():
     time.sleep(wait_timeout)
     yield platform, fabric
     fabric.unset_platform()
-    platform.reset('rm_container')
+    if not debug:
+        platform.reset('rm_container')
 
 
 @pytest.yield_fixture(scope='function')
 def duplicated_undeployed():
+    debug = pytest.config.getoption('--keep')
     wait_timeout = int(pytest.config.getoption('--wait'))
     distri = pytest.config.getoption('--distri')
     platform = PlatformManager('duplicated', {'host1': distri, 'host2': distri}, timeout=wait_timeout)
@@ -64,7 +71,8 @@ def duplicated_undeployed():
     time.sleep(wait_timeout)
     yield platform, fabric
     fabric.unset_platform()
-    platform.reset('rm_container')
+    if not debug:
+        platform.reset('rm_container')
 
 
 # ===================     DEPLOYED PLATFORMS FIXTURES     =======================
@@ -78,6 +86,7 @@ def setup_platform_deployed(platform, distri):
 
 @pytest.yield_fixture(scope='function')
 def single():
+    debug = pytest.config.getoption('--keep')
     wait_timeout = int(pytest.config.getoption('--wait'))
     distri = pytest.config.getoption('--distri')
     platform = PlatformManager('single', {'host': distri}, timeout=wait_timeout)
@@ -87,11 +96,13 @@ def single():
     time.sleep(wait_timeout)
     yield deployed_platform, fabric
     fabric.unset_platform()
-    deployed_platform.reset('rm_container')
+    if not debug:
+        deployed_platform.reset('rm_container')
 
 
 @pytest.yield_fixture(scope='function')
 def distributed():
+    debug = pytest.config.getoption('--keep')
     wait_timeout = int(pytest.config.getoption('--wait'))
     distri = pytest.config.getoption('--distri')
     platform = PlatformManager('distributed', {'host1': distri, 'host2': distri}, timeout=wait_timeout)
@@ -106,11 +117,13 @@ def distributed():
     time.sleep(wait_timeout)
     yield deployed_platform, fabric
     fabric.unset_platform()
-    deployed_platform.reset('rm_container')
+    if not debug:
+        deployed_platform.reset('rm_container')
 
 
 @pytest.yield_fixture(scope='function')
 def duplicated():
+    debug = pytest.config.getoption('--keep')
     wait_timeout = int(pytest.config.getoption('--wait'))
     distri = pytest.config.getoption('--distri')
     platform = PlatformManager('duplicated', {'host1': distri, 'host2': distri}, timeout=wait_timeout)
@@ -125,4 +138,5 @@ def duplicated():
     time.sleep(wait_timeout)
     yield deployed_platform, fabric
     fabric.unset_platform()
-    deployed_platform.reset('rm_container')
+    if not debug:
+        deployed_platform.reset('rm_container')
