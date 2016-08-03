@@ -93,7 +93,7 @@ def rollback_instance(instance, test=True):
     instance = get_real_instance(instance)
     execute(swap_data_nav, instance, force=True)
     execute(set_kraken_binary, instance, old=True)
-    execute(restart_kraken, instance, wait=test and env.KRAKEN_RESTART_SCHEME)
+    execute(restart_kraken, instance, wait=env.KRAKEN_RESTART_SCHEME if test else 'no_test')
 
 
 @task
