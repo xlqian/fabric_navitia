@@ -682,6 +682,7 @@ def remove_ed_instance(instance):
     run("rm -rf %s" % instance.backup_dir)
 
 
+@task
 @roles('tyr')
 def deploy_default_synonyms(instance):
     """
@@ -697,3 +698,20 @@ def deploy_default_synonyms(instance):
 
     put(default_synonyms_file, instance.source_dir, use_sudo=True)
     sudo("chown {u} {f}".format(u=env.KRAKEN_USER, f=os.path.join(instance.source_dir, 'default_synonyms.txt')))
+
+
+@task
+@roles('tyr_master')
+def normalize_data_files():
+    for instance in env.instances:
+        source = env.tyr_source_dir_template.format(instance=instance)
+        destination = env.tyr_base_destination_dir + instance
+        backup = env.tyr_backup_dir_template.format(instance=instance)
+        # chown and chmod do not change the date of the file
+        run("chown -Rf {0}:{0} ".format(env.TYR_USER) + source)
+        run("chmod -Rf 644 " + source)
+        if source != destination:
+            run("chown -Rf {0}:{0} ".format(env.TYR_USER) + destination)
+            run("chmod -Rf 644 " + destination)
+        run("chown -Rf {0}:{0} ".format(env.TYR_USER) + backup)
+        run("chmod -Rf 644 " + backup)
