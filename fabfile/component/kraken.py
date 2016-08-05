@@ -147,8 +147,12 @@ def require_monitor_kraken_started():
 def restart_all_krakens(wait='serial'):
     """restart and test all kraken instances"""
     execute(require_monitor_kraken_started)
-    for instance in env.instances.values():
+    instances = tuple(env.instances)
+    for index, instance in enumerate(env.instances.values()):
         restart_kraken(instance, wait=wait)
+        left = instances[index + 1:]
+        if left:
+            print(blue("Instances left: {}".format(','.join(left))))
 
 
 @task
