@@ -93,7 +93,7 @@ def rollback_instance(instance, test=True):
     instance = get_real_instance(instance)
     execute(swap_data_nav, instance, force=True)
     execute(set_kraken_binary, instance, old=True)
-    execute(restart_kraken, instance, wait=test and env.KRAKEN_RESTART_SCHEME)
+    execute(restart_kraken, instance, wait=env.KRAKEN_RESTART_SCHEME if test else 'no_test')
 
 
 @task
@@ -262,13 +262,12 @@ def restart_kraken(instance, wait='serial'):
                Possible values=False or None: restart in parallel, no test
                'serial': restart serially and test
                'parallel': restart in parallel and test
+               'no_test': explicitely skip tests (faster but dangerous)
         The default value is 'serial' because it is the safest scenario
         to restart the krakens of an instance in production.
     """
-    if wait:
-        wait = wait.lower()
-        if wait not in ('serial', 'parallel'):
-            wait = None
+    if wait not in ('serial', 'parallel', 'no_test'):
+        abort(yellow("Error: wait parameter must be serial, parallel or no_test"))
     instance = get_real_instance(instance)
     excluded = instance.name in env.excluded_instances
     # restart krakens of this instance that are also in the eng role,
@@ -279,8 +278,10 @@ def restart_kraken(instance, wait='serial'):
             test_kraken(instance, fail_if_error=False, wait=True, hosts=[host])
     if wait == 'parallel' and not excluded:
         test_kraken(instance, fail_if_error=False, wait=True)
-    if wait and excluded:
+    if wait != 'no_test' and excluded:
         print(yellow("Coverage '{}' has no data, not testing it".format(instance.name)))
+    if wait == 'no_test':
+        print(yellow("Warning Coverage '{}' not tested: parameter wait='no_test'".format(instance.name)))
 
 
 @task

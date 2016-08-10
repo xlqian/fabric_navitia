@@ -59,7 +59,7 @@ def test_stop_restart_single_kraken_parallel(duplicated):
 
 
 @skipifdev
-def test_stop_restart_single_kraken_nowait1(duplicated):
+def test_stop_restart_single_kraken_nowait(duplicated):
     _, fabric = duplicated
     with fabric.set_call_tracker('component.kraken.test_kraken') as data:
         _test_stop_restart_kraken(duplicated,
@@ -67,21 +67,7 @@ def test_stop_restart_single_kraken_nowait1(duplicated):
                                  map_stop=krakens_after_stop,
                                  stop_pat=('stop_kraken', ('us-wa', 'fr-ne-amiens')),
                                  start_pat=('component.kraken.restart_kraken', ('us-wa', 'fr-ne-amiens'),
-                                            dict(wait='false'))
-                                 )
-    assert len(data()['test_kraken']) == 0
-
-
-@skipifdev
-def test_stop_restart_single_kraken_nowait2(duplicated):
-    _, fabric = duplicated
-    with fabric.set_call_tracker('component.kraken.test_kraken') as data:
-        _test_stop_restart_kraken(duplicated,
-                                 map_start=nominal_krakens,
-                                 map_stop=krakens_after_stop,
-                                 stop_pat=('stop_kraken', ('us-wa', 'fr-ne-amiens')),
-                                 start_pat=('component.kraken.restart_kraken', ('us-wa', 'fr-ne-amiens'),
-                                            dict(wait=None))
+                                            dict(wait='no_test'))
                                  )
     assert len(data()['test_kraken']) == 0
 
@@ -89,16 +75,16 @@ def test_stop_restart_single_kraken_nowait2(duplicated):
 @skipifdev
 def test_restart_all_krakens(duplicated):
     _, fabric = duplicated
-    with fabric.set_call_tracker('component.kraken.test_kraken',
+    with fabric.set_call_tracker('-component.kraken.test_kraken',
                                  'component.kraken.restart_kraken') as data:
         _test_stop_restart_kraken(duplicated,
                                  map_start=nominal_krakens,
                                  map_stop=krakens_after_stop,
                                  stop_pat=('stop_kraken', ('us-wa', 'fr-ne-amiens')),
-                                 start_pat=('restart_all_krakens', (), dict(wait=False))
+                                 start_pat=('restart_all_krakens', (), dict(wait='parallel'))
                                  )
     assert len(data()['restart_kraken']) == len(fabric.env.instances)
-    assert len(data()['test_kraken']) == 0
+    assert len(data()['test_kraken']) == len(fabric.env.instances)
 
 
 @skipifdev
@@ -307,7 +293,7 @@ def test_upgrade_engine_packages(duplicated):
     assert platform.path_exists('/usr/bin/kraken.old')
 
 
-@skipifdev
+# @skipifdev
 def test_rollback_instance(duplicated):
     platform, fabric = duplicated
 
@@ -325,8 +311,8 @@ def test_rollback_instance(duplicated):
         assert platform.docker_exec('readlink /srv/kraken/{}/kraken'.format(instance), 'host2') == '/usr/bin/kraken'
 
     # we don't want to actually restart the kraken under test
-    with fabric.set_call_tracker('-component.kraken.restart_kraken') as data:
-        value, exception, stdout, stderr = fabric.execute_forked('rollback_instance', 'us-wa')
+    with fabric.set_call_tracker('component.kraken.restart_kraken') as data:
+        value, exception, stdout, stderr = fabric.execute_forked('rollback_instance', 'us-wa', False)
     assert exception is None
     assert stderr == ''
 
