@@ -267,7 +267,7 @@ def restart_kraken(instance, wait='serial'):
         to restart the krakens of an instance in production.
     """
     if wait not in ('serial', 'parallel', 'no_test'):
-        abort(yellow("Error: wait parameter must be serial, parallel or no_test"))
+        abort(yellow("Error: wait parameter must be 'serial', 'parallel' or 'no_test', found '{}'".format(wait)))
     instance = get_real_instance(instance)
     excluded = instance.name in env.excluded_instances
     # restart krakens of this instance that are also in the eng role,

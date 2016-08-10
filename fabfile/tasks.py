@@ -57,7 +57,7 @@ import random
 
 
 @task
-def deploy_from_scratch(kraken_wait=False):
+def deploy_from_scratch(kraken_wait='serial'):
     """
     deploy navitia on empty server
     This task can also be called on a already configured environment, it should only update all
