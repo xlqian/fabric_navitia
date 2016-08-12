@@ -560,15 +560,18 @@ def delete_kraken_queue_to_rabbitmq(instance, apply_on='reverse'):
     else:
         abort("Bad 'apply_on' parameter value: {}".format(apply_on))
 
+    if env.rabbitmq_host_api == 'localhost':
+        host_string = env.roledefs['tyr_master'][0]
+    else:
+        host_string = env.rabbitmq_host_api
+
     for host in set(hosts) - set(exclude_hosts):
-        with settings(host_string=env.default_ssh_user + '@' + env.rabbitmq_host_api):
-            run('curl -i -u {}:{} "content-type:application/json" -XDELETE '
-                '"http://{}:{}/api/queues/%2F/kraken_{}_{}_rt"'
-                .format(env.rabbitmq_user, env.rabbitmq_pass, env.rabbitmq_host_api, env.rabbitmq_port_api,
+        with settings(host_string=host_string):
+            run('curl -i -u {}:{} -XDELETE "http://localhost:{}/api/queues/%2F/kraken_{}_{}_rt"'
+                .format(env.rabbitmq_user, env.rabbitmq_pass, env.rabbitmq_port_api,
                         get_host_addr(host).split('.')[0], instance))
-            run('curl -i -u {}:{} "content-type:application/json" -XDELETE '
-                '"http://{}:{}/api/queues/%2F/kraken_{}_{}_task"'
-                .format(env.rabbitmq_user, env.rabbitmq_pass, env.rabbitmq_host_api, env.rabbitmq_port_api,
+            run('curl -i -u {}:{} -XDELETE "http://localhost:{}/api/queues/%2F/kraken_{}_{}_task"'
+                .format(env.rabbitmq_user, env.rabbitmq_pass, env.rabbitmq_port_api,
                         get_host_addr(host).split('.')[0], instance))
 
 
