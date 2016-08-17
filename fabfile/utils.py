@@ -83,7 +83,7 @@ def _install_packages(package_filter):
     else:
         # don't want filename package, just the name
         # --quiet to pretty print progress in fabric
-        sudo('apt-get -f --quiet update && apt-get --yes install {}'
+        sudo('apt-get --quiet update && apt-get --yes install {}'
         .format(' '.join(package_filter).replace('*deb', '')))
 
 
