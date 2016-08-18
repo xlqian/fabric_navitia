@@ -35,6 +35,7 @@ import requests
 
 from fabric.api import run, env, task, execute, roles, abort
 from fabric.colors import blue, red, yellow, green
+from fabric.context_managers import settings
 from fabric.contrib.files import exists
 
 import component
@@ -336,10 +337,9 @@ def upgrade_jormungandr(reload=True, up_confs=True):
         execute(jormungandr.reload_jormun_safe_all)
 
 
-@task
-@roles("tyr_master")
-def isset_dataset(filename=None):
-    return exists(filename)
+def dataset_exists(filename):
+    with settings(host_string=env.roledefs['tyr_master'][0]):
+        return exists(filename)
 
 
 @task
@@ -365,8 +365,8 @@ def check_last_dataset():
             if dataset != "":
                 fil, typ = dataset.split("|")
                 filname = os.path.split(fil)[1]
-                isset = execute(isset_dataset, fil)
-                if not isset:
+                # check existence of data file and abort if file is missing
+                if not dataset_exists(fil):
                     datasets['ko'].append({'instance': instance.name, 'file': fil, 'type': typ, 'filename': filname})
                     nb_ko += 1
                 else:
