@@ -176,3 +176,25 @@ def test_update_instance(duplicated):
 
     assert len(data()['create_eng_instance']) == 1
     assert len(data()['deploy_jormungandr_instance_conf']) == 1
+
+
+@skipifdev
+def test_check_last_dataset(duplicated):
+    platform, fabric = duplicated
+    platform.scp(os.path.join(ROOTDIR, '../test_tyr/data.zip'), '/srv/ed/data/us-wa/', 'host1')
+    # wait first binarization by tyr (automatic)
+    time.sleep(30)
+    # check that ata.zip as been moved to backup folder
+    assert platform.path_exists('/srv/ed/data/us-wa/data.zip', 'host1', negate=True)
+    backup = '/srv/ed/data/us-wa/backup'
+    folder = platform.docker_exec('ls {}'.format(backup), 'host1').strip()
+    assert platform.path_exists('{}/{}/data.zip'.format(backup, folder), 'host1')
+
+    value, exception, stdout, stderr = fabric.execute_forked('check_last_dataset')
+    assert exception is None
+    assert stderr == ''
+    assert '******** AVAILABLE DATASETS ********\n\x1b[32m/srv/ed/data/us-wa/backup/' in stdout
+
+    platform.docker_exec('rm {}/{}/data.zip'.format(backup, folder), 'host1')
+    value, exception, stdout, stderr = fabric.execute_forked('check_last_dataset')
+    assert '********* MISSING DATASETS *********\n\x1b[31m/srv/ed/data/us-wa/backup/' in stdout
