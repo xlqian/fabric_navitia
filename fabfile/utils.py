@@ -96,7 +96,7 @@ def stop_puppet():
 @task
 @roles('tyr', 'eng', 'ws')
 def start_puppet():
-    run("service puppet stop")
+    run("service puppet start")
 
 
 @task
