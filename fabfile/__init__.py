@@ -31,9 +31,14 @@
 
 # WARNING: the way fabric_navitia imports are done as a strong influence
 #          on the resulting naming of tasks, wich can break integration tests
+
+import sys
+
 from env.platforms import *
 from tasks import *
 from custom_tasks import *
 
-# If we want to narrow the list of public task, we can do it with the __all__
-#__all__ = ['upgrade_all', 'env']
+# log fabric command line at start of fabric
+fab_comm = "Start Fabric command: <fab {}>".format(' '.join(sys.argv[1:]))
+print('\n' + fab_comm)
+print('=' * min(150, len(fab_comm)) + '\n')

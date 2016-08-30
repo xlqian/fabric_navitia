@@ -29,12 +29,13 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 
-from fabric.api import env
-from fabric.decorators import task
-from fabric.colors import yellow
+from importlib import import_module
 import re
 import os
-from importlib import import_module
+
+from fabric.api import env
+from fabric.colors import yellow
+from fabric.decorators import task
 from fabric.operations import run
 
 env.distrib = 'ubuntu14.04'

@@ -200,4 +200,4 @@ fab_list = [
 def test_fab_list():
     with cd('..'):
         cmd = Command('fab --list')
-        assert fab_list == cmd.stdout_column(column=0, start=2)
+        assert fab_list == cmd.stdout_column(column=0, start=6)
