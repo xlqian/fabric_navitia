@@ -164,6 +164,8 @@ env.standalone = True
 env.use_load_balancer = False
 # some envronment use nfsv4 which does not allow chmod
 env.use_nfs4 = False
+# show diff when uploading a configuration file
+env.show_diff_when_upload = 'diff'
 
 # brokker == brokk == rabbitmq
 # used by tyr, kraken, ...

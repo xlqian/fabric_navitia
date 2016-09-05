@@ -5,7 +5,7 @@ from ..utils import filter_column, python_requirements_compare
 from ..test_common import skipifdev
 
 
-@skipifdev
+# @skipifdev
 def test_update_tyr_config_file(distributed_undeployed):
     platform, fabric = distributed_undeployed
     # create empty directory for task under test
@@ -15,10 +15,18 @@ def test_update_tyr_config_file(distributed_undeployed):
     assert stderr == ''
     # check fabric tasks execution count
     assert stdout.count("Executing task 'update_tyr_config_file'") == 2
-    # check existence of directories and files created by the task under test
-    assert platform.path_exists('/srv/tyr')
+    # check existence of files created by the task under test
     assert platform.path_exists('/srv/tyr/settings.py')
     assert platform.path_exists('/srv/tyr/settings.wsgi')
+
+    env = fabric.get_object('env')
+    env.tyr_broker_username = 'toto'
+    value, exception, stdout, stderr = fabric.execute_forked('update_tyr_config_file')
+    assert exception is None
+    assert stderr.count("Warning: run() received nonzero return code 1 while executing "
+                        "'diff /srv/tyr/settings.py /srv/tyr/settings.py.temp'") == 2
+    assert stdout.count("> CELERY_BROKER_URL = 'amqp://toto:guest@localhost:5672//'") == 2
+    assert stdout.count("< CELERY_BROKER_URL = 'amqp://guest:guest@localhost:5672//'") == 2
 
 
 @skipifdev
@@ -100,7 +108,7 @@ def test_setup_tyr_master(distributed_undeployed):
     assert platform.path_exists('/etc/init.d/tyr_beat', 'host2', negate=True)
 
 
-# @skipifdev
+@skipifdev
 def test_upgrade_ed_packages(distributed_undeployed):
     platform, fabric = distributed_undeployed
     fabric.execute('upgrade_ed_packages')

@@ -64,6 +64,7 @@ def deploy_from_scratch(kraken_wait='serial'):
     This task can also be called on a already configured environment, it should only update all
     :param kraken_wait: 'serial' or 'parallel'
     """
+    env.show_diff_when_upload = ''
     execute(setup)
     execute(update_all_instances, kraken_wait=kraken_wait)
     execute(upgrade_all)

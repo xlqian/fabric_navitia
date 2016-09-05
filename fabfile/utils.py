@@ -143,7 +143,7 @@ def require_directories(dirs, is_on_nfs4=False, **kwargs):
             del kwargs['group']
     require.files.directories(dirs, **kwargs)
 
-    
+
 def _upload_template(filename, destination, context=None, chown=True, user='www-data', **kwargs):
     kwargs['use_jinja'] = True
     kwargs['template_dir'] = os.path.join(os.path.dirname(os.path.realpath(__file__)),
@@ -154,7 +154,15 @@ def _upload_template(filename, destination, context=None, chown=True, user='www-
     kwargs['user'] = user
     kwargs['use_sudo'] = True
     kwargs['backup'] = env.backup_conf_files
-    upload_template(filename, destination, **kwargs)
+    if env.show_diff_when_upload and exists(destination):
+        destination_temp = destination + '.temp'
+        upload_template(filename, destination_temp, **kwargs)
+        with warn_only():
+            run('{} {} {}'.format(env.show_diff_when_upload, destination, destination_temp))
+        run('rm {}'.format(destination))
+        run('mv {} {}'.format(destination_temp, destination))
+    else:
+        upload_template(filename, destination, **kwargs)
 
 
 def get_psql_version():
