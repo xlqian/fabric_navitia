@@ -31,12 +31,12 @@
 
 import StringIO
 import ConfigParser
-import os
 from io import BytesIO
+import os
 from retrying import Retrying, RetryError
 import time
 
-from fabric.api import execute, env, task
+from fabric.api import execute, env, task, abort
 from fabric.colors import red, blue, green, yellow
 from fabric.context_managers import settings, warn_only, cd, shell_env
 from fabric.contrib.files import exists
@@ -51,7 +51,8 @@ from fabfile.component import db
 from fabfile.utils import (_install_packages, _upload_template, update_init, Parallel,
                            start_or_stop_with_delay, supervision_downtime, time_that,
                            get_real_instance, require_directories, require_directory,
-                           run_once_per_host, execute_flat, idempotent_symlink)
+                           run_once_per_host, execute_flat, idempotent_symlink, collapse_op,
+                           get_processes, watchdog_manager)
 
 
 @task
@@ -438,18 +439,40 @@ def launch_rebinarization_upgrade(pilot_supervision=True, pilot_tyr_beat=True, i
                 if i_name in env.excluded_instances:
                     print(blue("NOTICE: i_name {} has been excluded, skipping it".format(i_name)))
                     instances2process.remove(i_name)
-                else:
-                    if launch_rebinarization(i_name, True):
-                        # do not remove if bina failed
-                        instances2process.remove(i_name)
+                elif launch_rebinarization(i_name, True):
+                    # remove instance only if bina succeeds
+                    instances2process.remove(i_name)
             # print instances not yet binarized, this allows to easily resume the binarization
             # process in case of crash or freeze (use include:x,y,z,....)
             # see http://jira.canaltp.fr/browse/DEVOP-408
             print(blue("Instances left: {}".format(','.join(instances2process))))
 
-        # run the bina in parallel (if you want sequential, set env.nb_thread_for_bina = 1)
-        with Parallel(env.nb_thread_for_bina) as pool:
-            pool.map(binarize_instance, instances2process)
+        def bina_watchdog():
+            frozen_bina_count = 0
+            step_count = 0
+            while run_watchdog:
+                time.sleep(10)
+                if step_count >= 6:   # every minute
+                    step_count = 0
+                else:
+                    step_count += 1
+                    continue
+                if get_role_processes():
+                    frozen_bina_count = 0
+                else:
+                    frozen_bina_count += 1
+                    if frozen_bina_count >= 3:
+                        print(red("\n  ERROR: binarisation process is frozen."))
+                        if raw_input(yellow("Aborting ? (y/N)")).lower()[0] == 'y':
+                            abort(red("aborted"))
+                        break
+
+        run_watchdog = True
+        with watchdog_manager(bina_watchdog):
+            # run the bina in parallel (if you want sequential, set env.nb_thread_for_bina = 1)
+            with Parallel(env.nb_thread_for_bina) as pool:
+                pool.map(binarize_instance, instances2process)
+            run_watchdog = False
         return tuple(instances2process)
     finally:
         if pilot_tyr_beat:
@@ -475,6 +498,25 @@ def launch_rebinarization(instance, use_temp=False):
             return True
         except:
             print(red("ERROR: failed binarization on {}".format(instance)))
+
+
+@task
+def get_role_processes(role='tyr', procs='BINA'):
+    """ Get running processes on a role (tyr, eng, ws, ...)
+    :param role: string = name of the role
+    :param procs: string of column-separated processes
+    :return: the set of processes found on the hosts of the role
+    """
+    if procs == 'BINA':
+        # default = binarisation processes
+        procs = ('ed2', '2ed')
+    elif procs:
+        procs = procs.split(':')
+    else:
+        procs = None
+    ret = set(collapse_op(env.roledefs[role], op='extend')(get_processes)(filter=procs))
+    print(ret)
+    return ret
 
 
 @task

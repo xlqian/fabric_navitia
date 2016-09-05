@@ -109,6 +109,7 @@ fab_list = [
  'component.tyr.create_tyr_instance',
  'component.tyr.deploy_default_synonyms',
  'component.tyr.get_instance_id',
+ 'component.tyr.get_role_processes',
  'component.tyr.get_tyr_config',
  'component.tyr.get_tyr_last_done_job_id',
  'component.tyr.get_tyr_last_pt_data_set',

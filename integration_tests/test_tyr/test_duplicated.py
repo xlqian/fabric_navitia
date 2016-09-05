@@ -90,7 +90,7 @@ def test_launch_rebinarization(duplicated):
     assert platform.path_exists('/srv/ed/data/us-wa/temp/data.nav.lz4', 'host1')
 
 
-# @skipifdev
+@skipifdev
 def test_normalize_data_files(duplicated):
     platform, fabric = duplicated
     for instance in instances_names:
@@ -104,3 +104,20 @@ def test_normalize_data_files(duplicated):
         path = '/srv/ed/data/{}/data.nav.lz4'.format(instance)
         assert get_path_attribute(platform, path, 'user', 'host1')[0] == 'www-data'
         assert get_path_attribute(platform, path, 'rights', 'host1')[0] == '-rw-r--r--'
+
+
+# @skipifdev
+def test_launch_rebinarization_upgrade(duplicated):
+    platform, fabric = duplicated
+    platform.scp(os.path.join(ROOTDIR, 'data.zip'), '/srv/ed/data/us-wa/', 'host1')
+    # wait first binarization by tyr (automatic)
+    time.sleep(30)
+    assert platform.path_exists('/srv/ed/data/us-wa/data.zip', 'host1', negate=True)
+    assert platform.path_exists('/srv/ed/data/us-wa/data.nav.lz4', 'host1')
+    platform.docker_exec('rm -f /srv/ed/data/us-wa/data.nav.lz4', 'host1')
+
+    value, exception, stdout, stderr = fabric.execute_forked('component.tyr.launch_rebinarization_upgrade',
+                                                             pilot_supervision=False, pilot_tyr_beat=False,
+                                                             instances=('us-wa',))
+    assert exception is None
+    assert stderr == ''
