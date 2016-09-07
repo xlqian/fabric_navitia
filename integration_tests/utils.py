@@ -47,7 +47,7 @@ def filter_column(text, column, sep=None, **kwargs):
         op = '__eq__'
     elif op in ('contains', 'includes'):
         op = '__contains__'
-    elif not op in ('startswith', 'endswith'):
+    elif op not in ('startswith', 'endswith'):
         raise ValueError("Unknown filter_column operator: {}".format(op))
     if isinstance(text, basestring):
         text = text.splitlines()

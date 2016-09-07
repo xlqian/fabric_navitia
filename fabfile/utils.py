@@ -39,6 +39,8 @@ from pipes import quote
 import random
 from retrying import Retrying, RetryError
 import string
+from threading import Thread
+from cStringIO import StringIO
 import time
 import datetime
 import semver
@@ -653,3 +655,76 @@ def supervision_downtime(step):
                     env.supervision_handler.stop_supervision(host, service, step_data['downtime'])
             else:
                 env.supervision_handler.stop_supervision(host, step_data['service'], step_data['downtime'])
+
+
+def collapse_op(hosts, op=dict):
+    """ Decorator to automatically execute a function on a specific host or multiple hosts,
+        collecting return values in a dict or a list, or just testing them.
+        The decorated function must have its first argument a host specifier (string).
+        Usage: if the wrapper function is called with host='host' parameter, the wrapped
+        function will be called once with this host.
+        If the wrapper function is called with no host= parameter, the wrapped function will
+        be called once per host of the platform. The wrapped function will then return a
+        value depending of the op parameter.
+        :param op:
+        - dict:  a dictionary {host: value, ...} of the return values for each host.
+        - extend or append: a concatenated list of return values, use 'extend' if
+          the wrapped function returns a sequence, otherwise use 'append'.
+        - and: a boolean, execution on multiple hosts stops as soon as the wrapped
+          function returns False (good to check path or process exists on all hosts).
+        - any: a boolean, execution on multiple hosts stops as soon as the wrapped
+          function returns True (good to check missing path or process on all hosts).
+    """
+    op_values = ('dict', 'extend', 'append', 'and', 'any')
+    def wrapper(meth):
+        def wrapped(*args, **kwargs):
+            host = kwargs.pop('host', None)
+            if host:
+                return meth(host, *args, **kwargs)
+            elif op == 'dict':
+                return {host: meth(host, *args, **kwargs) for host in hosts}
+            elif op in ('extend', 'append'):
+                ret = []
+                for host in hosts:
+                    getattr(ret, op)(meth(host, *args, **kwargs))
+                return ret
+            elif op == 'and':
+                return all(meth(host, *args, **kwargs) for host in hosts)
+            elif op == 'any':
+                return any(meth(host, *args, **kwargs) for host in hosts)
+            else:
+                raise ValueError("Parameter op must be one of {}".format(op_values))
+        return wrapped
+    return wrapper
+
+
+def run_command_on_host(host, cmd):
+    with settings(host_string=host):
+        stdout = StringIO()
+        run(cmd, stdout=stdout)
+        return stdout.getvalue().strip()
+
+
+def get_processes(host, cmd="ps -A", filter=None):
+    if filter:
+        if isinstance(filter, basestring):
+            cmd += " | grep '{}'".format(filter)
+        else:
+            cmd += " | grep -E '{}'".format('|'.join(filter))
+    with settings(warn_only=True):
+        ret = []
+        for line in run_command_on_host(host, cmd).split('\n'):
+            line = line.strip()
+            if line:
+                line = line.split()
+                if len(line) > 2:
+                    ret.append(line[-1])
+        return ret
+
+
+@contextmanager
+def watchdog_manager(target, *args, **kwargs):
+    th = Thread(target=target, *args, **kwargs)
+    th.start()
+    yield th
+    th.join()
