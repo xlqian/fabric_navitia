@@ -38,7 +38,8 @@ class Instance:
     def __init__(self, name, db_password, db_local='fr_FR.UTF8',
                  is_free=False, chaos_database=None, rt_topics=[],
                  zmq_socket_port=None, db_name=None, db_user=None, source_dir=None,
-                 enable_realtime=False, realtime_proxies=[], cache_raptor=None, zmq_server=None):
+                 enable_realtime=False, realtime_proxies=[], cache_raptor=None, zmq_server=None,
+                 kraken_threads=None):
         self.name = name
         self.db_password = db_password
         self.is_free = is_free
@@ -74,7 +75,10 @@ class Instance:
             abort('Instance configuration must include a zmq_socket_port, aborting '
                   '(see fabfile.env.platforms for some instructions)')
 
-        self.kraken_nb_threads = env.KRAKEN_NB_THREADS
+        if not kraken_threads:
+            self.kraken_nb_threads = env.KRAKEN_NB_THREADS
+        else:
+            self.kraken_nb_threads = kraken_threads
         self.db_local = db_local
         self.chaos_database = chaos_database
         self.rt_topics = rt_topics
