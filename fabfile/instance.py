@@ -38,7 +38,7 @@ class Instance:
     def __init__(self, name, db_password, db_local='fr_FR.UTF8',
                  is_free=False, chaos_database=None, rt_topics=[],
                  zmq_socket_port=None, db_name=None, db_user=None, source_dir=None,
-                 enable_realtime=False, realtime_proxies=[], cache_raptor=None, zmq_server=None,
+                 enable_realtime=False, realtime_proxies=[], street_network=None, cache_raptor=None, zmq_server=None,
                  kraken_threads=None):
         self.name = name
         self.db_password = db_password
@@ -90,6 +90,7 @@ class Instance:
         self.enable_realtime = enable_realtime
         self.realtime_proxies = realtime_proxies
         self.cache_raptor = cache_raptor
+        self.street_network = street_network
 
     @property
     def kraken_engines_url(self):
