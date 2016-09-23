@@ -29,6 +29,7 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 
+from collections import defaultdict
 from importlib import import_module
 import re
 import os
@@ -385,6 +386,10 @@ env.dry_run = False
 #number of parallele binarization
 env.nb_thread_for_bina = 1
 env.acceptable_bina_fail_rate = 0.08
+# Dictionary of thread pools  {integer: list of instances, ...}
+# where integer is usually 1, 2 or 4 and represents the level of parallelism
+# during the binarisation process of the instances in the corresponding list
+env.bina_thread_pools = defaultdict(list)
 
 #instances configurations
 env.instances = {}

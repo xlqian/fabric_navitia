@@ -39,7 +39,7 @@ class Instance:
                  is_free=False, chaos_database=None, rt_topics=[],
                  zmq_socket_port=None, db_name=None, db_user=None, source_dir=None,
                  enable_realtime=False, realtime_proxies=[], street_network=None, cache_raptor=None, zmq_server=None,
-                 kraken_threads=None):
+                 kraken_threads=None, bina_threads=None):
         self.name = name
         self.db_password = db_password
         self.is_free = is_free
@@ -79,6 +79,9 @@ class Instance:
             self.kraken_nb_threads = env.KRAKEN_NB_THREADS
         else:
             self.kraken_nb_threads = kraken_threads
+        # instance is added in a binarisation thread pool:
+        # either specified bina_threads pool if given, or default env.nb_thread_for_bina
+        env.bina_thread_pools[bina_threads or env.nb_thread_for_bina].append(name)
         self.db_local = db_local
         self.chaos_database = chaos_database
         self.rt_topics = rt_topics
