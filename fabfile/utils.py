@@ -574,22 +574,27 @@ def login_nagios(self):
         "thruk_conf=; thruk_auth=; thruk_message=; thruk_test=%2A%2A%2A%2A; _ga={}' '{}' "
         "--data 'referer=&login={}&password={}&submit=login'"
         .format(self.thruk_backends[0], self.thruk_backends[1], self.thruk_backends[2], self.thruk_backends[3],
-                self.ga, self.url + 'login.cgi', self.user, self.pwd))
+                self.ga, self.url + 'cgi-bin/login.cgi', self.user, self.pwd))
+        parse_response = run("curl --cookie /tmp/thruk.cookie '{}'".format(self.url))
+        for line in parse_response.split('\n'):
+            if line.startswith('var user_token'):
+                token = line.split('=')[1].strip()
+                return token[1:-2]
 
 
 @task
-def stop_supervision(self, message, data, start_str, end_str, ctp_host, service):
+def stop_supervision(self, message, data, start_str, end_str, ctp_host, service, token):
             run("curl --cookie /tmp/thruk.cookie '{}'  --data 'referer={}&token={}&cmd_typ={}&cmd_mod={}&host={}"
                 "&service={}&com_data={}&trigger={}&start_time={}&end_time={}&fixed={}&hours={}&minutes={}&backend={}"
                 "&backend.orig={}&btnSubmit={}'"
-                .format(self.url + 'cmd.cgi', message, self.token, data['cmd_typ'], data['cmd_mod'], ctp_host, service,
+                .format(self.url + 'cgi-bin/cmd.cgi', message, token, data['cmd_typ'], data['cmd_mod'], ctp_host, service,
                         message, data['trigger'], start_str, end_str, data['fixed'], data['hours'], data['minutes'],
                         self.backend, self.backend, data['btnSubmit']))
 
 
 class ThrukSupervisionHandler(SupervisionHandler):
 
-    def __init__(self, thruk_backends, ga, url, user, pwd, backend, host_support, token):
+    def __init__(self, thruk_backends, ga, url, user, pwd, backend, host_support):
         self.thruk_backends = thruk_backends
         self.ga = ga
         self.url = url
@@ -597,7 +602,6 @@ class ThrukSupervisionHandler(SupervisionHandler):
         self.pwd = pwd
         self.backend = backend
         self.host_support = host_support
-        self.token = token
 
     def format_host(self, host):
         """the Thruk supervisor only wants a short host name"""
@@ -627,8 +631,8 @@ class ThrukSupervisionHandler(SupervisionHandler):
 
         with settings(host_string=env.default_ssh_user + '@' + self.host_support):
             # need to keep login in cookie before to deactivation the supervision
-            env.supervision_handler.authentification()
-            stop_supervision(self, message, data, start_str, end_str, ctp_host, service)
+            token = env.supervision_handler.authentification()
+            stop_supervision(self, message, data, start_str, end_str, ctp_host, service, token)
 
     def start_supervision(self, host, service):
         """
