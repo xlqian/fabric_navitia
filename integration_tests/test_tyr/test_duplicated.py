@@ -106,18 +106,23 @@ def test_normalize_data_files(duplicated):
         assert get_path_attribute(platform, path, 'rights', 'host1')[0] == '-rw-r--r--'
 
 
-# @skipifdev
 def test_launch_rebinarization_upgrade(duplicated):
     platform, fabric = duplicated
-    platform.scp(os.path.join(ROOTDIR, 'data.zip'), '/srv/ed/data/us-wa/', 'host1')
+    data_zip = os.path.join(ROOTDIR, 'data.zip')
+    instances = tuple(instances_names)
+    for inst in instances:
+        platform.scp(data_zip, '/srv/ed/data/{}/'.format(inst), 'host1')
     # wait first binarization by tyr (automatic)
-    time.sleep(30)
-    assert platform.path_exists('/srv/ed/data/us-wa/data.zip', 'host1', negate=True)
-    assert platform.path_exists('/srv/ed/data/us-wa/data.nav.lz4', 'host1')
-    platform.docker_exec('rm -f /srv/ed/data/us-wa/data.nav.lz4', 'host1')
+    time.sleep(60)
+    for inst in instances:
+        assert platform.path_exists('/srv/ed/data/{}/data.zip'.format(inst), 'host1', negate=True)
+        assert platform.path_exists('/srv/ed/data/{}/backup'.format(inst), 'host1')
+        assert platform.path_exists('/srv/ed/data/{}/data.nav.lz4'.format(inst), 'host1')
 
     value, exception, stdout, stderr = fabric.execute_forked('component.tyr.launch_rebinarization_upgrade',
                                                              pilot_supervision=False, pilot_tyr_beat=False,
-                                                             instances=('us-wa',))
+                                                             instances=instances)
     assert exception is None
     assert stderr == ''
+    for inst in instances:
+        assert platform.path_exists('/srv/ed/data/{}/temp/data.nav.lz4'.format(inst), 'host1')

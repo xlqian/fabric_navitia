@@ -22,9 +22,9 @@ def duplicated(host1, host2):
     env.zmq_server = 'localhost'
     env.rabbitmq_host = 'localhost'
 
-    add_instance("fr-nw", "passwd", zmq_socket_port=30006, is_free=True, zmq_server=(host1, host2), bina_threads=2)
+    add_instance("fr-nw", "passwd", zmq_socket_port=30006, is_free=True, zmq_server=(host1, host2))
     add_instance("fr-ne-amiens", "passwd*", zmq_socket_port=30019, zmq_server=(host1, host2), bina_threads=2)
-    add_instance("fr-idf", "passwd", zmq_socket_port=30002, is_free=True, zmq_server=(host1, host2), bina_threads=2)
+    add_instance("fr-idf", "passwd", zmq_socket_port=30002, is_free=True, zmq_server=(host1, host2))
     add_instance("fr-cen", "passwd", zmq_socket_port=30000, zmq_server=(host1, host2))
     add_instance("us-wa", "passwd", zmq_socket_port=30023, is_free=True, zmq_server=(host1, host2), bina_threads=2)
     add_instance("fr-npdc", "passwd", zmq_socket_port=30018, zmq_server=(host1, host2))

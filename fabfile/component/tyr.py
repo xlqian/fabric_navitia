@@ -432,12 +432,9 @@ def launch_rebinarization_upgrade(pilot_supervision=True, pilot_tyr_beat=True, i
             instances2process = set(instances)
 
         def binarize_instance(i_name):
-            with time_that(blue("data loaded for " + i_name + " in {elapsed}")):
-                print(blue("loading data for {}".format(i_name)))
-                update_ed_db(i_name)
-
+            with time_that(blue("Binarization of " + i_name + " completed in {elapsed}")):
                 if i_name in env.excluded_instances:
-                    print(blue("NOTICE: i_name {} has been excluded, skipping it".format(i_name)))
+                    print(blue("NOTICE: instance {} has been excluded, skipping it".format(i_name)))
                     instances2process.remove(i_name)
                 elif launch_rebinarization(i_name, True):
                     # remove instance only if bina succeeds
@@ -467,6 +464,8 @@ def launch_rebinarization_upgrade(pilot_supervision=True, pilot_tyr_beat=True, i
                             abort(red("aborted"))
                         break
 
+        for instance in instances2process:
+            update_ed_db(instance)
         run_watchdog = True
         with watchdog_manager(bina_watchdog):
             thread_pools = list(env.bina_thread_pools)
