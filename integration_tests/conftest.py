@@ -12,8 +12,8 @@ DEFAULT_DEBIAN = 'debian8'
 def pytest_addoption(parser):
     parser.addoption('--dev', action='store_true',
                      help="run only non decorated tests (default: run all tests")
-    parser.addoption('--keep', action='store_true',
-                     help="run in debug mode (and keep the containers up)")
+    parser.addoption('--keep-running', action='store_true',
+                     help="keep the containers up for debug")
     parser.addoption('--wait', action='store', default=1,
                      help="specify sleep time for processes start before testing (default: 0")
     parser.addoption('--reset', action='store_true',
@@ -35,7 +35,7 @@ def setup_platform(platform, distri):
 
 @pytest.yield_fixture(scope='function')
 def single_undeployed():
-    debug = pytest.config.getoption('--keep')
+    debug = pytest.config.getoption('--keep-running')
     wait_timeout = int(pytest.config.getoption('--wait'))
     distri = pytest.config.getoption('--distri')
     platform = PlatformManager('single', {'host': distri}, timeout=wait_timeout)
@@ -49,7 +49,7 @@ def single_undeployed():
 
 @pytest.yield_fixture(scope='function')
 def distributed_undeployed():
-    debug = pytest.config.getoption('--keep')
+    debug = pytest.config.getoption('--keep-running')
     wait_timeout = int(pytest.config.getoption('--wait'))
     distri = pytest.config.getoption('--distri')
     platform = PlatformManager('distributed', {'host1': distri, 'host2': distri}, timeout=wait_timeout)
@@ -63,7 +63,7 @@ def distributed_undeployed():
 
 @pytest.yield_fixture(scope='function')
 def duplicated_undeployed():
-    debug = pytest.config.getoption('--keep')
+    debug = pytest.config.getoption('--keep-running')
     wait_timeout = int(pytest.config.getoption('--wait'))
     distri = pytest.config.getoption('--distri')
     platform = PlatformManager('duplicated', {'host1': distri, 'host2': distri}, timeout=wait_timeout)
@@ -86,7 +86,7 @@ def setup_platform_deployed(platform, distri):
 
 @pytest.yield_fixture(scope='function')
 def single():
-    debug = pytest.config.getoption('--keep')
+    debug = pytest.config.getoption('--keep-running')
     wait_timeout = int(pytest.config.getoption('--wait'))
     distri = pytest.config.getoption('--distri')
     platform = PlatformManager('single', {'host': distri}, timeout=wait_timeout)
@@ -102,7 +102,7 @@ def single():
 
 @pytest.yield_fixture(scope='function')
 def distributed():
-    debug = pytest.config.getoption('--keep')
+    debug = pytest.config.getoption('--keep-running')
     wait_timeout = int(pytest.config.getoption('--wait'))
     distri = pytest.config.getoption('--distri')
     platform = PlatformManager('distributed', {'host1': distri, 'host2': distri}, timeout=wait_timeout)
@@ -123,7 +123,7 @@ def distributed():
 
 @pytest.yield_fixture(scope='function')
 def duplicated():
-    debug = pytest.config.getoption('--keep')
+    debug = pytest.config.getoption('--keep-running')
     wait_timeout = int(pytest.config.getoption('--wait'))
     distri = pytest.config.getoption('--distri')
     platform = PlatformManager('duplicated', {'host1': distri, 'host2': distri}, timeout=wait_timeout)

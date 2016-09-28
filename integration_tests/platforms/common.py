@@ -37,6 +37,8 @@ def env_common(tyr, ed, kraken, jormun):
     env.tyr_source_dir_template = '/srv/ed/data/{instance}'
     env.tyr_base_destination_dir = '/srv/ed/data/'
 
+    env.KRAKEN_RESTART_DELAY = 15
+    env.nb_thread_for_bina = 4
     # env.jormungandr_url = jormun
 
     env.jormungandr_url_prefix = '/navitia'
