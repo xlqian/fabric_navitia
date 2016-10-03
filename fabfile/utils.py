@@ -613,7 +613,7 @@ class ThrukSupervisionHandler(SupervisionHandler):
         TODO
         Use Requests library
         """
-        login_nagios(self)
+        return login_nagios(self)
 
     def stop_supervision(self, host, service, duration):
         if not duration:
