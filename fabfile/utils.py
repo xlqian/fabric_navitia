@@ -50,7 +50,7 @@ import re
 import requests
 from requests.auth import HTTPBasicAuth
 
-from fabric.api import env, task, roles, run, put, sudo, warn_only, execute
+from fabric.api import env, task, roles, run, put, sudo, warn_only, execute, hide
 from fabric.colors import green, yellow, red
 from fabric.context_managers import cd
 from fabric.contrib.files import exists
@@ -575,7 +575,8 @@ def login_nagios(self):
         "--data 'referer=&login={}&password={}&submit=login'"
         .format(self.thruk_backends[0], self.thruk_backends[1], self.thruk_backends[2], self.thruk_backends[3],
                 self.ga, self.url + 'cgi-bin/login.cgi', self.user, self.pwd))
-        parse_response = run("curl --cookie /tmp/thruk.cookie '{}'".format(self.url))
+        with hide('output'), settings(warn_only=True):
+            parse_response = run("curl --cookie /tmp/thruk.cookie '{}'".format(self.url))
         for line in parse_response.split('\n'):
             if line.startswith('var user_token'):
                 token = line.split('=')[1].strip()
