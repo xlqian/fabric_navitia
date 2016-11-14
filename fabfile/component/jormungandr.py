@@ -105,6 +105,7 @@ def upgrade_ws_packages():
     ]
     if env.distrib in ('ubuntu14.04', 'debian8'):
         packages.append('libzmq3-dev')
+        packages.append('libgeos-3.4.2')
     elif env.distrib == 'debian7':
         packages.append('libzmq-dev')
 
