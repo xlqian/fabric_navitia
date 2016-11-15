@@ -71,7 +71,7 @@ def setup_kraken():
 @task
 @roles('eng')
 def upgrade_engine_packages():
-    packages = ['logrotate', 'python2.7', 'gcc', 'python-dev']
+    packages = ['logrotate', 'python2.7', 'gcc', 'python-dev', 'apache2', 'libapache2-mod-wsgi']
     if env.distrib in ('ubuntu14.04', 'debian8'):
         packages.append('libzmq3-dev')
     elif env.distrib == 'debian7':
