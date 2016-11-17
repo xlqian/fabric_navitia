@@ -36,7 +36,7 @@ import os
 from retrying import Retrying, RetryError
 import time
 
-from fabric.api import execute, env, task, abort
+from fabric.api import execute, env, task, abort, hide
 from fabric.colors import red, blue, green, yellow
 from fabric.context_managers import settings, warn_only, cd, shell_env
 from fabric.contrib.files import exists
@@ -727,17 +727,20 @@ def remove_ed_instance(instance):
 
 
 @task
-@roles('tyr')
+@roles('tyr_master')
 def deploy_default_synonyms(instance):
     """
     add default synonyms to instance
     this should be done only on the first deployement
     """
     if not instance.first_deploy:
-        return
+        with hide('output'), settings(host_string=env.roledefs['db'][0]):
+            default_synonyms = run('sudo -i -u postgres psql -A -t --dbname={} -c "select * from georef.synonym;"'.format(instance.db_name))
+            if default_synonyms:
+                return
     default_synonyms_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                        os.path.pardir, os.path.pardir,
-                                        'static_files', 'ed', 'default_synonyms.txt')
+                                         os.path.pardir, os.path.pardir,
+                                         'static_files', 'ed', 'default_synonyms.txt')
     print blue("copy default synonyms for {}".format(instance.name))
 
     put(default_synonyms_file, instance.source_dir, use_sudo=True)
