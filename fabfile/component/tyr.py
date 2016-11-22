@@ -468,12 +468,9 @@ def launch_rebinarization_upgrade(pilot_supervision=True, pilot_tyr_beat=True, i
             update_ed_db(instance)
         run_watchdog = True
         with watchdog_manager(bina_watchdog):
-            thread_pools = list(env.bina_thread_pools)
-            # sort thread pools in order to binarize instances with high parallelism first
-            thread_pools.sort(reverse=True)
-            for nb_thread in thread_pools:
-                with Parallel(nb_thread) as pool:
-                    pool.map(binarize_instance, instances2process.intersection(env.bina_thread_pools[nb_thread]))
+            # run the bina in parallel (if you want sequential, set env.nb_thread_for_bina = 1)
+            with Parallel(env.nb_thread_for_bina) as pool:
+                pool.map(binarize_instance, instances2process)
             run_watchdog = False
         return tuple(instances2process)
     finally:
