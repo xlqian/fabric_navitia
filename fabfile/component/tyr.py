@@ -170,6 +170,7 @@ def upgrade_tyr_packages():
     else:
         _upload_template('tyr/tyr_worker.jinja', env.service_name('tyr_worker'),
                          user='root', mode='755', context={'env': env})
+    restart_tyr_worker()
     update_init(host='tyr')
 
 
@@ -181,7 +182,7 @@ def upgrade_db_tyr(pilot_tyr_beat=True):
         run('python manage.py db upgrade')
     if pilot_tyr_beat:
         require.service.start('tyr_beat')
-    restart_tyr_worker()
+    require.service.start('tyr_worker')
 
 
 @task
