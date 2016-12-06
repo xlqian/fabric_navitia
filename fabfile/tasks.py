@@ -251,7 +251,7 @@ def compare_version_candidate_installed(host_name='eng'):
 
 
 @task
-def upgrade_tyr(up_confs=False, pilot_tyr_beat=True):
+def upgrade_tyr(up_confs=False, pilot_tyr_beat=True, reload=True):
     """Upgrade all ed instances db, launch bina"""
     if pilot_tyr_beat:
         execute(tyr.stop_tyr_beat)
@@ -262,6 +262,8 @@ def upgrade_tyr(up_confs=False, pilot_tyr_beat=True):
     if up_confs:
         tyr.update_tyr_confs()
     execute(tyr.upgrade_cities_db)
+    if reload:
+        execute(tyr.reload_tyr_safe_all)
     if pilot_tyr_beat:
         restart_tyr(pilot_tyr_beat)
 
