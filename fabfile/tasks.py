@@ -137,7 +137,7 @@ def upgrade_all(up_tyr=True, up_confs=True, check_version=True, send_mail='no',
         execute(compare_version_candidate_installed)
     execute(kraken.swap_all_data_nav)
 
-    if env.use_load_balancer:
+    if env.use_load_balancer and env.name == 'prod':
         # Upgrade kraken/jormun on first hosts set
         env.roledefs['eng'] = env.eng_hosts_1
         env.roledefs['ws'] = env.ws_hosts_1
