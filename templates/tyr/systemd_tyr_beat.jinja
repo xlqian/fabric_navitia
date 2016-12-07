@@ -7,10 +7,11 @@ Description=start celery beat for tyr
 After=network.target
 
 [Service]
-Type=forking
+Type=simple
 PIDFile=/tmp/tyr_beat.pid
 Environment=TYR_CONFIG_FILE={{env.tyr_settings_file}}
-ExecStart=/sbin/start-stop-daemon --start --chdir /tmp --exec /usr/local/bin/celery beat -- --uid={{env.TYR_USER}} --gid={{env.TYR_USER}} --pidfile=/tmp/tyr_beat.pid --app=tyr.tasks --detach
+WorkingDirectory=/tmp
+ExecStart=/usr/local/bin/celery beat --uid={{env.TYR_USER}} --gid={{env.TYR_USER}} --pidfile=/tmp/tyr_beat.pid --app=tyr.tasks
 ExecReload=/bin/kill -HUP $MAINPID
 ExecStop=/bin/kill -s TERM $MAINPID
 
