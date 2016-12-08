@@ -137,54 +137,48 @@ def upgrade_all(up_tyr=True, up_confs=True, check_version=True, send_mail='no',
         execute(compare_version_candidate_installed)
     execute(kraken.swap_all_data_nav)
 
-    if env.use_load_balancer and env.name == 'prod':
-        # Upgrade kraken/jormun on first hosts set
-        env.roledefs['eng'] = env.eng_hosts_1
-        env.roledefs['ws'] = env.ws_hosts_1
-        if manual_lb:
-            raw_input(yellow("Please disable ENG1,3/WS1,5,6 and enable ENG2,4/WS2-4"))
-        else:
-            execute(switch_to_first_phase, env.eng_hosts_1, env.ws_hosts_1, env.ws_hosts_2)
-        time_dict.register_start('kraken')
-        execute(upgrade_kraken, wait=env.KRAKEN_RESTART_SCHEME, up_confs=up_confs, supervision=True)
-        if check_dead:
-            execute(kraken.check_dead_instances)
-        execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
+    # Upgrade kraken/jormun on first hosts set
+    env.roledefs['eng'] = env.eng_hosts_1
+    env.roledefs['ws'] = env.ws_hosts_1
+    if manual_lb:
+        raw_input(yellow("Please disable ENG1,3/WS7-9 and enable ENG2,4/WS10-12"))
+    else:
+        execute(switch_to_first_phase, env.eng_hosts_1, env.ws_hosts_1, env.ws_hosts_2)
+    execute(upgrade_kraken, wait=env.KRAKEN_RESTART_SCHEME, up_confs=up_confs, supervision=True)
+    if check_dead:
+        execute(kraken.check_dead_instances)
+    execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
 
-        # check first hosts set before upgrading the second one
-        for server in env.roledefs['ws']:
-            instance = random.choice(env.instances.values())
-            execute(jormungandr.test_jormungandr, get_host_addr(server), instance=instance.name)
+    # check first hosts set
+    for server in env.roledefs['ws']:
+        instance = random.choice(env.instances.values())
+        execute(jormungandr.test_jormungandr, get_host_addr(server), instance=instance.name)
 
+    if env.roledefs['eng'] and env.roledefs['ws']:
         # Upgrade kraken/jormun on remaining hosts
         env.roledefs['eng'] = env.eng_hosts_2
         env.roledefs['ws'] = env.ws_hosts_2
         if manual_lb:
-            raw_input(yellow("Please enable ENG1,3/WS1,5,6 and disable ENG2,4/WS2-4"))
+            raw_input(yellow("Please enable ENG1,3/WS7-9 and disable ENG2,4/WS10-12"))
         else:
             execute(switch_to_second_phase, env.eng_hosts_1, env.eng_hosts_2,
                     env.ws_hosts_1,  env.ws_hosts_2)
         execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
         if manual_lb:
-            raw_input(yellow("Please enable WS1-6"))
+            raw_input(yellow("Please enable WS7-12"))
         else:
             execute(switch_to_third_phase, env.ws_hosts_2)
         env.roledefs['ws'] = env.ws_hosts
         execute(upgrade_kraken, wait=env.KRAKEN_RESTART_SCHEME, up_confs=up_confs)
-        time_dict.register_end('kraken')
+
+        # check second hosts set
+        for server in env.roledefs['ws']:
+            instance = random.choice(env.instances.values())
+            execute(jormungandr.test_jormungandr, get_host_addr(server), instance=instance.name)
+
         if not manual_lb:
             execute(enable_all_nodes, env.eng_hosts, env.ws_hosts_1,  env.ws_hosts_2)
         env.roledefs['eng'] = env.eng_hosts
-    else:
-        time_dict.register_start('kraken')
-        execute(upgrade_kraken, wait=env.KRAKEN_RESTART_SCHEME, up_confs=up_confs, supervision=True)
-        time_dict.register_end('kraken')
-        execute(upgrade_jormungandr, up_confs=up_confs)
-
-    # check deployment OK
-    for server in env.roledefs['ws']:
-        instance = random.choice(env.instances.values())
-        execute(jormungandr.test_jormungandr, get_host_addr(server), instance=instance.name)
 
     # start tyr_beat even if up_tyr is False
     execute(tyr.start_tyr_beat)
@@ -196,7 +190,7 @@ def upgrade_all(up_tyr=True, up_confs=True, check_version=True, send_mail='no',
         broadcast_email('end', status)
 
     if env.use_load_balancer and manual_lb:
-        print(yellow("Please enable ENG1-4/WS1-4"))
+        print(yellow("Please enable ENG1-4/WS7-12"))
 
 
 @task

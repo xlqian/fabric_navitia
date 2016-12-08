@@ -691,7 +691,7 @@ def reload_tyr_safe(server, safe=True):
     with settings(host_string=server):
         if env.use_load_balancer and safe:
             load_balancer.disable_node(server)
-        sudo("service apache2 reload")
+        sudo("apache2ctl graceful")
         if env.use_load_balancer and safe:
             load_balancer.enable_node(server)
 
