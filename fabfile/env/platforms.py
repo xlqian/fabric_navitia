@@ -168,6 +168,9 @@ env.use_nfs4 = False
 # show diff when uploading a configuration file
 env.show_diff_when_upload = 'diff'
 
+# restart kraken
+env.restart_service_always = False
+
 # brokker == brokk == rabbitmq
 # used by tyr, kraken, ...
 # only overwritten on exploit and prod
