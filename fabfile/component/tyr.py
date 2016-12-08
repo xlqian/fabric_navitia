@@ -47,12 +47,12 @@ from fabtools import require, python, files
 # WARNING: the way fabric_navitia imports are done as a strong influence
 #          on the resulting naming of tasks, wich can break integration tests
 import fabfile.component as component
-from fabfile.component import db
+from fabfile.component import db, load_balancer
 from fabfile.utils import (_install_packages, _upload_template, update_init, Parallel,
                            start_or_stop_with_delay, supervision_downtime, time_that,
                            get_real_instance, require_directories, require_directory,
                            run_once_per_host, execute_flat, idempotent_symlink, collapse_op,
-                           get_processes, watchdog_manager)
+                           get_processes, get_bool_from_cli, watchdog_manager)
 
 
 @task
@@ -680,6 +680,30 @@ def create_tyr_instance(instance):
     if not env.standalone:
         #@TODO: change user for non standalone
         pass
+
+
+@task
+def reload_tyr_safe(server, safe=True):
+    """ Reload tyr on a specific server,
+        in a safe way if load balancers are available
+    """
+    safe = get_bool_from_cli(safe)
+    with settings(host_string=server):
+        if env.use_load_balancer and safe:
+            load_balancer.disable_node(server)
+        sudo("service apache2 reload")
+        if env.use_load_balancer and safe:
+            load_balancer.enable_node(server)
+
+
+@task
+def reload_tyr_safe_all(safe=True, reverse=False):
+    """ Reload tyr on all servers,
+        in a safe way if load balancers are available
+    """
+    safe = get_bool_from_cli(safe)
+    for server in (env.roledefs['tyr'][::-1] if reverse else env.roledefs['tyr']):
+        execute(reload_tyr_safe, server, safe)
 
 
 # remove apply to whole tyr, not only tyr_master
