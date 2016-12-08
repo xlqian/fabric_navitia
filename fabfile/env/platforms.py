@@ -180,10 +180,10 @@ env.rabbitmq_port_api = 15672
 
 env.stat_broker_exchange = 'stat_persistor_exchange'
 
-env.ws_hosts_1 = ''
-env.eng_hosts_1 = ''
-env.ws_hosts_2 = ''
-env.eng_hosts_2 = ''
+env.ws_hosts_1 = []
+env.eng_hosts_1 = []
+env.ws_hosts_2 = []
+env.eng_hosts_2 = []
 
 # tyr instance, jormungangr, and other database host
 # no need to change this, works if the server is standalone or if it use a
