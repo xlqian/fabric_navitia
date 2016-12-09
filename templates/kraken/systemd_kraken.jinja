@@ -11,6 +11,7 @@ Type=simple
 ExecStart={{kraken_base_conf}}/{{instance}}/kraken
 ExecReload=/bin/kill -HUP $MAINPID
 ExecStop=/bin/kill -s TERM $MAINPID
+{% if env.restart_service_always %}Restart=always{% endif %}
 User={{env.KRAKEN_USER}}
 Group={{env.KRAKEN_USER}}
 WorkingDirectory={{kraken_base_conf}}/{{instance}}/
