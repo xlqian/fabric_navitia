@@ -138,12 +138,13 @@ def upgrade_all(up_tyr=True, up_confs=True, check_version=True, send_mail='no',
     execute(kraken.swap_all_data_nav)
 
     # Upgrade kraken/jormun on first hosts set
-    env.roledefs['eng'] = env.eng_hosts_1
-    env.roledefs['ws'] = env.ws_hosts_1
-    if manual_lb:
-        raw_input(yellow("Please disable ENG1,3/WS7-9 and enable ENG2,4/WS10-12"))
-    else:
-        execute(switch_to_first_phase, env.eng_hosts_1, env.ws_hosts_1, env.ws_hosts_2)
+    if env.roledefs['eng'] and env.roledefs['ws']:
+        env.roledefs['eng'] = env.eng_hosts_1
+        env.roledefs['ws'] = env.ws_hosts_1
+        if manual_lb:
+            raw_input(yellow("Please disable ENG1,3/WS7-9 and enable ENG2,4/WS10-12"))
+        else:
+            execute(switch_to_first_phase, env.eng_hosts_1, env.ws_hosts_1, env.ws_hosts_2)
     execute(upgrade_kraken, wait=env.KRAKEN_RESTART_SCHEME, up_confs=up_confs, supervision=True)
     if check_dead:
         execute(kraken.check_dead_instances)
