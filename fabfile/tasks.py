@@ -138,7 +138,7 @@ def upgrade_all(up_tyr=True, up_confs=True, check_version=True, send_mail='no',
     execute(kraken.swap_all_data_nav)
 
     # Upgrade kraken/jormun on first hosts set
-    if env.roledefs['eng'] and env.roledefs['ws']:
+    if not env.roledefs['eng'] and not env.roledefs['ws']:
         env.roledefs['eng'] = env.eng_hosts_1
         env.roledefs['ws'] = env.ws_hosts_1
         if manual_lb:
@@ -155,7 +155,7 @@ def upgrade_all(up_tyr=True, up_confs=True, check_version=True, send_mail='no',
         instance = random.choice(env.instances.values())
         execute(jormungandr.test_jormungandr, get_host_addr(server), instance=instance.name)
 
-    if env.roledefs['eng'] and env.roledefs['ws']:
+    if not env.roledefs['eng'] and not env.roledefs['ws']:
         # Upgrade kraken/jormun on remaining hosts
         env.roledefs['eng'] = env.eng_hosts_2
         env.roledefs['ws'] = env.ws_hosts_2
