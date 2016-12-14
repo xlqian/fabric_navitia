@@ -302,7 +302,7 @@ def upgrade_version():
     """
     # upgrade packages anywhere
     execute(upgrade_all_packages)
-    execute(upgrade_tyr)
+    execute(upgrade_tyr, reload=False)
     for instance in env.instances.values():
         execute(tyr.update_ed_db, instance.name)
 
