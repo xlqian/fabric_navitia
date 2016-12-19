@@ -307,7 +307,7 @@ def apt_get_update():
 @task
 def restart_apache():
     start_or_stop_with_delay("apache2", 4000, 500, start=False, only_once=True)
-    start_or_stop_with_delay("apache2", 4000, 500, only_once=env.KRAKEN_START_ONLY_ONCE)
+    start_or_stop_with_delay("apache2", 4000, 500, only_once=True)
 
 
 @task
