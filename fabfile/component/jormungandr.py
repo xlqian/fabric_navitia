@@ -53,7 +53,8 @@ from fabtools import require, python
 #          on the resulting naming of tasks, wich can break integration tests
 from fabfile.component import load_balancer
 from fabfile.utils import (_install_packages, _upload_template, get_real_instance,
-                           start_or_stop_with_delay, get_bool_from_cli, show_version)
+                           start_or_stop_with_delay, get_bool_from_cli, show_version,
+                            restart_apache)
 
 
 @task
@@ -133,8 +134,7 @@ def reload_jormun_safe(server, safe=True):
     with settings(host_string=server):
         if env.use_load_balancer and safe:
             load_balancer.disable_node(server)
-        sudo("service apache2 reload")
-        sleep(1)
+        restart_apache()
         if env.use_load_balancer and safe:
             load_balancer.enable_node(server)
 
