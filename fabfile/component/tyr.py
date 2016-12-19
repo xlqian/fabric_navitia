@@ -52,7 +52,7 @@ from fabfile.utils import (_install_packages, _upload_template, update_init, Par
                            start_or_stop_with_delay, supervision_downtime, time_that,
                            get_real_instance, require_directories, require_directory,
                            run_once_per_host, execute_flat, idempotent_symlink, collapse_op,
-                           get_processes, get_bool_from_cli, watchdog_manager)
+                           get_processes, get_bool_from_cli, watchdog_manager, restart_apache)
 
 
 @task
@@ -691,7 +691,7 @@ def reload_tyr_safe(server, safe=True):
     with settings(host_string=server):
         if env.use_load_balancer and safe:
             load_balancer.disable_node(server)
-        sudo("service apache2 restart")
+        restart_apache()
         if env.use_load_balancer and safe:
             load_balancer.enable_node(server)
 
