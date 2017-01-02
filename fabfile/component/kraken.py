@@ -539,7 +539,9 @@ def remove_kraken_instance(instance, purge_logs=False, apply_on='engines'):
             if env.use_systemd:
                 run("systemctl disable kraken_{}.service".format(instance.name))
                 run('systemctl daemon-reload')
-            run("rm -f {}/kraken_{}".format(env.service_path(), instance.name))
+                run("rm -f {}/kraken_{}.service".format(env.service_path(), instance.name))
+            else:
+                run("rm -f {}/kraken_{}".format(env.service_path(), instance.name))
             run("rm -rf {}/{}/".format(env.kraken_basedir, instance.name))
             if purge_logs:
                 run("rm -f {}/{}.log".format(env.kraken_log_basedir, instance.name))
