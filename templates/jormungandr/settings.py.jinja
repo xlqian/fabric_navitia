@@ -98,8 +98,8 @@ CACHE_CONFIGURATION = {
 
 {% if env.bragi_url %}
 AUTOCOMPLETE = {
-    "class_path": "jormungandr.autocomplete.geocodejson.GeocodeJson",
-    'kwargs': {
+    "class": "jormungandr.autocomplete.geocodejson.GeocodeJson",
+    'args': {
         "host": "{{env.bragi_url}}",
         "timeout": {{env.bragi_timeout}},
     }
