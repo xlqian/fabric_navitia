@@ -109,3 +109,8 @@ AUTOCOMPLETE = {
 {% if env.jormungandr_bss_provider %}
 BSS_PROVIDER = {{env.jormungandr_bss_provider}}
 {% endif %}
+
+{% if env.jormungandr_patch_with_gevent_socket %}
+PATCH_WITH_GEVENT_SOCKET = {{env.jormungandr_patch_with_gevent_socket}}
+{% endif %}
+
