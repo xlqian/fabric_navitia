@@ -39,7 +39,7 @@ class Instance:
                  is_free=False, chaos_database=None, rt_topics=[],
                  zmq_socket_port=None, db_name=None, db_user=None, source_dir=None,
                  enable_realtime=False, realtime_proxies=[], street_network=None, cache_raptor=None, zmq_server=None,
-                 kraken_threads=None):
+                 kraken_threads=None, autocomplete=None):
         self.name = name
         self.db_password = db_password
         self.is_free = is_free
@@ -91,6 +91,7 @@ class Instance:
         self.realtime_proxies = realtime_proxies
         self.cache_raptor = cache_raptor
         self.street_network = street_network
+        self.autocomplete = autocomplete
 
     @property
     def kraken_engines_url(self):

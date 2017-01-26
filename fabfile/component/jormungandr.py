@@ -304,6 +304,8 @@ def deploy_jormungandr_instance_conf(instance):
               'realtime_proxies': instance.realtime_proxies}
     if instance.street_network:
         config["street_network"] = instance.street_network
+    if instance.autocomplete:
+        config["autocomplete"] = instance.autocomplete
     _upload_template("jormungandr/instance.json.jinja",
                      instance.jormungandr_config_file,
                      context={
