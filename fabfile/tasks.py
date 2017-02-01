@@ -370,11 +370,13 @@ def check_last_dataset():
         print("********* MISSING DATASETS *********")
         for data in datasets['ko']:
             print(red(data['filename']))
-            db.remove_missing_dataset(data['filename'])
     if len(datasets['empty']):
         print("********** EMPTY DATASETS **********")
         for data in datasets['empty']:
             print(yellow(data))
+
+    if nb_ko > 0:
+        exit(1)
 
 
 #############################################
