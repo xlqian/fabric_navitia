@@ -242,3 +242,16 @@ def create_privileges_instance_db(instance):
     for schema in env.postgres_schemas:
         run('{} -c "GRANT SELECT ON ALL TABLES IN SCHEMA {} TO {};"'
             .format(postgres_connection_user, schema, env.postgres_read_only_user))
+
+
+def remove_missing_dataset(filename):
+    """Remove a given dataset in jormungandr PostgreSQL db"""
+    with settings(host_string=env.roledefs['db'][0]):
+        data_to_remove = sudo('sudo -i -u postgres psql -A -t --dbname={} '
+                              '-c "select * from data_set where name like \'{}\';"'
+                              .format(env.tyr_postgresql_database, filename)).split('|')
+        run('sudo -i -u postgres psql -A -t --dbname={} '
+            '-c "delete from metric where dataset_id={};"'.format(env.tyr_postgresql_database, data_to_remove[0]))
+        run('sudo -i -u postgres psql -A -t --dbname={} '
+            '-c "delete from data_set where id={};"'.format(env.tyr_postgresql_database, data_to_remove[0]))
+    print("{} has been removed into bdd".format(filename))

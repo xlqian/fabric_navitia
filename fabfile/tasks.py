@@ -29,17 +29,11 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 
-import datetime
-import os
-import requests
-
-from fabric.api import run, env, task, execute, roles, abort
+from fabric.api import env, task, execute, abort
 from fabric.colors import blue, red, yellow, green
 from fabric.context_managers import settings
 from fabric.contrib.files import exists
-
-import component
-from component import tyr, jormungandr, kraken
+from component import tyr, jormungandr, kraken, db
 from component.load_balancer import _adc_connection
 from utils import (get_bool_from_cli, show_version, get_host_addr,
                    show_dead_kraken_status, TimeCollector, compute_instance_status,
@@ -48,6 +42,8 @@ from utils import (get_bool_from_cli, show_version, get_host_addr,
 from prod_tasks import (remove_kraken_vip, switch_to_first_phase,
                         switch_to_second_phase, switch_to_third_phase, enable_all_nodes)
 import random
+import requests
+import component
 
 
 #############################################
@@ -341,73 +337,44 @@ def dataset_exists(filename):
 
 
 @task
-@roles("db")
 def check_last_dataset():
     """Check the data before upgrade"""
-    datasets_pending = {}
-    datasets = {'ok': [], 'ko': [], 'pending': [], 'empty': []}
+    datasets = {'ok': [], 'ko': [], 'empty': []}
     nb_ko = 0
 
-    date_stopchecking = datetime.datetime.now() - datetime.timedelta(days=10)
-    str_date = date_stopchecking.strftime("%Y-%m-%d")
-
     for instance in env.instances.values():
-        datasets_pending[instance.name] = []
-        res = run('sudo -i -u postgres psql -A -t -c '
-              '"select distinct on (data_set.family_type) data_set.name, data_set.family_type '
-              '  from instance, job, data_set '
-              '  where instance.id = job.instance_id and job.id = data_set.job_id and instance.name=\'%s\' and job.state=\'done\' '
-              '  order by data_set.family_type desc, job.created_at desc;" jormungandr' % instance.name)
-        arr_dataset = res.split('\n')
-        for dataset in arr_dataset:
-            if dataset != "":
-                fil, typ = dataset.split("|")
-                filname = os.path.split(fil)[1]
-                # check existence of data file and abort if file is missing
-                if not dataset_exists(fil):
-                    datasets['ko'].append({'instance': instance.name, 'file': fil, 'type': typ, 'filename': filname})
+        url = 'http://{}/v0/instances/{}/last_datasets'.format(env.tyr_url, instance)
+        try:
+            status = requests.get(url)
+        except Exception as e:
+            abort("Request failed: {} ({})".format(url, e))
+
+        if status.json():
+            for elt in status.json():
+                filename = elt['name']
+                family_type = elt['family_type']
+                # check existence of data file and remove into bdd if file is missing
+                if not dataset_exists(filename):
+                    datasets['ko'].append({'instance': instance.name, 'filename': filename, 'type': family_type})
                     nb_ko += 1
                 else:
-                    datasets['ok'].append({'instance': instance.name, 'file': fil, 'type': typ, 'filename': filname})
-            else:
-                datasets['empty'].append(instance.name)
-
-        res = run('sudo -i -u postgres psql -A -t -c '
-              '"select distinct on (data_set.family_type) data_set.name, data_set.family_type, job.created_at '
-              '  from instance, job, data_set '
-              '  where instance.id = job.instance_id and job.id = data_set.job_id and instance.name=\'{}\' and job.state=\'pending\' and job.created_at > \'{}\' '
-              '  order by data_set.family_type desc, job.created_at desc;" jormungandr'.format(instance.name, str_date))
-        arr_dataset = res.split('\n')
-        for dataset in arr_dataset:
-            if dataset != "":
-                (fil, typ, dat) = dataset.split("|")
-                filname = os.path.split(fil)[1]
-                datasets['pending'].append({'instance': instance.name, 'file': fil, 'type': typ,
-                                            'filename': filname, 'date': dat})
-                datasets_pending[instance.name].append(filname)
+                    datasets['ok'].append({'instance': instance.name, 'filename': filename, 'type': family_type})
+        else:
+            datasets['empty'].append(instance.name)
 
     if len(datasets['ok']):
         print("******** AVAILABLE DATASETS ********")
         for data in datasets['ok']:
-            print(green(data['file']))
+            print(green(data['filename']))
     if len(datasets['ko']):
         print("********* MISSING DATASETS *********")
         for data in datasets['ko']:
-            if data['filename'] in datasets_pending[data['instance']]:
-                print(red(data['file']) + yellow(" (Pending)"))
-            else:
-                print(red(data['file']))
-    if len(datasets['pending']):
-        print("********* PENDING DATASETS *********")
-        for data in datasets['pending']:
-            print(yellow(data['file'] + " since " + data['date']))
+            print(red(data['filename']))
+            db.remove_missing_dataset(data['filename'])
     if len(datasets['empty']):
         print("********** EMPTY DATASETS **********")
         for data in datasets['empty']:
             print(yellow(data))
-
-    if nb_ko > 0:
-        exit(1)
 
 
 #############################################
