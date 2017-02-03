@@ -305,7 +305,7 @@ def deploy_jormungandr_instance_conf(instance):
     if instance.street_network:
         config["street_network"] = instance.street_network
     if instance.autocomplete:
-        config["autocomplete"] = instance.autocomplete
+        config["default_autocomplete"] = instance.autocomplete
     _upload_template("jormungandr/instance.json.jinja",
                      instance.jormungandr_config_file,
                      context={
