@@ -181,6 +181,9 @@ def upgrade_all(up_tyr=True, up_confs=True, check_version=True, send_mail='no',
             execute(enable_all_nodes, env.eng_hosts, env.ws_hosts_1,  env.ws_hosts_2)
         env.roledefs['eng'] = env.eng_hosts
 
+    # restart for jormun
+    execute(jormungandr.reload_jormun_safe_all)
+
     # start tyr_beat even if up_tyr is False
     execute(tyr.start_tyr_beat)
     time_dict.register_end('total_deploy')
