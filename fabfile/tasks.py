@@ -46,7 +46,7 @@ from utils import (get_bool_from_cli, show_version, get_host_addr,
                    show_time_deploy, host_app_mapping, send_mail,
                    supervision_downtime, get_real_instance)
 from prod_tasks import (remove_kraken_vip, switch_to_first_phase,
-                        switch_to_second_phase, switch_to_third_phase, enable_all_nodes)
+                        switch_to_second_phase, switch_to_third_phase, enable_nodes)
 import random
 
 
@@ -149,6 +149,9 @@ def upgrade_all(up_tyr=True, up_confs=True, check_version=True, send_mail='no',
     if check_dead:
         execute(kraken.check_dead_instances)
     execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
+    # need restart apache without using upgrade_jormungandr task previously
+    # because that causes a problem in prod
+    execute(jormungandr.reload_jormun_safe_all, safe=False)
 
     # check first hosts set
     for server in env.roledefs['ws']:
@@ -165,6 +168,9 @@ def upgrade_all(up_tyr=True, up_confs=True, check_version=True, send_mail='no',
             execute(switch_to_second_phase, env.eng_hosts_1, env.eng_hosts_2,
                     env.ws_hosts_1,  env.ws_hosts_2)
         execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
+        # need restart apache without using upgrade_jormungandr task previously
+        # because that causes a problem in prod
+        execute(jormungandr.reload_jormun_safe_all, safe=False)
         if manual_lb:
             raw_input(yellow("Please enable WS7-12"))
         else:
@@ -177,9 +183,9 @@ def upgrade_all(up_tyr=True, up_confs=True, check_version=True, send_mail='no',
             instance = random.choice(env.instances.values())
             execute(jormungandr.test_jormungandr, get_host_addr(server), instance=instance.name)
 
-        if not manual_lb:
-            execute(enable_all_nodes, env.eng_hosts, env.ws_hosts_1,  env.ws_hosts_2)
         env.roledefs['eng'] = env.eng_hosts
+        if not manual_lb:
+            execute(enable_nodes, env.eng_hosts)
 
     # start tyr_beat even if up_tyr is False
     execute(tyr.start_tyr_beat)

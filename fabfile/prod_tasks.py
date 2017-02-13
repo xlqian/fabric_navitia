@@ -112,15 +112,13 @@ def switch_to_second_phase(eng_hosts_1, eng_hosts_2, ws_hosts_1,  ws_hosts_2):
     # first, enable / disable kraken nodes
     execute(enable_nodes, eng_hosts_1)
     execute(disable_nodes, eng_hosts_2)
-    # then enable / disable jormun nodes and restart active jormun nodes
-    execute(restart_jormungandr, ws_hosts_1, safe=False)
+    # then enable / disable jormun nodes
     execute(enable_nodes, ws_hosts_1)
     execute(disable_nodes, ws_hosts_2)
 
 
 @task
 def switch_to_third_phase(ws_hosts_2):
-    execute(restart_jormungandr, ws_hosts_2, safe=False)
     execute(enable_nodes, ws_hosts_2)
 
 
