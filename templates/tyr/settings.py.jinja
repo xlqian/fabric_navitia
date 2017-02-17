@@ -15,8 +15,11 @@ CELERY_BROKER_URL = 'amqp://{{tyr_broker_username}}:{{tyr_broker_password}}@{{ra
 #URI for postgresql
 # postgresql://<user>:<password>@<host>:<port>/<dbname>
 #http://docs.sqlalchemy.org/en/rel_0_9/dialects/postgresql.html#psycopg2
+{% if env.replica_postgresql_database_host %}
+SQLALCHEMY_DATABASE_URI = 'postgresql://{{tyr_postgresql_user}}:{{tyr_postgresql_password}}@{{replica_postgresql_database_host}}/{{tyr_postgresql_database}}'
+{% else %}
 SQLALCHEMY_DATABASE_URI = 'postgresql://{{tyr_postgresql_user}}:{{tyr_postgresql_password}}@{{postgresql_database_host}}/{{tyr_postgresql_database}}'
-
+{% endif %}
 #Path to the directory where the configuration file of each instance of ed are defined
 INSTANCES_DIR = '{{env.tyr_base_instances_dir}}'
 
