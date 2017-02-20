@@ -68,6 +68,7 @@ def update_tyr_config_file():
                         'tyr_postgresql_user': env.tyr_postgresql_user,
                         'tyr_postgresql_password': env.tyr_postgresql_password,
                         'postgresql_database_host': env.postgresql_database_host,
+                        'replica_postgresql_database_host': env.replica_postgresql_database_host,
                         'tyr_postgresql_database': env.tyr_postgresql_database,
                         'tyr_base_instances_dir': env.tyr_base_instances_dir,
                         'tyr_base_logfile': env.tyr_base_logfile,
