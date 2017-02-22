@@ -178,6 +178,7 @@ def set_postgresql_database_host(db):
     env.ed_postgresql_database_host = db
     env.tyr_postgresql_database_host = db
 
+env.set_postgresql_database_host = set_postgresql_database_host
 # restart kraken
 env.restart_service_always = False
 
