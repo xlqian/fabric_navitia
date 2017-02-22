@@ -103,7 +103,7 @@ def cities_integration():
     raw_input("Please add \"CITIES_DATABASE_URI = 'user={user} password={password} "
               "host={database_host} dbname={dbname}'\" in /srv/tyr/settings.py and press "
               "enter when finished.".format(password=password,
-                                            database_host=env.postgresql_database_host,
+                                            database_host=env.ed_postgresql_database_host,
                                             dbname=postgresql_database,
                                             user=postgresql_user))
 

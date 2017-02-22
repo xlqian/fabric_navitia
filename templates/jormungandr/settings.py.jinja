@@ -7,7 +7,7 @@
 INSTANCES_DIR='{{env.jormungandr_instances_dir}}'
 
 #chaine de connnection à postgresql pour la base jormungandr
-SQLALCHEMY_DATABASE_URI ='postgresql://{{env.tyr_postgresql_user}}:{{env.tyr_postgresql_password}}@{{env.postgresql_database_host}}/{{env.tyr_postgresql_database}}'
+SQLALCHEMY_DATABASE_URI ='postgresql://{{env.tyr_postgresql_user}}:{{env.tyr_postgresql_password}}@{{env.tyr_postgresql_database_host}}/{{env.tyr_postgresql_database}}'
 
 #désactivation de l'authentification
 PUBLIC={{env.jormungandr_is_public}}

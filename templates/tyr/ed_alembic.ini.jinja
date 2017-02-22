@@ -5,7 +5,7 @@
 # path to migration scripts
 script_location = /usr/share/navitia/ed/alembic
 
-sqlalchemy.url = postgresql://{{instance.db_user}}:{{instance.db_password}}@{{env.postgresql_database_host}}:5432/{{instance.db_name}}
+sqlalchemy.url = postgresql://{{instance.db_user}}:{{instance.db_password}}@{{env.ed_postgresql_database_host}}:5432/{{instance.db_name}}
 
 # Logging configuration
 [loggers]
