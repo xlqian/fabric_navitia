@@ -168,6 +168,16 @@ env.use_nfs4 = False
 # show diff when uploading a configuration file
 env.show_diff_when_upload = 'diff'
 
+# postgres host to ED database
+env.ed_postgresql_database_host = 'localhost'
+# postgres host to jormun/tyr database
+env.tyr_postgresql_database_host = 'localhost'
+
+def set_postgresql_database_host(db):
+    # set all database hosts to 'db'
+    env.ed_postgresql_database_host = db
+    env.tyr_postgresql_database_host = db
+
 # restart kraken
 env.restart_service_always = False
 

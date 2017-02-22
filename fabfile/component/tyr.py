@@ -67,7 +67,7 @@ def update_tyr_config_file():
                         'rabbitmq_port': env.rabbitmq_port,
                         'tyr_postgresql_user': env.tyr_postgresql_user,
                         'tyr_postgresql_password': env.tyr_postgresql_password,
-                        'postgresql_database_host': env.postgresql_database_host,
+                        'ed_postgresql_database_host': env.ed_postgresql_database_host,
                         'tyr_postgresql_database_host': env.tyr_postgresql_database_host,
                         'tyr_postgresql_database': env.tyr_postgresql_database,
                         'tyr_base_instances_dir': env.tyr_base_instances_dir,

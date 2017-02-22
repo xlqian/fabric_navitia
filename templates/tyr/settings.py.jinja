@@ -21,7 +21,7 @@ INSTANCES_DIR = '{{env.tyr_base_instances_dir}}'
 
 
 {% if env.use_cities %}
-CITIES_DATABASE_URI = 'user={{env.cities_db_user}} password={{env.cities_db_password}} host={{env.postgresql_database_host}} port=5432 dbname={{env.cities_db_name}}'
+CITIES_DATABASE_URI = 'user={{env.cities_db_user}} password={{env.cities_db_password}} host={{env.ed_postgresql_database_host}} port=5432 dbname={{env.cities_db_name}}'
 {% else %}
 CITIES_DATABASE_URI = None
 {% endif %}
