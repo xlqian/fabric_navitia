@@ -209,7 +209,8 @@ def check_kraken_jormun_after_deploy(show=False):
         elif item['status'] == "no_data":
             kraken_warn['kraken_version'] = warn_dict['jormungandr']
 
-        warn_dict['kraken'].append(kraken_warn)
+        if 'kraken_version' in kraken_warn.keys():
+            warn_dict['kraken'].append(kraken_warn)
 
     if show:
         if warn_dict['jormungandr']:
@@ -228,61 +229,72 @@ def test_jormungandr(server, instance=None, fail_if_error=True):
     Note: we don't launch that with a role because we want to test the access from the outside of the server
     """
     headers = {'Host': env.jormungandr_url}
+    request_str = 'http://{}{}/v1/coverage'.format(server, env.jormungandr_url_prefix)
 
     if instance:
-        request_str = 'http://{s}{p}/v1/coverage/{i}/status'.format(s=server, p=env.jormungandr_url_prefix, i=instance)
-    else:
-        request_str = 'http://{}{}/v1/coverage'.format(server, env.jormungandr_url_prefix)
+        request_str = 'http://{}{}/v1/coverage/{}/status'.format(server, env.jormungandr_url_prefix, instance)
+        technical_request = {'vehicle_journeys': 'http://{}{}/v1/coverage/{}/vehicle_journeys?count=1'.format(server, env.jormungandr_url_prefix, instance),
+                             'stop_points': 'http://{}{}/v1/coverage/{}/stop_points?count=1'.format(server, env.jormungandr_url_prefix, instance)}
+
     print request_str
 
     try:
         response = requests.get(request_str, headers=headers, auth=HTTPBasicAuth(env.token, ''))
+
+        if response.status_code == 200 and instance:
+            for query_type, url in technical_request.items():
+                r = requests.get(url, headers=headers, auth=HTTPBasicAuth(env.token, ''))
+
+                # Raise error if status_code != 200
+                r.raise_for_status()
+
+        result = response.json()
+
     except (ConnectionError, HTTPError) as e:
         if fail_if_error:
-            print(red("Connection or HTTP Error %s" % e))
+            print(red("Connection or HTTP Error {}".format(e)))
             exit(1)
         else:
-            print(yellow("WARNING: {instance} is running but "
-                "problem found: {error} (maybe no data ?)"
-                .format(instance=instance, error=e)))
+            print(yellow("WARNING: {} is running but problem found: {} (maybe no data ?)".format(instance, e)))
             exit(0)
+    except JSONDecodeError:
+        print(red("cannot read json response : {}".format(response.text)))
+        exit(1)
     except Exception as e:
         print(red("Error when connecting to %s: %s" % (env.jormungandr_url, e)))
         exit(1)
 
-    try:
-        result = response.json()
-    except JSONDecodeError:
-        print(red("cannot read json response : {}".format(response.text)))
-        exit(1)
-
     # if result contain just a message, this indicate a problem
-    if 'message' in result:
-        if fail_if_error is True:
-            print(red("CRITICAL: Problem on result: '{}'".format(result)))
-            exit(1)
+    if 'message' in result and fail_if_error:
+        print(red("CRITICAL: Problem on result: '{}'".format(result)))
+        exit(1)
+    elif 'message' in result:
         print(yellow("WARNING: Problem on result: '{}'".format(result)))
         return False
 
     if instance:
         print(result['status'])
-        print(green("Kraken Version is %s" % result['status']['kraken_version']))
+        print(green("Kraken Version is {}".format(result['status']['kraken_version'])))
     # just check that there is one instance running
     else:
         regions = result['regions']
 
         active_instance = [i for i in env.instances.keys() if i not in env.excluded_instances]
+
         if len(regions) != len(active_instance):
             print red("there is not the right number of instances, "
                       "we should have {ref} but we got {real} instances".
                       format(ref=len(active_instance), real=len(regions)))
+
             print red('instances in diff: {}'.format(
                 set(active_instance).symmetric_difference(set([r['id'] for r in regions]))))
+
             if fail_if_error:
                 exit(1)
+
             return False
         else:
-            #we check that at least one is ok
+            # We check that at least one is ok
             statuses = [(r['id'], r['status']) for r in regions]
 
             if all(map(lambda p: p[1] == 'running', statuses)):

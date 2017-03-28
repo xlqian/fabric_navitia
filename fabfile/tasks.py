@@ -111,6 +111,11 @@ def upgrade_all(up_tyr=True, up_confs=True, check_version=True, send_mail='no',
     if check_version:
         execute(compare_version_candidate_installed, host_name='tyr')
 
+    # check first hosts set
+    for server in env.roledefs['ws']:
+        instance = random.choice(env.instances.values())
+        execute(jormungandr.test_jormungandr, get_host_addr(server), instance=instance.name)
+
     if env.use_load_balancer:
         if manual_lb:
             print(yellow("WARNING : you are in MANUAL mode :\n"
