@@ -33,6 +33,7 @@ import StringIO
 import ConfigParser
 from io import BytesIO
 import json
+import re
 import fabtools
 import requests
 from requests.auth import HTTPBasicAuth
@@ -165,48 +166,55 @@ def start_services():
 
 @task
 def check_kraken_jormun_after_deploy(show=False):
-    headers = {'Host': env.jormungandr_url}
 
+    headers = {'Host': env.jormungandr_url}
     request_str = 'http://{}{}/v1/status'.format(env.jormungandr_url, env.jormungandr_url_prefix)
+
     print("request_str: {}".format(request_str))
 
     try:
+        # Send HTTP GET requests
         response = requests.get(request_str, headers=headers, auth=HTTPBasicAuth(env.token, ''))
+
+        # If HTTP status_code Erreur.
         if response.status_code != 200:
             print(red("Request not successful : {}".format(str(response))))
             return
-    except (ConnectionError, HTTPError) as e:
-        print(red("HTTP Error %s: %s" % (e.code, e.readlines()[0])))
-        return
-    except Exception as e:
-        print(red("Error when connecting to %s: %s" % (env.jormungandr_url, e)))
-        return
 
-    try:
         result = response.json()
+
+    except (ConnectionError, HTTPError) as e:
+        print(red("HTTP Error {}: {}".format(e.code, e.readlines()[0])))
+        return
     except JSONDecodeError:
         print(red("cannot read json response : {}".format(response.text)))
         return
+    except Exception as e:
+        print(red("Error when connecting to {}: {}".format(env.jormungandr_url, e)))
+        return
 
-    candidate_kraken_version = "v" + show_version(action='get')[1]
-    warn_dict = dict()
-    warn_dict['jormungandr'] = result['jormungandr_version'] if candidate_kraken_version != result['jormungandr_version'] else None
-    warn_dict['kraken'] = warn_list = list()
+    warn_dict = {'jormungandr': None, 'kraken': []}
+
+    if re.match(r"v{}".format(show_version(action='get')[1]), result['jormungandr_version']):
+        warn_dict['jormungandr'] = result['jormungandr_version']
 
     for item in result['regions']:
-        if item['region_id'] not in env.instances:
-            continue
+
+        kraken_warn = {'status': item['status'], 'region_id': item['region_id']}
+
         if item['status'] == "dead":
-            warn_list.append(dict(status='dead', region_id=item['region_id'], kraken_version=None))
-        elif item['kraken_version'] != candidate_kraken_version:
-            warn_list.append(dict(status=item['status'], region_id=item['region_id'], kraken_version=item['kraken_version']))
+            kraken_warn['kraken_version'] = None
+        elif item['kraken_version'] != warn_dict['jormungandr']:
+            kraken_warn['kraken_version'] = item['kraken_version']
         elif item['status'] == "no_data":
-            warn_list.append(dict(status='no_data', region_id=item['region_id'], kraken_version=candidate_kraken_version))
+            kraken_warn['kraken_version'] = warn_dict['jormungandr']
+
+        warn_dict['kraken'].append(kraken_warn)
 
     if show:
         if warn_dict['jormungandr']:
             print(yellow("Jormungandr version={}".format(warn_dict['jormungandr'])))
-        for item in warn_list:
+        for item in warn_dict['kraken']:
             print(yellow("status={status} | region_id={region_id} | kraken_version={kraken_version}".format(**item)))
 
     return warn_dict
