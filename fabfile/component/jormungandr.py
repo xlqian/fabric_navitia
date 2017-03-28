@@ -168,7 +168,7 @@ def start_services():
 def check_kraken_jormun_after_deploy(show=False):
 
     headers = {'Host': env.jormungandr_url}
-    request_str = 'http://%s%s/v1/status' % (env.jormungandr_url, env.jormungandr_url_prefix)
+    request_str = 'http://{}{}/v1/status'.format(env.jormungandr_url, env.jormungandr_url_prefix)
 
     print("request_str: %s" % request_str)
 
@@ -184,18 +184,18 @@ def check_kraken_jormun_after_deploy(show=False):
         result = response.json()
 
     except (ConnectionError, HTTPError) as e:
-        print(red("HTTP Error %s: %s" % (e.code, e.readlines()[0])))
+        print(red("HTTP Error {}: {}".format(e.code, e.readlines()[0])))
         return
     except JSONDecodeError:
-        print(red("cannot read json response : %s" % response.text))
+        print(red("cannot read json response : {}".format(response.text)))
         return
     except Exception as e:
-        print(red("Error when connecting to %s: %s" % (env.jormungandr_url, e)))
+        print(red("Error when connecting to {}: {}".format(env.jormungandr_url, e)))
         return
 
     warn_dict = {'jormungandr': None, 'kraken': []}
 
-    if re.match(r"v%s" % show_version(action='get')[1], result['jormungandr_version']):
+    if re.match(r"v{}".format(show_version(action='get')[1]), result['jormungandr_version']):
         warn_dict['jormungandr'] = result['jormungandr_version']
 
     for item in result['regions']:
