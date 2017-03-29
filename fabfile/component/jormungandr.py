@@ -37,10 +37,10 @@ import re
 import fabtools
 import requests
 from requests.auth import HTTPBasicAuth
-from requests.exceptions import ConnectionError
+from requests.exceptions import ConnectionError, HTTPError
 from simplejson.scanner import JSONDecodeError
 from time import sleep
-from urllib2 import HTTPError
+# from urllib2 import HTTPError
 
 from fabric.colors import red, green, blue, yellow
 from fabric.context_managers import settings
@@ -236,17 +236,21 @@ def test_jormungandr(server, instance=None, fail_if_error=True):
         technical_request = {'vehicle_journeys': 'http://{}{}/v1/coverage/{}/vehicle_journeys?count=1'.format(server, env.jormungandr_url_prefix, instance),
                              'stop_points': 'http://{}{}/v1/coverage/{}/stop_points?count=1'.format(server, env.jormungandr_url_prefix, instance)}
 
-    print request_str
-
     try:
         response = requests.get(request_str, headers=headers, auth=HTTPBasicAuth(env.token, ''))
 
-        if response.status_code == 200 and instance:
+        response.raise_for_status()
+        print("{} -> {}".format(response.url, green(response.status_code)))
+
+        if instance:
             for query_type, url in technical_request.items():
                 r = requests.get(url, headers=headers, auth=HTTPBasicAuth(env.token, ''))
 
                 # Raise error if status_code != 200
-                r.raise_for_status()
+                if r.status_code != 200:
+                    print("{} -> {}".format(query_type, yellow(r.status_code)))
+                else:
+                    print("{} -> {}".format(query_type, green(r.status_code)))
 
         result = response.json()
 
@@ -273,7 +277,7 @@ def test_jormungandr(server, instance=None, fail_if_error=True):
         return False
 
     if instance:
-        print(result['status'])
+        # print(result['status'])
         print(green("Kraken Version is {}".format(result['status']['kraken_version'])))
     # just check that there is one instance running
     else:
