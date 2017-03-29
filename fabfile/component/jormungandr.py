@@ -277,7 +277,6 @@ def test_jormungandr(server, instance=None, fail_if_error=True):
         return False
 
     if instance:
-        # print(result['status'])
         print(green("Kraken Version is {}".format(result['status']['kraken_version'])))
     # just check that there is one instance running
     else:
