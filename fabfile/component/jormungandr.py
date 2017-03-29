@@ -209,7 +209,8 @@ def check_kraken_jormun_after_deploy(show=False):
         elif item['status'] == "no_data":
             kraken_warn['kraken_version'] = warn_dict['jormungandr']
 
-        warn_dict['kraken'].append(kraken_warn)
+        if 'kraken_version' in kraken_warn.keys():
+            warn_dict['kraken'].append(kraken_warn)
 
     if show:
         if warn_dict['jormungandr']:
