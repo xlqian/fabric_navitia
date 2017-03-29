@@ -37,10 +37,10 @@ import re
 import fabtools
 import requests
 from requests.auth import HTTPBasicAuth
-from requests.exceptions import ConnectionError, HTTPError
+from requests.exceptions import ConnectionError
 from simplejson.scanner import JSONDecodeError
 from time import sleep
-# from urllib2 import HTTPError
+from urllib2 import HTTPError
 
 from fabric.colors import red, green, blue, yellow
 from fabric.context_managers import settings
