@@ -245,9 +245,8 @@ def test_jormungandr(server, instance=None, fail_if_error=True):
         print("{} -> {}".format(response.url, green(response.status_code)))
 
         if instance:
-
-            for query_type in [i for i in technical_requests.keys() if i != "root"]:
-                r = requests.get(technical_requests[query_type], headers=headers, auth=HTTPBasicAuth(env.token, ''))
+            for query_type in technical_requests.keys():
+                r = requests.get(query_type, headers=headers, auth=HTTPBasicAuth(env.token, ''))
 
                 # Raise error if status_code != 200
                 if r.status_code != 200 and query_type not in r.json().keys() and 'error' in r.json().keys():
