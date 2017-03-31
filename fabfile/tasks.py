@@ -108,6 +108,12 @@ def upgrade_all(up_tyr=True, up_confs=True, check_version=True, send_mail='no',
     check_dead = get_bool_from_cli(check_dead)
     check_bina = get_bool_from_cli(check_bina)
 
+    # check one instance on each WS
+    #TODO: Check all instance not only random one.
+    for server in env.roledefs['ws']:
+        instance = random.choice(env.instances.values())
+        execute(jormungandr.test_jormungandr, get_host_addr(server), instance=instance.name)
+
     if check_version:
         execute(compare_version_candidate_installed, host_name='tyr')
 
@@ -149,7 +155,8 @@ def upgrade_all(up_tyr=True, up_confs=True, check_version=True, send_mail='no',
     # because that causes a problem in prod
     execute(jormungandr.reload_jormun_safe_all, safe=False)
 
-    # check first hosts set
+    # check one instance on each WS
+    #TODO: Check all instance not only random one.
     for server in env.roledefs['ws']:
         instance = random.choice(env.instances.values())
         execute(jormungandr.test_jormungandr, get_host_addr(server), instance=instance.name)
