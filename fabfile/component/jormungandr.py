@@ -29,27 +29,22 @@
 # https://groups.google.com/d/forum/navitia
 # www.navitia.io
 
-import StringIO
-import ConfigParser
-from io import BytesIO
+
 import json
 import re
-import fabtools
 import requests
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import ConnectionError
 from simplejson.scanner import JSONDecodeError
-from time import sleep
 from urllib2 import HTTPError
 
 from fabric.colors import red, green, blue, yellow
 from fabric.context_managers import settings
-from fabric.contrib.files import exists
 from fabric.decorators import roles
-from fabric.operations import run, get
+from fabric.operations import run
 from fabric.api import execute, task, env, sudo
 from fabtools import require, python
-from pprint import pprint
+
 # WARNING: the way fabric_navitia imports are done as a strong influence
 #          on the resulting naming of tasks, wich can break integration tests
 from fabfile.component import load_balancer
@@ -92,7 +87,7 @@ def setup_jormungandr():
 
 @task
 @roles('ws')
-#@runs_once
+# @runs_once
 def upgrade_ws_packages():
     packages = [
         'apache2',
@@ -118,12 +113,10 @@ def upgrade_ws_packages():
     if not python.is_pip_installed():
         python.install_pip()
 
-    #we want the version of the system for these packages
+    # We want the version of the system for these packages
     run('''sed -e "/protobuf/d" -e "/psycopg2/d"  /usr/share/jormungandr/requirements.txt > /tmp/jormungandr_requirements.txt''')
     run('git config --global url."https://".insteadOf git://')
-    require.python.install_requirements('/tmp/jormungandr_requirements.txt',
-            use_sudo=True,
-            exists_action='w')
+    require.python.install_requirements('/tmp/jormungandr_requirements.txt', use_sudo=True, exists_action='w')
 
 
 @task
@@ -186,8 +179,8 @@ def check_kraken_jormun_after_deploy(show=False):
     except (ConnectionError, HTTPError) as e:
         print(red("HTTP Error {}: {}".format(e.code, e.readlines()[0])))
         return
-    except JSONDecodeError:
-        print(red("cannot read json response : {}".format(response.text)))
+    except JSONDecodeError as e:
+        print(red("cannot read json response : {}".format(e)))
         return
     except Exception as e:
         print(red("Error when connecting to {}: {}".format(env.jormungandr_url, e)))
@@ -232,11 +225,13 @@ def test_jormungandr(server, instance=None, fail_if_error=True):
 
     request_str = 'http://{}{}/v1/coverage'.format(server, env.jormungandr_url_prefix)
 
-    technical_requests = {'vehicle_journeys': 'http://{}{}/v1/coverage/{}/vehicle_journeys?count=1'.format(server, env.jormungandr_url_prefix, instance),
-                          'stop_points': 'http://{}{}/v1/coverage/{}/stop_points?count=1'.format(server, env.jormungandr_url_prefix, instance),
-                          'root': 'http://{}{}/v1/coverage/{}'.format(server, env.jormungandr_url_prefix, instance)}
-
-    technical_test_ok = True
+    technical_requests = {
+        'vehicle_journeys': 'http://{}{}/v1/coverage/{}/vehicle_journeys?count=1'.format(server,
+                                                                                         env.jormungandr_url_prefix,
+                                                                                         instance),
+        'stop_points': 'http://{}{}/v1/coverage/{}/stop_points?count=1'.format(server, env.jormungandr_url_prefix,
+                                                                               instance)
+    }
 
     result = {}
 
@@ -255,22 +250,10 @@ def test_jormungandr(server, instance=None, fail_if_error=True):
                 r = requests.get(technical_requests[query_type], headers=headers, auth=HTTPBasicAuth(env.token, ''))
 
                 # Raise error if status_code != 200
-                if r.status_code != 200:
+                if r.status_code != 200 and query_type not in r.json().keys() and 'error' in r.json().keys():
                     print("{} -> {}".format(query_type, yellow(r.status_code)))
-                    technical_test_ok = False
                 else:
                     print("{} -> {}".format(query_type, green(r.status_code)))
-
-        # If technical urls ok, run test on root path.
-        if technical_test_ok:
-
-            r = requests.get(technical_requests['root'], headers=headers, auth=HTTPBasicAuth(env.token, ''))
-
-            # Test if error field is null
-            if r.json()['regions'][0]['error']:
-                print("{} error field not null: {}".format(request_str, yellow(r.json()['regions'][0]['error'])))
-            else:
-                print("{} -> {}".format(technical_requests['root'], green(r.status_code)))
 
         result = response.json()
 
