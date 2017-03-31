@@ -252,6 +252,10 @@ def test_jormungandr(server, instance=None, fail_if_error=True):
                 else:
                     print("{} -> {}".format(query_type, green(r.status_code)))
 
+                # Test if error field is null
+                if r.json()['regions'][0]['error']:
+                    print("{} error field not null: {}".format(query_type, yellow(r.json()['regions'][0]['error'])))
+
         result = response.json()
 
     except (ConnectionError, HTTPError) as e:
