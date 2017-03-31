@@ -49,7 +49,7 @@ from fabric.decorators import roles
 from fabric.operations import run, get
 from fabric.api import execute, task, env, sudo
 from fabtools import require, python
-
+from pprint import pprint
 # WARNING: the way fabric_navitia imports are done as a strong influence
 #          on the resulting naming of tasks, wich can break integration tests
 from fabfile.component import load_balancer
@@ -229,12 +229,19 @@ def test_jormungandr(server, instance=None, fail_if_error=True):
     Note: we don't launch that with a role because we want to test the access from the outside of the server
     """
     headers = {'Host': env.jormungandr_url}
+
     request_str = 'http://{}{}/v1/coverage'.format(server, env.jormungandr_url_prefix)
+
+    technical_requests = {'vehicle_journeys': 'http://{}{}/v1/coverage/{}/vehicle_journeys?count=1'.format(server, env.jormungandr_url_prefix, instance),
+                          'stop_points': 'http://{}{}/v1/coverage/{}/stop_points?count=1'.format(server, env.jormungandr_url_prefix, instance),
+                          'root': 'http://{}{}/v1/coverage/{}'.format(server, env.jormungandr_url_prefix, instance)}
+
+    technical_test_ok = True
+
+    result = {}
 
     if instance:
         request_str = 'http://{}{}/v1/coverage/{}/status'.format(server, env.jormungandr_url_prefix, instance)
-        technical_request = {'vehicle_journeys': 'http://{}{}/v1/coverage/{}/vehicle_journeys?count=1'.format(server, env.jormungandr_url_prefix, instance),
-                             'stop_points': 'http://{}{}/v1/coverage/{}/stop_points?count=1'.format(server, env.jormungandr_url_prefix, instance)}
 
     try:
         response = requests.get(request_str, headers=headers, auth=HTTPBasicAuth(env.token, ''))
@@ -243,18 +250,27 @@ def test_jormungandr(server, instance=None, fail_if_error=True):
         print("{} -> {}".format(response.url, green(response.status_code)))
 
         if instance:
-            for query_type, url in technical_request.items():
-                r = requests.get(url, headers=headers, auth=HTTPBasicAuth(env.token, ''))
+
+            for query_type in [i for i in technical_requests.keys() if i != "root"]:
+                r = requests.get(technical_requests[query_type], headers=headers, auth=HTTPBasicAuth(env.token, ''))
 
                 # Raise error if status_code != 200
                 if r.status_code != 200:
                     print("{} -> {}".format(query_type, yellow(r.status_code)))
+                    technical_test_ok = False
                 else:
                     print("{} -> {}".format(query_type, green(r.status_code)))
 
-                # Test if error field is null
-                if r.json()['regions'][0]['error']:
-                    print("{} error field not null: {}".format(query_type, yellow(r.json()['regions'][0]['error'])))
+        # If technical urls ok, run test on root path.
+        if technical_test_ok:
+
+            r = requests.get(technical_requests['root'], headers=headers, auth=HTTPBasicAuth(env.token, ''))
+
+            # Test if error field is null
+            if r.json()['regions'][0]['error']:
+                print("{} error field not null: {}".format(request_str, yellow(r.json()['regions'][0]['error'])))
+            else:
+                print("{} -> {}".format(technical_requests['root'], green(r.status_code)))
 
         result = response.json()
 
@@ -265,8 +281,8 @@ def test_jormungandr(server, instance=None, fail_if_error=True):
         else:
             print(yellow("WARNING: {} is running but problem found: {} (maybe no data ?)".format(instance, e)))
             exit(0)
-    except JSONDecodeError:
-        print(red("cannot read json response : {}".format(response.text)))
+    except JSONDecodeError as e:
+        print(red("cannot read json response : {}".format(e)))
         exit(1)
     except Exception as e:
         print(red("Error when connecting to %s: %s" % (env.jormungandr_url, e)))
@@ -350,7 +366,7 @@ def remove_jormungandr_instance(instance):
         * Reload apache
     """
     instance = get_real_instance(instance)
-    run("rm --force %s" % (instance.jormungandr_config_file))
+    run("rm --force {}" .format(instance.jormungandr_config_file))
 
     reload_jormun_safe_all()
 
