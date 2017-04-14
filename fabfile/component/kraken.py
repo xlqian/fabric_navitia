@@ -230,19 +230,40 @@ def purge_data_nav(force=False):
 
 
 @task
-def check_dead_instances():
-    dead = 0
-    threshold = env.kraken_threshold * len(env.instances)
+def check_loaded_instances():
+    not_loaded_instance = list()
     for instance in env.instances.values():
         for host in instance.kraken_engines_url:
-            request = 'http://{}:{}/{}/?instance={}'.format(host,
-                env.kraken_monitor_port, env.kraken_monitor_location_dir, instance.name)
+            request = 'http://{}:{}/{}/?instance={}'.format(host, env.kraken_monitor_port,
+                                                            env.kraken_monitor_location_dir, instance.name)
             result = _test_kraken(request, fail_if_error=False)
             if not result or result['status'] == 'timeout' or result['loaded'] is False:
-                dead += 1
-    if dead > int(threshold):
-        print(red("The threshold of allowed dead instances is exceeded: "
-                  "Found {} dead instances out of {}.".format(dead, len(env.instances))))
+                not_loaded_instance.append(instance)
+
+    if not_loaded_instance:
+        print(red("Not loaded instances:"))
+        for instance in not_loaded_instance:
+            print(red("{}".format(instance)))
+
+    return not_loaded_instance
+
+
+@task
+def check_dead_instances(not_loaded_instances):
+    dead_instance = list()
+    for instance in env.instances.values():
+        for host in instance.kraken_engines_url:
+            request = 'http://{}:{}/{}/?instance={}'.format(host, env.kraken_monitor_port,
+                                                            env.kraken_monitor_location_dir, instance.name)
+            result = _test_kraken(request, fail_if_error=False)
+            if not result or result['status'] == 'timeout' or result['loaded'] is False:
+                if instance not in not_loaded_instances:
+                    dead_instance.append(instance)
+
+    if dead_instance:
+        print(red("Dead instances because of deployment:"))
+        for instance in dead_instance:
+            print(red(instance))
         exit(1)
 
     installed_kraken, candidate_kraken = show_version(action='get')
