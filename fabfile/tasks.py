@@ -109,7 +109,7 @@ def upgrade_all(up_tyr=True, up_confs=True, check_version=True, send_mail='no',
     check_bina = get_bool_from_cli(check_bina)
 
     # check if all krakens are running with data
-    not_loaded_instances = kraken.check_loaded_instances()
+    not_loaded_instances = kraken.get_not_loaded_instances_per_host()
 
     # check one instance on each WS
     #TODO: Check all instance not only random one.

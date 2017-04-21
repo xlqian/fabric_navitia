@@ -33,6 +33,7 @@ import os.path
 from retrying import Retrying
 import simplejson as json
 import requests
+from collections import namedtuple
 
 from fabric.api import task, env, sudo, execute
 from fabric.colors import blue, red, green, yellow
@@ -230,48 +231,34 @@ def purge_data_nav(force=False):
 
 
 @task
-def check_loaded_instances():
-    not_loaded_instance = list()
+def get_not_loaded_instances_per_host():
+    instance_host = namedtuple('InstanceAndHost', ['instance', 'host'])
+    not_loaded = []
     for instance in env.instances.values():
         for host in instance.kraken_engines_url:
             request = 'http://{}:{}/{}/?instance={}'.format(host, env.kraken_monitor_port,
                                                             env.kraken_monitor_location_dir, instance.name)
             result = _test_kraken(request, fail_if_error=False)
             if not result or result['status'] == 'timeout' or result['loaded'] is False:
-                not_loaded_instance.append(instance)
+                not_loaded.append(instance_host(instance=instance.name, host=host))
 
-    if not_loaded_instance:
-        print(red("Not loaded instances:"))
-        for instance in not_loaded_instance:
-            print(red("{}".format(instance)))
-
-    return not_loaded_instance
+    if not_loaded:
+        print("Not loaded instances:")
+        for coverage in not_loaded:
+            print(yellow("Instance {} to {}".format(coverage.instance, coverage.host)))
+    return not_loaded
 
 
 @task
 def check_dead_instances(not_loaded_instances):
-    dead_instance = list()
-    for instance in env.instances.values():
-        for host in instance.kraken_engines_url:
-            request = 'http://{}:{}/{}/?instance={}'.format(host, env.kraken_monitor_port,
-                                                            env.kraken_monitor_location_dir, instance.name)
-            result = _test_kraken(request, fail_if_error=False)
-            if not result or result['status'] == 'timeout' or result['loaded'] is False:
-                if instance not in not_loaded_instances:
-                    dead_instance.append(instance)
+    new_not_loaded = get_not_loaded_instances_per_host()  # we fetch again the not loaded instances
 
-    if dead_instance:
-        print(red("Dead instances because of deployment:"))
-        for instance in dead_instance:
-            print(red(instance))
-        exit(1)
+    difference = set(new_not_loaded) - set(not_loaded_instances)
 
-    installed_kraken, candidate_kraken = show_version(action='get')
-    if installed_kraken != candidate_kraken:
-        # if update of packages did not work
-        print(red("Installed kraken version ({}) is different "
-                  "than the candidate kraken version ({})"
-                  .format(installed_kraken, candidate_kraken)))
+    if difference:
+        print("Dead instances because of deployment:")
+        for coverage in difference:
+            print(red("Instance {} to {}".format(coverage.instance, coverage.host)))
         exit(1)
 
 
