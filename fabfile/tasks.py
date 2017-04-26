@@ -108,6 +108,9 @@ def upgrade_all(up_tyr=True, up_confs=True, check_version=True, send_mail='no',
     check_dead = get_bool_from_cli(check_dead)
     check_bina = get_bool_from_cli(check_bina)
 
+    # check if all krakens are running with data
+    not_loaded_instances = kraken.get_not_loaded_instances_per_host()
+
     # check one instance on each WS
     #TODO: Check all instance not only random one.
     for server in env.roledefs['ws']:
@@ -149,7 +152,7 @@ def upgrade_all(up_tyr=True, up_confs=True, check_version=True, send_mail='no',
             execute(switch_to_first_phase, env.eng_hosts_1, env.ws_hosts_1, env.ws_hosts_2)
     execute(upgrade_kraken, wait=env.KRAKEN_RESTART_SCHEME, up_confs=up_confs, supervision=True)
     if check_dead:
-        execute(kraken.check_dead_instances)
+        execute(kraken.check_dead_instances, not_loaded_instances)
     execute(upgrade_jormungandr, reload=False, up_confs=up_confs)
     # need restart apache without using upgrade_jormungandr task previously
     # because that causes a problem in prod
@@ -180,7 +183,8 @@ def upgrade_all(up_tyr=True, up_confs=True, check_version=True, send_mail='no',
             execute(switch_to_third_phase, env.ws_hosts_2)
         env.roledefs['ws'] = env.ws_hosts
         execute(upgrade_kraken, wait=env.KRAKEN_RESTART_SCHEME, up_confs=up_confs)
-
+        if check_dead:
+            execute(kraken.check_dead_instances, not_loaded_instances)
         # check second hosts set
         for server in env.roledefs['ws']:
             instance = random.choice(env.instances.values())

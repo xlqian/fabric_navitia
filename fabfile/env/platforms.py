@@ -408,9 +408,6 @@ env.acceptable_bina_fail_rate = 0.08
 #instances configurations
 env.instances = {}
 
-# threshold for kraken update abort
-env.kraken_threshold = 0.15
-
 # those 3 strings template will be formated with base = tyr base directory and instance = name of the instance
 env.tyr_backup_dir_template = '{base}/{instance}/backup'
 env.tyr_source_dir_template = '{base}/{instance}/source'

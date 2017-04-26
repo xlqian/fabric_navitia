@@ -33,6 +33,7 @@ import os.path
 from retrying import Retrying
 import simplejson as json
 import requests
+from collections import namedtuple
 
 from fabric.api import task, env, sudo, execute
 from fabric.colors import blue, red, green, yellow
@@ -230,27 +231,34 @@ def purge_data_nav(force=False):
 
 
 @task
-def check_dead_instances():
-    dead = 0
-    threshold = env.kraken_threshold * len(env.instances)
+def get_not_loaded_instances_per_host():
+    instance_host = namedtuple('InstanceAndHost', ['instance', 'host'])
+    not_loaded = []
     for instance in env.instances.values():
         for host in instance.kraken_engines_url:
-            request = 'http://{}:{}/{}/?instance={}'.format(host,
-                env.kraken_monitor_port, env.kraken_monitor_location_dir, instance.name)
+            request = 'http://{}:{}/{}/?instance={}'.format(host, env.kraken_monitor_port,
+                                                            env.kraken_monitor_location_dir, instance.name)
             result = _test_kraken(request, fail_if_error=False)
             if not result or result['status'] == 'timeout' or result['loaded'] is False:
-                dead += 1
-    if dead > int(threshold):
-        print(red("The threshold of allowed dead instances is exceeded: "
-                  "Found {} dead instances out of {}.".format(dead, len(env.instances))))
-        exit(1)
+                not_loaded.append(instance_host(instance=instance.name, host=host))
 
-    installed_kraken, candidate_kraken = show_version(action='get')
-    if installed_kraken != candidate_kraken:
-        # if update of packages did not work
-        print(red("Installed kraken version ({}) is different "
-                  "than the candidate kraken version ({})"
-                  .format(installed_kraken, candidate_kraken)))
+    if not_loaded:
+        print("Not loaded instances:")
+        for coverage in not_loaded:
+            print(yellow("Instance {} to {}".format(coverage.instance, coverage.host)))
+    return not_loaded
+
+
+@task
+def check_dead_instances(not_loaded_instances):
+    new_not_loaded = get_not_loaded_instances_per_host()  # we fetch again the not loaded instances
+
+    difference = set(new_not_loaded) - set(not_loaded_instances)
+
+    if difference:
+        print("Dead instances because of deployment:")
+        for coverage in difference:
+            print(red("Instance {} to {}".format(coverage.instance, coverage.host)))
         exit(1)
 
 
