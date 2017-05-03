@@ -35,7 +35,7 @@ LOGGER = {
             'format': 'tyr: [%(name)s] [%(asctime)s] [%(levelname)s] [%(process)s] %(message)s',
         },
         'instance': {
-            'format': '%(name)s: [%(asctime)s] [%(levelname)s] [%(process)s] [%(task_id)s] %(message)s',
+            'format': 'tyr: [%(name)s] [%(asctime)s] [%(levelname)s] [%(process)s] [%(task_id)s] %(message)s',
         }
 
     },
@@ -53,6 +53,14 @@ LOGGER = {
             'address': '/dev/log',
             'facility': '{{env.tyr_syslog_facility}}',
             'formatter': 'default',
+        },
+
+        'instance_syslog': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.SysLogHandler',
+            'address': '/dev/log',
+            'facility': '{{env.tyr_syslog_facility}}',
+            'formatter': 'instance',
         },
         {% endif %}
         'instance': {
