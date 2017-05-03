@@ -240,5 +240,7 @@ def create_privileges_instance_db(instance):
     postgres_connection_user = 'sudo -i -u postgres psql -A -t --dbname={}'.format(postgres_database)
 
     for schema in env.postgres_schemas:
+        run('{} -c "GRANT USAGE ON SCHEMA {} TO {};"'
+            .format(postgres_connection_user, schema, env.postgres_read_only_user))
         run('{} -c "GRANT SELECT ON ALL TABLES IN SCHEMA {} TO {};"'
             .format(postgres_connection_user, schema, env.postgres_read_only_user))
