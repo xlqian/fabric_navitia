@@ -6,8 +6,14 @@
 #emplacement ou charger les fichier de configuration par instances
 INSTANCES_DIR='{{env.jormungandr_instances_dir}}'
 
-#chaine de connnection à postgresql pour la base jormungandr
-SQLALCHEMY_DATABASE_URI ='postgresql://{{env.tyr_postgresql_user}}:{{env.tyr_postgresql_password}}@{{env.tyr_postgresql_database_host}}/{{env.tyr_postgresql_database}}'
+#chaine de connnection à postgresql (pgpool) pour la base jormungandr
+{% if env.name == "prod" %}
+SQLALCHEMY_DATABASE_URI ='postgresql://{{env.jormungandr_postgresql_user}}:{{env.jormungandr_postgresql_password}}@{{env.jormungandr_postgresql_database_host}}:{{env.jormungandr_postgresql_database_port}}/{{env.jormungandr_postgresql_database}}'
+{% else %}
+# There is a dirty condition there to keep compatibility with staging servers to avoid changing all environments configuration about them in navitia_deployment_conf like prod.py
+# One day, we will must do this change
+SQLALCHEMY_DATABASE_URI='postgresql://{{env.tyr_postgresql_user}}:{{env.tyr_postgresql_password}}@{{env.tyr_postgresql_database_host}}/{{env.tyr_postgresql_database}}'
+{% endif %}
 
 #désactivation de l'authentification
 PUBLIC={{env.jormungandr_is_public}}
