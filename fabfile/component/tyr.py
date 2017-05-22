@@ -432,18 +432,19 @@ def launch_rebinarization_upgrade(pilot_supervision=True, pilot_tyr_beat=True, i
             instances2process = set(env.instances)
         else:
             instances2process = set(instances)
-
+        instance2remove = set()
         def binarize_instance(i_name):
             with time_that(blue("Binarization of " + i_name + " completed in {elapsed}")):
                 if i_name in env.excluded_instances:
                     print(blue("NOTICE: instance {} has been excluded, skipping it".format(i_name)))
-                    instances2process.remove(i_name)
+                    instance2remove.add(i_name)
                 elif launch_rebinarization(i_name, True):
                     # remove instance only if bina succeeds
-                    instances2process.remove(i_name)
+                    instance2remove.add(i_name)
             # print instances not yet binarized, this allows to easily resume the binarization
             # process in case of crash or freeze (use include:x,y,z,....)
             # see http://jira.canaltp.fr/browse/DEVOP-408
+            instances2process.difference_update(instance2remove)
             print(blue("Instances left: {}".format(','.join(instances2process))))
 
         def bina_watchdog():
