@@ -444,8 +444,7 @@ def launch_rebinarization_upgrade(pilot_supervision=True, pilot_tyr_beat=True, i
             # print instances not yet binarized, this allows to easily resume the binarization
             # process in case of crash or freeze (use include:x,y,z,....)
             # see http://jira.canaltp.fr/browse/DEVOP-408
-            instances2process.difference_update(instance2remove)
-            print(blue("Instances left: {}".format(','.join(instances2process))))
+            print(blue("Instances left: {}".format(','.join(instances2process - instance2remove))))
 
         def bina_watchdog():
             frozen_bina_count = 0
@@ -475,7 +474,7 @@ def launch_rebinarization_upgrade(pilot_supervision=True, pilot_tyr_beat=True, i
             with Parallel(env.nb_thread_for_bina) as pool:
                 pool.map(binarize_instance, instances2process)
             run_watchdog = False
-        return tuple(instances2process)
+        return tuple(instances2process - instance2remove)
     finally:
         if pilot_tyr_beat:
             start_tyr_beat()
