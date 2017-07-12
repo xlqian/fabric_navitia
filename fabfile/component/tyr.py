@@ -52,7 +52,8 @@ from fabfile.utils import (_install_packages, _upload_template, update_init, Par
                            start_or_stop_with_delay, supervision_downtime, time_that,
                            get_real_instance, require_directories, require_directory,
                            run_once_per_host, execute_flat, idempotent_symlink, collapse_op,
-                           get_processes, get_bool_from_cli, watchdog_manager, restart_apache)
+                           get_processes, get_bool_from_cli, watchdog_manager, restart_apache,
+                           restart_uwsgi)
 
 
 @task
@@ -81,6 +82,9 @@ def update_tyr_config_file():
                      context={
                          'tyr_settings_file': env.tyr_settings_file
                      })
+
+    _upload_template('tyr/tyr.ini.jinja', env.tyr_wsgi_file,
+                     context={'env': env})
 
 
 @task
@@ -694,7 +698,11 @@ def reload_tyr_safe(server, safe=True):
     with settings(host_string=server):
         if env.use_load_balancer and safe:
             load_balancer.disable_node(server)
-        restart_apache()
+
+        if env.uwsgi_enable:
+            restart_uwsgi('tyr')
+        else:
+            restart_apache()
         if env.use_load_balancer and safe:
             load_balancer.enable_node(server)
 

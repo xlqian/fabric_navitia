@@ -309,6 +309,15 @@ def restart_apache():
     start_or_stop_with_delay("apache2", 4000, 500, start=False, only_once=True)
     start_or_stop_with_delay("apache2", 4000, 500, only_once=True)
 
+@task
+def restart_uwsgi(service):
+    """
+    Restart uWSGI service
+    :param service: uWSGI service to restart.
+    """
+    start_or_stop_with_delay(service, 4000, 500, start=False, only_once=True)
+    start_or_stop_with_delay(service, 4000, 500, only_once=True)
+
 
 @task
 def get_version(host):
