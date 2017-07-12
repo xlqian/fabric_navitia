@@ -364,6 +364,7 @@ env.tyr_migration_dir = os.path.join(env.tyr_basedir, 'migrations')
 env.tyr_settings_file = os.path.join(env.tyr_basedir, 'settings.py')
 env.tyr_settings_file_sh = os.path.join(env.tyr_basedir, 'settings.sh')
 env.tyr_wsgi_file = os.path.join(env.tyr_basedir, 'settings.wsgi')
+env.tyr_uwsgi_config_file = os.path.join(env.tyr_basedir, 'tyr.ini')
 
 env.tyr_ws_url = 'localhost'
 env.tyr_ws_port = 86
