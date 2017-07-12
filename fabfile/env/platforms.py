@@ -47,6 +47,8 @@ env.debian_packages_path = None
 
 env.use_systemd = False
 
+# General enable/disable uwsgi
+env.uwsgi_enable = False
 
 def service_path():
     """
@@ -253,6 +255,10 @@ env.jormungandr_settings_file = os.path.join(env.jormungandr_base_dir,
 # apache conf is usually not handled by fabric, but when it is (for docker for example)
 # we do not use virtualhost, so all is in conf.d
 env.jormungandr_apache_config_file = '/etc/apache2/conf.d/jormungandr.conf'
+
+# uWSGI
+env.jormungandr_uwsgi_config_file = os.path.join(env.jormungandr_base_dir,
+                                          'jormungandr.ini')
 
 env.jormungandr_url = 'localhost'
 env.jormungandr_url_prefix = ''

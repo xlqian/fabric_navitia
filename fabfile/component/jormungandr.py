@@ -50,7 +50,7 @@ from fabtools import require, python
 from fabfile.component import load_balancer
 from fabfile.utils import (_install_packages, _upload_template, get_real_instance,
                            start_or_stop_with_delay, get_bool_from_cli, show_version,
-                            restart_apache)
+                           restart_apache, restart_uwsgi)
 
 
 @task
@@ -69,6 +69,11 @@ def update_jormungandr_conf():
     _upload_template('jormungandr/settings.py.jinja', env.jormungandr_settings_file,
                      context={'env': env})
 
+    if env.uwsgi_enable:
+        # Add uwsgi config for jormungandr
+        _upload_template('jormungandr/jormungandr.ini.jinja', env.jormungandr_uwsgi_config_file,
+                         context={'env': env}, backup=False)
+
 
 @task
 @roles('ws')
@@ -80,7 +85,7 @@ def setup_jormungandr():
     if env.setup_apache:
         sudo('sudo a2enmod rewrite')
         _upload_template('jormungandr/jormungandr_apache_config.jinja', env.jormungandr_apache_config_file,
-                     context={'env': env}, backup=False)
+                         context={'env': env}, backup=False)
 
     execute(start_jormungandr_all)
 
@@ -124,11 +129,20 @@ def reload_jormun_safe(server, safe=True):
     """ Reload jormungandr on a specific server,
         in a safe way if load balancers are available
     """
+
     safe = get_bool_from_cli(safe)
+
     with settings(host_string=server):
         if env.use_load_balancer and safe:
             load_balancer.disable_node(server)
-        restart_apache()
+
+        # Restart uWSGI if set.
+        if env.uwsgi_enable:
+            restart_uwsgi()
+
+        else:
+            restart_apache()
+
         if env.use_load_balancer and safe:
             load_balancer.enable_node(server)
 

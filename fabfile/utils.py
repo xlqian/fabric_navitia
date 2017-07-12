@@ -309,6 +309,11 @@ def restart_apache():
     start_or_stop_with_delay("apache2", 4000, 500, start=False, only_once=True)
     start_or_stop_with_delay("apache2", 4000, 500, only_once=True)
 
+@task
+def restart_uwsgi():
+    start_or_stop_with_delay("jormungandr", 4000, 500, start=False, only_once=True)
+    start_or_stop_with_delay("jormungandr", 4000, 500, only_once=True)
+
 
 @task
 def get_version(host):

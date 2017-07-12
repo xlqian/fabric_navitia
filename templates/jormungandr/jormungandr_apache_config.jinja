@@ -5,6 +5,13 @@
 # Navitia2 webservice
 #
 
+{% if uwsgi_enable %}
+ProxyRequests On
+ProxyPreserveHost On
+ProxyPass / http://127.0.0.1:9090/
+ProxyPassReverse / http://127.0.0.1:9090/
+{% else %}
+
 WSGISocketPrefix /run/wsgi
 
 WSGIDaemonProcess jormungandr processes=1 threads=15 display-name='%{GROUP}'
@@ -12,6 +19,8 @@ WSGIProcessGroup jormungandr
 WSGIApplicationGroup %{GLOBAL}
 WSGIImportScript {{env.jormungandr_wsgi_file}} process-group=jormungandr application-group=%{GLOBAL}
 WSGIScriptAlias {{env.jormungandr_url_prefix}} {{env.jormungandr_wsgi_file}}
+
+{% endif %}
 
 <Location /navitia/>
     Order allow,deny
