@@ -1,4 +1,4 @@
 [uwsgi]
-{% for k, v in env.uwsgi_config.items() -%}
+{% for k, v in env.uwsgi_jormungandr_config.items() -%}
 {{ k }} = {{ v }}
 {% endfor %}
