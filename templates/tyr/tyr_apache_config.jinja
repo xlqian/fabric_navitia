@@ -26,9 +26,16 @@ Listen {{env.tyr_ws_port}}
 	CustomLog ${APACHE_LOG_DIR}/{{env.tyr_ws_url}}-tyr-access.log combined
 	ErrorLog ${APACHE_LOG_DIR}/{{env.tyr_ws_url}}-tyr-error.log
 
+    {% if uwsgi_enable %}
+    ProxyRequests On
+    ProxyPreserveHost On
+    ProxyPass / http://127.0.0.1:9091/
+    ProxyPassReverse / http://127.0.0.1:9091/
+    {% else %}
 	WSGIDaemonProcess jormungandr processes=1 threads=15 display-name='%{GROUP}' inactivity-timeout=120
     WSGIProcessGroup jormungandr
     WSGIApplicationGroup %{GLOBAL}
     WSGIImportScript {{env.tyr_wsgi_file}} process-group=jormungandr application-group=%{GLOBAL}
     WSGIScriptAlias / {{env.tyr_wsgi_file}}
+    {% endif %}
 </VirtualHost>

@@ -138,7 +138,7 @@ def reload_jormun_safe(server, safe=True):
 
         # Restart uWSGI if set.
         if env.uwsgi_enable:
-            restart_uwsgi()
+            restart_uwsgi('jormungandr')
 
         else:
             restart_apache()
