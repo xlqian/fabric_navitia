@@ -1,4 +1,4 @@
 [uwsgi]
-{% for k, v in env.uwsgi_tyr_config.items() -%}
+{% for k, v in env.uwsgi_config['tyr'].items() -%}
 {{ k }} = {{ v }}
 {% endfor %}
