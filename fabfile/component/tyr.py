@@ -83,8 +83,9 @@ def update_tyr_config_file():
                          'tyr_settings_file': env.tyr_settings_file
                      })
 
-    _upload_template('tyr/tyr.ini.jinja', env.tyr_uwsgi_config_file,
-                     context={'env': env})
+    if env.uwsgi_enable:
+        _upload_template('tyr/tyr.ini.jinja', env.tyr_uwsgi_config_file,
+                          context={'env': env})
 
 
 @task
